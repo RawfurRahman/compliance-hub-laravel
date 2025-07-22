@@ -1,131 +1,86 @@
+{{-- resources/views/pci/show.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
-<div x-data="evidenceManager()">
-    <!-- Page Header -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-slate-800">Evidence Management</h1>
-        <p class="mt-1 text-md text-slate-500">Project: <span class="font-semibold text-slate-600">{{ $project->name }}</span></p>
-    </div>
+    {{--
+        This is the main view for a PCI DSS Project assessment.
+        It uses Alpine.js to manage the state of the form, allowing users to toggle between
+        a read-only view ('view mode') and an editable form ('edit mode').
 
-    <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Left Column: Requirements & Uploads -->
-        <div class="lg:w-2/3 space-y-4">
-            @foreach($requirements as $req)
-            <div class="bg-white rounded-lg shadow-sm" x-data="{ open: false }">
-                <button @click="open = !open" class="flex justify-between items-center w-full text-left p-4">
-                    <span class="text-md font-semibold text-slate-800">{{ $req->req_num }}: {{ $req->req_description }}</span>
-                    <i :class="{'transform rotate-180': open}" class="fas fa-chevron-down text-slate-500 transition-transform"></i>
+        - x-data: Initializes the Alpine.js component with several state variables:
+            - isEditing: A boolean to track if the form is in edit mode.
+            - addMode: A boolean to determine if this is a new, unsaved project. This is set to false as we are viewing an existing project.
+            - originalDetails: A JSON object holding the initial state of the project details. Used for the "Cancel" button.
+            - details: A JSON object that is bound to the form inputs. Changes are made to this object.
+        - :action: The form's action URL is dynamically set based on whether it's a new project or an update.
+    --}}
+    <div x-data="{
+        isEditing: {{ $project->pciDssDetails->wasRecentlyCreated ? 'true' : 'false' }},
+        addMode: {{ $project->pciDssDetails->wasRecentlyCreated ? 'true' : 'false' }},
+        originalDetails: {{ json_encode($project->pciDssDetails) }},
+        details: {{ json_encode($project->pciDssDetails) }}
+    }">
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">PCI DSS v4.0.1 Assessment</h1>
+                <p class="mt-1 text-md text-slate-500">Project: <span class="font-semibold text-slate-600">{{ $project->name }}</span></p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                 <!-- Report Generation Button -->
+                <a href="{{ route('reports.pci.generate', $project) }}" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                    <i class="fas fa-file-alt mr-2"></i> Generate Report
+                </a>
+                <!-- Edit / Save / Cancel Buttons -->
+                <div x-show="!isEditing && !addMode">
+                    <button type="button" @click="isEditing = true" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+                        <i class="fas fa-edit mr-2"></i> Edit Project Information
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @if (session('success'))
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+                <p>{{ session('success') }}</p>
+            </div>
+        @endif
+
+        <form :action="addMode ? '{{ route('pci.store') }}' : '{{ route('pci.update', $project) }}'" method="POST">
+            @csrf
+            <template x-if="!addMode">
+                @method('PUT')
+            </template>
+
+            <!-- Sticky Save/Cancel bar for Edit Mode -->
+            <div x-show="isEditing" x-transition class="sticky top-0 bg-white/80 backdrop-blur-sm z-10 p-4 mb-6 rounded-lg shadow-md border border-slate-200 flex justify-end items-center space-x-4">
+                <button type="button" @click="isEditing = false; details = JSON.parse(JSON.stringify(originalDetails))" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 shadow-sm">
+                    <i class="fas fa-save mr-2"></i> Save Changes
                 </button>
-                <div x-show="open" x-transition class="p-4 border-t border-slate-200">
-                    <!-- Uploaded Files List -->
-                    <h4 class="font-semibold text-slate-600 mb-2">Uploaded Evidence:</h4>
-                    @if($evidenceByRequirement->has($req->id))
-                        <ul class="space-y-2 mb-4">
-                        @foreach($evidenceByRequirement->get($req->id) as $file)
-                            <li class="flex items-center justify-between p-2 bg-slate-50 rounded-md">
-                                <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank" class="text-sky-600 hover:underline truncate">
-                                    <i class="fas fa-file-alt mr-2"></i>{{ $file->original_filename }}
-                                </a>
-                                <span class="text-xs text-slate-500 ml-4 whitespace-nowrap">by {{ $file->user->username }}</span>
-                            </li>
-                        @endforeach
-                        </ul>
-                    @else
-                        <p class="text-sm text-slate-500 mb-4">No evidence has been uploaded for this requirement yet.</p>
-                    @endif
-
-                    <!-- File Upload Form -->
-                    <form action="{{ route('evidence.upload', $project) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="requirement_id" value="{{ $req->id }}">
-                        <div class="flex items-center">
-                            <input type="file" name="file" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
-                            <button type="submit" class="ml-4 px-4 py-2 bg-sky-500 text-white text-sm font-semibold rounded-md hover:bg-sky-600">Upload</button>
-                        </div>
-                    </form>
-                </div>
             </div>
-            @endforeach
-        </div>
 
-        <!-- Right Column: Chat -->
-        <div class="lg:w-1/3">
-            <div class="sticky top-8 bg-white rounded-lg shadow-sm flex flex-col h-[calc(100vh-6rem)]">
-                <div class="p-4 border-b border-slate-200">
-                    <h3 class="text-xl font-bold text-slate-800">Project Chat</h3>
-                </div>
-                <!-- Chat Messages -->
-                <div class="flex-1 p-4 overflow-y-auto" x-ref="chatbox">
-                    <template x-for="message in messages" :key="message.id">
-                        <div class="flex mb-4" :class="message.user_id === {{ auth()->id() }} ? 'justify-end' : 'justify-start'">
-                            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg" :class="message.user_id === {{ auth()->id() }} ? 'bg-sky-500 text-white' : 'bg-slate-200 text-slate-800'">
-                                <p class="text-sm" x-text="message.message"></p>
-                                <p class="text-xs mt-1 opacity-75" x-text="`${message.user.username} (${message.user.roles[0].name}) - ${new Date(message.created_at).toLocaleTimeString()}`"></p>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                <!-- Chat Input -->
-                <div class="p-4 border-t border-slate-200">
-                    <form @submit.prevent="sendMessage">
-                        <div class="flex items-center">
-                            <input type="text" x-model="newMessage" placeholder="Type your message..." class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
-                            <button type="submit" class="ml-2 px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600"><i class="fas fa-paper-plane"></i></button>
-                        </div>
-                    </form>
-                </div>
+            <!-- Assessment Components -->
+            {{--
+                Each section of the assessment is broken out into its own Blade component.
+                - We pass the project details to each component using the `:details` prop.
+                - The `isEditing` state is implicitly available to all child components because they
+                  are inside the main `x-data` scope. This allows them to show/hide input fields.
+            --}}
+            <div class="space-y-8">
+                <x-pci.project-info :project="$project" />
+                <x-pci.assessment-timeframe :details="$project->pciDssDetails" />
+                <x-pci.business-overview :details="$project->pciDssDetails" :paymentChannels="$paymentChannels" />
+                <x-pci.scope-of-work :details="$project->pciDssDetails" />
+                <x-pci.environment-details :details="$project->pciDssDetails" />
+                <x-pci.reviewed-environments :details="$project->pciDssDetails" />
+                <x-pci.quarterly-scans :details="$project->pciDssDetails" />
+                <x-pci.assessment-activities :details="$project->pciDssDetails" />
+                <x-pci.overall-findings :details="$project->pciDssDetails" />
+
+                {{-- The Requirements List is the most complex component, handling its own search state --}}
+                <x-pci.requirements-list :requirements="$requirements" :findings="$findings" />
             </div>
-        </div>
+        </form>
     </div>
-</div>
-
-<script>
-    function evidenceManager() {
-        return {
-            messages: @json($chatMessages),
-            newMessage: '',
-            init() {
-                this.scrollToBottom();
-                // Poll for new messages every 5 seconds
-                setInterval(() => {
-                    this.fetchMessages();
-                }, 5000);
-            },
-            fetchMessages() {
-                fetch('{{ route('evidence.chat.get', $project) }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length !== this.messages.length) {
-                            this.messages = data;
-                            this.scrollToBottom();
-                        }
-                    });
-            },
-            sendMessage() {
-                if (this.newMessage.trim() === '') return;
-                
-                fetch('{{ route('evidence.chat.post', $project) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ message: this.newMessage })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    this.messages.push(data);
-                    this.newMessage = '';
-                    this.scrollToBottom();
-                });
-            },
-            scrollToBottom() {
-                this.$nextTick(() => {
-                    this.$refs.chatbox.scrollTop = this.$refs.chatbox.scrollHeight;
-                });
-            }
-        }
-    }
-</script>
 @endsection

@@ -1,3 +1,5 @@
+{{-- resources/views/dashboard.blade.php --}}
+
 @extends('layouts.app')
 
 @section('content')
@@ -26,7 +28,12 @@
             </div>
         </a>
 
-        <a href="#" class="block p-6 bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow border border-slate-200">
+        {{-- Evidence Hub button: The route helper is correct. If you're getting a 404, --}}
+        {{-- it's likely a backend issue (e.g., route cache, controller not found). --}}
+        {{-- Make sure to run 'php artisan route:clear' and 'php artisan optimize:clear' --}}
+        {{-- after adding/modifying routes or controllers. --}}
+        {{-- Assuming a default project ID for quick access, or you'd fetch the user's active project --}}
+        <a href="{{ route('evidence.show', ['project' => $currentProjectId ?? 1]) }}" class="block p-6 bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow border border-slate-200">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-teal-100 text-teal-600">
                     <i class="fas fa-cloud-upload-alt fa-lg"></i>
@@ -53,3 +60,4 @@
         @endcan
     </div>
 @endsection
+

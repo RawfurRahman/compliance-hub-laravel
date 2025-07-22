@@ -36,7 +36,7 @@
                             @endif
                             
                             {{-- ** THE FIX IS HERE (New Button) ** --}}
-                            {{-- Link to the new Evidence Management page for this specific project --}}
+                            {{-- This link now correctly points to the evidence page for this specific project --}}
                             <a href="{{ route('evidence.show', $project) }}" class="text-teal-600 hover:text-teal-900">Manage Evidence</a>
                         </td>
                     </tr>

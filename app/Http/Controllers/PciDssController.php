@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\ProjectPciDssDetail;
+use App\Models\PciDssRequirement; // Import PciDssRequirement model
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,13 +21,26 @@ class PciDssController extends Controller
         }
 
         // Eager load all related details for efficiency
-        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings');
+        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings', 'evidenceFiles.user', 'chatMessages.user.roles');
         
         // Get payment channels from the config file
         $paymentChannels = config('compliance.pci_dss.payment_channels', []);
 
-        // The requirements and findings are now loaded by the RequirementsList component directly.
-        return view('pci.show', compact('project', 'paymentChannels'));
+        // Fetch all PCI DSS requirements and sort them naturally
+        $requirements = PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
+
+        // Group evidence files by requirement ID for easy access in the view
+        $evidenceByRequirement = $project->evidenceFiles->groupBy('pci_dss_requirement_id');
+
+        // Get chat messages for the project
+        $chatMessages = $project->chatMessages;
+
+        // Extract findings from pciDssDetails and key them by requirement ID
+        // This ensures the $findings variable is available and correctly structured for the component
+        $findings = $project->pciDssDetails->findings->keyBy('pci_dss_requirement_id'); // Add this line 👈
+
+        // Pass all necessary data to the view
+        return view('pci.show', compact('project', 'paymentChannels', 'requirements', 'evidenceByRequirement', 'chatMessages', 'findings')); // Add 'findings' here 👈
     }
 
     /**
