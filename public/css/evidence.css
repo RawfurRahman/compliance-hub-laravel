@@ -1,0 +1,202 @@
+/* public/css/evidence.css */
+
+/* General Table Styling */
+.overflow-x-auto table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.overflow-x-auto th,
+.overflow-x-auto td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.875rem; /* 14px */
+}
+
+.overflow-x-auto th {
+    background-color: #f8fafc; /* slate-50 */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569; /* slate-600 */
+}
+
+.overflow-x-auto tbody tr:hover {
+    background-color: #f1f5f9; /* slate-100 */
+}
+
+/* Status Badge Styling */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem; /* 12px */
+    font-weight: 600;
+    line-height: 1.5;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+/* Status Colors */
+.status-pending, .status-processing, .status-awaiting_review {
+    background-color: #feefc3; /* amber-200 */
+    color: #92400e; /* amber-800 */
+    border-color: #fde68a; /* amber-300 */
+}
+
+.status-clean, .status-approved, .status-completed {
+    background-color: #dcfce7; /* green-200 */
+    color: #166534; /* green-800 */
+    border-color: #bbf7d0; /* green-300 */
+}
+
+.status-infected, .status-rejected, .status-failed, .status-webhook_failed {
+    background-color: #fee2e2; /* red-200 */
+    color: #991b1b; /* red-800 */
+    border-color: #fecaca; /* red-300 */
+}
+
+.status-n8n_not_configured, .status-skipped_due_to_scan {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #4b5563; /* gray-700 */
+    border-color: #d1d5db; /* gray-300 */
+}
+
+
+/* AI Details Row Styling */
+.ai-details-row td {
+    padding: 0;
+    background-color: #f8fafc; /* slate-50 */
+}
+
+.ai-details {
+    padding: 16px;
+    font-size: 0.875rem; /* 14px */
+    color: #334155; /* slate-700 */
+}
+
+    .ai-details p {
+        margin: 0;
+    }
+
+/* Action Buttons */
+.actions-cell {
+    white-space: nowrap;
+}
+
+.action-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.approve-btn {
+    background-color: #dcfce7;
+    color: #16a34a;
+    border-color: #16a34a;
+}
+
+    .approve-btn:hover {
+        background-color: #16a34a;
+        color: white;
+    }
+
+.reject-btn {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+    .reject-btn:hover {
+        background-color: #dc2626;
+        color: white;
+    }
+
+
+/* Chat Application Styling */
+.chat-box {
+    height: 600px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0; /* slate-200 */
+    border-radius: 0.5rem;
+    background-color: #f8fafc; /* slate-50 */
+}
+
+.message {
+    max-width: 80%;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+    .message.self {
+        align-self: flex-end;
+        background-color: #dbeafe; /* blue-200 */
+        border-bottom-right-radius: 0.25rem;
+    }
+
+    .message.other {
+        align-self: flex-start;
+        background-color: #e5e7eb; /* gray-200 */
+        border-bottom-left-radius: 0.25rem;
+    }
+
+.message-sender {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    color: #1e293b; /* slate-800 */
+    display: flex;
+    align-items: center;
+}
+
+.message-content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.message-timestamp {
+    font-size: 0.75rem;
+    color: #64748b; /* slate-500 */
+    margin-top: 0.5rem;
+    align-self: flex-end;
+}
+
+/* Role Badges in Chat */
+.role-badge {
+    margin-left: 0.5rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.role-admin {
+    background-color: #fecaca; /* red-300 */
+    color: #991b1b; /* red-800 */
+}
+
+.role-auditor {
+    background-color: #dbeafe; /* blue-200 */
+    color: #1e40af; /* blue-800 */
+}
+
+.role-customer {
+    background-color: #d1fae5; /* green-200 */
+    color: #065f46; /* green-800 */
+}
+
+.role-default {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #374151; /* gray-700 */
+}
