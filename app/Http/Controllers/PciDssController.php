@@ -48,10 +48,10 @@ class PciDssController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'project_name' => 'required|string|max:255',
-            // Add all other validation rules similar to the update method...
-        ]);
+        $validatedData = $request->validate(array_merge(
+            ['project_name' => 'required|string|max:255'],
+            $this->validationRules()
+        ));
 
         $project = Project::create([
             'name' => $validatedData['project_name'],
@@ -78,10 +78,7 @@ class PciDssController extends Controller
             abort(404);
         }
 
-        $request->validate([
-            'ae_company_name' => 'nullable|string|max:255',
-            // Add all other validation rules...
-        ]);
+        $request->validate($this->validationRules());
 
         $pciDssDetail = $project->pciDssDetails;
         $detailsData = $this->getDetailsDataFromRequest($request);
@@ -89,6 +86,52 @@ class PciDssController extends Controller
         $this->processAndSaveRelationships($request, $pciDssDetail);
 
         return redirect()->route('pci.show', $project)->with('success', 'Project information updated successfully!');
+    }
+
+    /**
+     * Get the validation rules for PCI DSS project details.
+     */
+    private function validationRules(): array
+    {
+        return [
+            'ae_company_name' => 'nullable|string|max:255',
+            'ae_dba' => 'nullable|string|max:255',
+            'ae_mailing_address' => 'nullable|string|max:255',
+            'ae_main_website' => 'nullable|string|max:255',
+            'ae_contact_name' => 'nullable|string|max:255',
+            'ae_contact_title' => 'nullable|string|max:255',
+            'ae_phone_number' => 'nullable|string|max:255',
+            'ae_email_address' => 'nullable|email|max:255',
+            'assessor_company_name' => 'nullable|string|max:255',
+            'assessor_mailing_address' => 'nullable|string|max:255',
+            'assessor_website' => 'nullable|string|max:255',
+            'assessor_lead_name' => 'nullable|string|max:255',
+            'assessor_phone' => 'nullable|string|max:255',
+            'assessor_email' => 'nullable|email|max:255',
+            'assessor_certificate_number' => 'nullable|string|max:255',
+            'date_of_report' => 'nullable|date',
+            'date_assessment_ended' => 'nullable|date',
+            'remote_assessment' => 'boolean',
+            'remote_justification' => 'nullable|string',
+            'additional_services' => 'boolean',
+            'additional_services_desc' => 'nullable|string',
+            'subcontractors_used' => 'boolean',
+            'subcontractor_list' => 'nullable|string',
+            'overall_assessment_result' => 'nullable|string',
+            'summary_findings' => 'nullable|string',
+            'business_overview_desc' => 'nullable|string',
+            'payment_channels' => 'nullable|array',
+            'scope_validation_activities' => 'nullable|string',
+            'scope_excluded_areas' => 'nullable|string',
+            'scope_reduction_factors' => 'nullable|string',
+            'saq_eligibility' => 'nullable|string',
+            'segmentation_used' => 'boolean',
+            'segmentation_desc' => 'nullable|string',
+            'pci_ssc_products_used' => 'boolean',
+            'network_diagrams_desc' => 'nullable|string',
+            'account_dataflow_diagrams_desc' => 'nullable|string',
+            'storage_account_data_desc' => 'nullable|string',
+        ];
     }
 
     /**
