@@ -69,14 +69,14 @@
             --}}
             <div class="space-y-8">
                 <x-pci.project-info :project="$project" />
-                <x-pci.assessment-timeframe :details="details" />
-                <x-pci.business-overview :details="details" :paymentChannels="$paymentChannels" />
-                <x-pci.scope-of-work :details="details" />
-                <x-pci.environment-details :details="details" />
-                <x-pci.reviewed-environments :details="details" />
-                <x-pci.quarterly-scans :details="details" />
-                <x-pci.assessment-activities :details="details" />
-                <x-pci.overall-findings :details="details" />
+                <x-pci.assessment-timeframe />
+                <x-pci.business-overview :paymentChannels="$paymentChannels" />
+                <x-pci.scope-of-work />
+                <x-pci.environment-details />
+                <x-pci.reviewed-environments />
+                <x-pci.quarterly-scans />
+                <x-pci.assessment-activities />
+                <x-pci.overall-findings />
 
                 {{-- The Requirements List is the most complex component, handling its own search state --}}
                 <x-pci.requirements-list :requirements="$requirements" :findings="$findings" />

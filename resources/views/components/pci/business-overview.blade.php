@@ -1,4 +1,4 @@
-@props(['details', 'paymentChannels'])
+@props(['paymentChannels'])
 
 <div class="bg-white shadow rounded-lg p-6 mb-8">
     <h2 class="text-xl font-semibold text-gray-800 mb-4">Business Overview</h2>
@@ -6,7 +6,7 @@
     {{-- Description of Entity's Business --}}
     <div class="mb-6">
         <label for="business_overview_desc" class="block text-sm font-medium text-gray-700">Description of Entity's Business</label>
-        <div x-show="!isEditing" class="mt-1 p-2 bg-gray-50 rounded-md border">{{ optional($details)->business_overview_desc ?: 'Not provided.' }}</div>
+        <div x-show="!isEditing" class="mt-1 p-2 bg-gray-50 rounded-md border" x-text="details.business_overview_desc || 'Not provided.'"></div>
         <div x-show="isEditing">
             <textarea name="business_overview_desc" id="business_overview_desc" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" x-model="details.business_overview_desc"></textarea>
         </div>
@@ -29,15 +29,12 @@
             </div>
             
             <div x-show="!isEditing">
-                @if(!empty(optional($details)->payment_channels))
-                    <ul class="list-disc list-inside">
-                        @foreach (optional($details)->payment_channels as $channel)
-                            <li class="font-semibold text-gray-800">{{ $channel }}</li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p class="text-gray-500">No payment channels selected.</p>
-                @endif
+                <ul class="list-disc list-inside" x-show="details.payment_channels && details.payment_channels.length > 0">
+                    <template x-for="channel in details.payment_channels" :key="channel">
+                        <li class="font-semibold text-gray-800" x-text="channel"></li>
+                    </template>
+                </ul>
+                <p class="text-gray-500" x-show="!details.payment_channels || details.payment_channels.length === 0">No payment channels selected.</p>
             </div>
         </div>
     </div>
