@@ -16,7 +16,6 @@
     --}}
     <div x-data="{
         isEditing: {{ $project->pciDssDetails->wasRecentlyCreated ? 'true' : 'false' }},
-        addMode: {{ $project->pciDssDetails->wasRecentlyCreated ? 'true' : 'false' }},
         originalDetails: {{ json_encode($project->pciDssDetails) }},
         details: {{ json_encode($project->pciDssDetails) }}
     }">

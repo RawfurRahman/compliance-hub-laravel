@@ -38,7 +38,6 @@ Route::middleware(['auth'])->group(function () {
 
     // PCI DSS Module Routes
     Route::get('/pci/{project}', [PciDssController::class, 'show'])->name('pci.show');
-    Route::post('/pci', [PciDssController::class, 'store'])->name('pci.store');
     Route::match(['put', 'post'], '/pci/{project}', [PciDssController::class, 'update'])->name('pci.update');
 
     // Evidence Routes

@@ -44,32 +44,6 @@ class PciDssController extends Controller
     }
 
     /**
-     * Store a newly created PCI DSS project's details in storage.
-     */
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate(array_merge(
-            ['project_name' => 'required|string|max:255'],
-            $this->validationRules()
-        ));
-
-        $project = Project::create([
-            'name' => $validatedData['project_name'],
-            'module_type' => 'pci_dss',
-            'user_id' => auth()->id(),
-        ]);
-        
-        $pciDssDetail = $project->pciDssDetails()->create(
-            $this->getDetailsDataFromRequest($request)
-        );
-
-        $this->processAndSaveRelationships($request, $pciDssDetail);
-
-        return redirect()->route('pci.show', $project)->with('success', 'New project information added successfully!');
-    }
-
-
-    /**
      * Update the specified PCI DSS project in storage.
      */
     public function update(Request $request, Project $project)
