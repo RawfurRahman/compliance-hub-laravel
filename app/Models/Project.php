@@ -26,9 +26,9 @@ class Project extends Model
     }
 
     // ** NEW RELATIONSHIPS **
-    public function evidenceFiles()
+    public function evidence()
     {
-        return $this->hasMany(EvidenceFile::class);
+        return $this->hasMany(Evidence::class);
     }
 
     public function chatMessages()

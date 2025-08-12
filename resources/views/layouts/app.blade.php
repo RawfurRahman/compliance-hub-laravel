@@ -14,7 +14,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     
     <style>
         /* Custom styles for a more polished design */
@@ -95,5 +95,6 @@
         </div>
 
     </div>
+    @stack('scripts')
 </body>
 </html>

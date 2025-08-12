@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\ProjectPciDssDetail;
-use App\Models\PciDssRequirement; // Import PciDssRequirement model
+use App\Models\PciDssRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +21,7 @@ class PciDssController extends Controller
         }
 
         // Eager load all related details for efficiency
-        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings', 'evidenceFiles.user', 'chatMessages.user.roles');
+        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings.requirement', 'evidence.user', 'chatMessages.user.roles');
         
         // Get payment channels from the config file
         $paymentChannels = config('compliance.pci_dss.payment_channels', []);
@@ -30,17 +30,16 @@ class PciDssController extends Controller
         $requirements = PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
 
         // Group evidence files by requirement ID for easy access in the view
-        $evidenceByRequirement = $project->evidenceFiles->groupBy('pci_dss_requirement_id');
+        $evidenceByRequirement = $project->evidence->groupBy('pci_dss_requirement_id');
 
         // Get chat messages for the project
         $chatMessages = $project->chatMessages;
 
         // Extract findings from pciDssDetails and key them by requirement ID
-        // This ensures the $findings variable is available and correctly structured for the component
-        $findings = $project->pciDssDetails->findings->keyBy('pci_dss_requirement_id'); // Add this line 👈
+        $findings = optional($project->pciDssDetails)->findings->keyBy('pci_dss_requirement_id') ?? collect();
 
         // Pass all necessary data to the view
-        return view('pci.show', compact('project', 'paymentChannels', 'requirements', 'evidenceByRequirement', 'chatMessages', 'findings')); // Add 'findings' here 👈
+        return view('pci.show', compact('project', 'paymentChannels', 'requirements', 'evidenceByRequirement', 'chatMessages', 'findings'));
     }
 
     /**
@@ -117,12 +116,14 @@ class PciDssController extends Controller
         $relationKeys = ['products', 'tpsps', 'networks', 'locations', 'components', 'ext_scans', 'int_scans', 'findings', '_token', '_method', 'project_name'];
         $detailsData = collect($allData)->except($relationKeys)->toArray();
 
+        // Ensure boolean values are correctly cast from the request.
         $detailsData['remote_assessment'] = $request->boolean('remote_assessment');
         $detailsData['additional_services'] = $request->boolean('additional_services');
         $detailsData['subcontractors_used'] = $request->boolean('subcontractors_used');
         $detailsData['segmentation_used'] = $request->boolean('segmentation_used');
         $detailsData['pci_ssc_products_used'] = $request->boolean('pci_ssc_products_used');
 
+        // Convert summary findings from a string to an array if needed.
         if (isset($detailsData['summary_findings']) && is_string($detailsData['summary_findings'])) {
             $detailsData['summary_findings'] = explode("\n", $detailsData['summary_findings']);
         }
@@ -135,13 +136,13 @@ class PciDssController extends Controller
      */
     private function processAndSaveRelationships(Request $request, ProjectPciDssDetail $details)
     {
-        // Products
+        // Handle PCI SSC Products
         $details->pciSscProducts()->delete();
         if ($request->boolean('pci_ssc_products_used') && $request->has('products')) {
             $details->pciSscProducts()->createMany($request->products);
         }
 
-        // TPSP, Networks, Locations
+        // Handle TPSP, Networks, and Locations
         $details->tpsps()->delete();
         if ($request->has('tpsps')) { $details->tpsps()->createMany($request->tpsps); }
 
@@ -151,7 +152,7 @@ class PciDssController extends Controller
         $details->locations()->delete();
         if ($request->has('locations')) { $details->locations()->createMany($request->locations); }
 
-        // Components
+        // Handle Components
         $details->components()->delete();
         if ($request->has('components')) {
             foreach ($request->components as $componentData) {
@@ -164,7 +165,7 @@ class PciDssController extends Controller
             }
         }
 
-        // Scans
+        // Handle External and Internal Scans
         $details->externalScans()->delete();
         if ($request->has('ext_scans')) {
             foreach ($request->ext_scans as $scan) {
@@ -182,11 +183,18 @@ class PciDssController extends Controller
             }
         }
         
-        // Findings
+        // Handle Findings using updateOrCreate for efficiency
         if ($request->has('findings')) {
             foreach ($request->findings as $reqId => $findingData) {
-                $details->findings()->updateOrCreate(['pci_dss_requirement_id' => $reqId],
-                    ['assessment_finding' => $findingData['assessment_finding'] ?? null,'compensating_control' => isset($findingData['compensating_control']),'customized_approach' => isset($findingData['customized_approach']),'finding_description' => $findingData['finding_description'] ?? null,'assessor_responses' => $findingData['assessor_responses'] ?? [],]
+                $details->findings()->updateOrCreate(
+                    ['pci_dss_requirement_id' => $reqId],
+                    [
+                        'assessment_finding' => $findingData['assessment_finding'] ?? null,
+                        'compensating_control' => isset($findingData['compensating_control']),
+                        'customized_approach' => isset($findingData['customized_approach']),
+                        'finding_description' => $findingData['finding_description'] ?? null,
+                        'assessor_responses' => $findingData['assessor_responses'] ?? [],
+                    ]
                 );
             }
         }
