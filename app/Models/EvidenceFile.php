@@ -25,6 +25,8 @@ class EvidenceFile extends Model
         'ai_analysis_status', // New: e.g., 'pending', 'completed', 'failed', 'awaiting_review'
         'ai_analysis_approved_by', // New: User ID of auditor who approved
         'ai_analysis_approved_at', // New: Timestamp of approval
+        'hitl_status', // pending_review, accepted, action_required
+        'customer_response', // Customer's response text upon re-uploading or answering
     ];
 
     // Cast new fields to appropriate types
@@ -65,6 +67,14 @@ class EvidenceFile extends Model
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'ai_analysis_approved_by');
+    }
+
+    /**
+     * Get the communication thread / feedbacks for this evidence file.
+     */
+    public function feedbacks()
+    {
+        return $this->hasMany(EvidenceFeedback::class);
     }
 }
 

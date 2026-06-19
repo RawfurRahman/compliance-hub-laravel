@@ -20,15 +20,37 @@ class Project extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the users (Auditors, Customers) assigned to this project.
+     */
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'project_user')->withTimestamps();
+    }
+
     public function pciDssDetails()
     {
         return $this->hasOne(ProjectPciDssDetail::class);
     }
 
-    // ** NEW RELATIONSHIPS **
+    public function scope()
+    {
+        return $this->hasOne(ProjectScope::class);
+    }
+
     public function evidence()
     {
         return $this->hasMany(Evidence::class);
+    }
+
+    public function evidenceFiles()
+    {
+        return $this->hasMany(EvidenceFile::class);
+    }
+
+    public function meetings()
+    {
+        return $this->hasMany(Meeting::class);
     }
 
     public function chatMessages()

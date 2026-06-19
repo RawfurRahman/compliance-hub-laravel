@@ -86,4 +86,47 @@ class User extends Authenticatable
             set: fn (string $value) => Hash::make($value),
         );
     }
+
+    /**
+     * Get the projects this user is assigned to (as an Auditor or Customer).
+     */
+    public function assignedProjects()
+    {
+        return $this->belongsToMany(Project::class, 'project_user')->withTimestamps();
+    }
+
+    public function assignedMeetings()
+    {
+        return $this->belongsToMany(Meeting::class, 'meeting_user')->withTimestamps();
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'parent_id');
+    }
+
+    public function subUsers()
+    {
+        return $this->hasMany(User::class, 'parent_id');
+    }
+
+    public function isPrimaryCustomer(): bool
+    {
+        return $this->hasRole('Customer') && is_null($this->parent_id);
+    }
+
+    public function getOrganizationUsers()
+    {
+        if ($this->isPrimaryCustomer()) {
+            return $this->subUsers()->get()->push($this);
+        } elseif ($this->parent_id) {
+            return User::where('parent_id', $this->parent_id)->orWhere('id', $this->parent_id)->get();
+        }
+        return collect([$this]);
+    }
+
+    public function assignedFindings()
+    {
+        return $this->hasMany(PciDssFinding::class, 'assigned_to_user_id');
+    }
 }

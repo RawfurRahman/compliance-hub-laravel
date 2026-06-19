@@ -23,9 +23,28 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // In the future, we will fetch stats, modules, and activities from the database here.
-        // For now, we just return the view.
-        return view('dashboard');
+        $user = auth()->user();
+        $stats = [
+            'active_projects' => 0,
+            'completed_requirements' => 0,
+            'pending_requirements' => 0,
+            'meetings' => 0,
+        ];
+
+        if ($user->hasRole('Admin')) {
+            $stats['active_projects'] = Project::count();
+            $stats['meetings'] = 0;
+        } else {
+            $projects = $user->assignedProjects()->get();
+            $stats['active_projects'] = $projects->count();
+            
+            // Calculate upcoming meetings where the user is either the creator or an attendee
+            $stats['meetings'] = 0;
+                
+            // Mocking logic: later we will sum up completed requirements across frameworks
+        }
+
+        return view('dashboard', compact('stats'));
     }
 
     public function submitComplianceData(Request $request)

@@ -49,6 +49,9 @@ class AuthController extends Controller
             try {
                 Mail::to($user->email)->send(new LoginOtpMail($otp));
             } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('OTP Mail sending failed: ' . $e->getMessage(), [
+                    'exception' => $e
+                ]);
                 return back()->withErrors([
                     'username_or_email' => 'Could not send OTP. Please check mail configuration and try again.',
                 ]);

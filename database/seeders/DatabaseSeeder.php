@@ -15,7 +15,9 @@ class DatabaseSeeder extends Seeder
         // Call the RoleSeeder to create the default roles
         $this->call([
             RoleSeeder::class,
+            FrameworkSeeder::class,
             AdminUserSeeder::class,
+            AuditorCustomerSeeder::class,
             PciDssRequirementSeeder::class, // Add the new seeder here
             AlexJohnUserSeeder::class,
         ]);

@@ -49,7 +49,7 @@
                         --}}
                         x-data="{
                             open: false,
-                            currentFindingData: {{ json_encode($currentFinding ?? new \stdClass()) }},
+                            currentFindingData: {{ json_encode($currentFinding ?? ['is_applicable' => true, 'required_documents' => '']) }},
                             description: {{ json_encode(strtolower($req->req_description)) }}
                         }"
                         {{--
@@ -68,10 +68,43 @@
                             <i :class="{'transform rotate-180': open}" class="fas fa-chevron-down text-slate-500 transition-transform"></i>
                         </button>
                         <div x-show="open" x-transition class="p-4 border-t border-slate-200 space-y-6">
-                            {{-- Section for Assessment Findings --}}
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Assessment Findings</h3>
-                                <table class="min-w-full divide-y divide-gray-300 assessment-table">
+                            
+                            {{-- Section for Scope & Curation (Auditor/Admin Only) --}}
+                            @canany(['is-admin', 'is-auditor'])
+                            <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                                <h3 class="text-lg font-medium text-indigo-900 mb-2">Scope & Curation</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="flex items-center space-x-3">
+                                        <label class="font-medium text-slate-700">Is this requirement applicable to the client?</label>
+                                        <div x-show="!isEditing">
+                                            <span x-show="currentFindingData.is_applicable !== false" class="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">Yes</span>
+                                            <span x-show="currentFindingData.is_applicable === false" class="px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800">No</span>
+                                        </div>
+                                        <div x-show="isEditing">
+                                            <select name="findings[{{ $req->id }}][is_applicable]" x-model="currentFindingData.is_applicable" class="border-gray-300 rounded-md shadow-sm text-sm">
+                                                <option :value="true">Yes, Applicable</option>
+                                                <option :value="false">No, Out of Scope</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="font-medium text-slate-700 block mb-1">Required Document List (Visible to Customer)</label>
+                                        <div x-show="!isEditing" class="p-2 bg-white rounded border min-h-[40px] text-sm text-slate-600 whitespace-pre-wrap" x-text="currentFindingData.required_documents || 'No specific documents requested.'"></div>
+                                        <div x-show="isEditing">
+                                            <textarea name="findings[{{ $req->id }}][required_documents]" x-model="currentFindingData.required_documents" rows="2" class="w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. Network Diagram, Firewall configuration..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endcanany
+
+                            {{-- Wrapper to hide assessing fields if out of scope --}}
+                            <div x-show="currentFindingData.is_applicable !== false" class="space-y-6">
+
+                                {{-- Section for Assessment Findings --}}
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Assessment Findings</h3>
+                                    <table class="min-w-full divide-y divide-gray-300 assessment-table">
                                     <thead class="bg-slate-100">
                                         <tr>
                                             <th colspan="4" class="bg-teal-600 text-white">Assessment Findings (select one)</th>
@@ -150,6 +183,7 @@
                                     </tbody>
                                 </table>
                             </div>
+                            </div> {{-- End of "Applicable constraint" wrapper --}}
                         </div>
                     </div>
                 @endforeach

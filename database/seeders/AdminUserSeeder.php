@@ -21,7 +21,7 @@ class AdminUserSeeder extends Seeder
 
         // Create the admin user
         $adminUser = User::firstOrCreate(
-            ['email' => 'admin@compliancehub.com'],
+            ['email' => 'admin.compliance@gmail.com'],
             [
                 'username' => 'admin',
                 'password' => 'password', // Default password, should be changed

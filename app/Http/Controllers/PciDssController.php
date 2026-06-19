@@ -194,6 +194,8 @@ class PciDssController extends Controller
                         'customized_approach' => isset($findingData['customized_approach']),
                         'finding_description' => $findingData['finding_description'] ?? null,
                         'assessor_responses' => $findingData['assessor_responses'] ?? [],
+                        'is_applicable' => filter_var($findingData['is_applicable'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                        'required_documents' => $findingData['required_documents'] ?? null,
                     ]
                 );
             }
