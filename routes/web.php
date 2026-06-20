@@ -86,11 +86,27 @@ Route::middleware(['auth'])->group(function () {
     // Report Generation Route
     Route::get('/reports/pci/{project}', [ReportController::class, 'generate'])->name('reports.pci.generate');
 
-    // ISO 27001:2022 Gap Assessment Routes
+    // ISO 27001:2022 Gap Assessment Routes (legacy import-based)
     Route::get('/iso-gap/{project_id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'index'])->name('iso-gap.index');
     Route::post('/iso-gap/{project_id}/import',  [\App\Http\Controllers\IsoGapAssessmentController::class, 'import'])->name('iso-gap.import');
     Route::post('/iso-gap/status/{id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'updateStatus'])->name('iso-gap.update-status');
     Route::get('/iso-gap/{project_id}/report',   [\App\Http\Controllers\IsoGapAssessmentController::class, 'generateReport'])->name('iso-gap.report');
+
+    // ── Unified Assessment Module ──────────────────────────────────────────
+    Route::prefix('assessments')->name('assessments.')->group(function () {
+        // Dashboard (with ?type=gap|final)
+        Route::get('/{project}',                    [\App\Http\Controllers\AssessmentController::class, 'show'])->name('show');
+        // Initialise a new assessment
+        Route::post('/{project}',                   [\App\Http\Controllers\AssessmentController::class, 'store'])->name('store');
+        // Clone gap → final
+        Route::post('/{project}/clone',             [\App\Http\Controllers\AssessmentController::class, 'clone'])->name('clone');
+        // Findings CRUD (JSON)
+        Route::post('/assessment/{assessment}/findings',        [\App\Http\Controllers\AssessmentController::class, 'storeFinding'])->name('findings.store');
+        Route::put('/findings/{finding}',                       [\App\Http\Controllers\AssessmentController::class, 'updateFinding'])->name('findings.update');
+        Route::delete('/findings/{finding}',                    [\App\Http\Controllers\AssessmentController::class, 'destroyFinding'])->name('findings.destroy');
+        // PDF report
+        Route::get('/report/{assessment}',          [\App\Http\Controllers\AssessmentController::class, 'report'])->name('report');
+    });
 
     // User Management Routes (Admin/Auditor specific)
     Route::middleware(['can:is-admin'])->group(function () {
