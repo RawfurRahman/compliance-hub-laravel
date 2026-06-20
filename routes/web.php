@@ -86,6 +86,12 @@ Route::middleware(['auth'])->group(function () {
     // Report Generation Route
     Route::get('/reports/pci/{project}', [ReportController::class, 'generate'])->name('reports.pci.generate');
 
+    // ISO 27001:2022 Gap Assessment Routes
+    Route::get('/iso-gap/{project_id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'index'])->name('iso-gap.index');
+    Route::post('/iso-gap/{project_id}/import',  [\App\Http\Controllers\IsoGapAssessmentController::class, 'import'])->name('iso-gap.import');
+    Route::post('/iso-gap/status/{id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'updateStatus'])->name('iso-gap.update-status');
+    Route::get('/iso-gap/{project_id}/report',   [\App\Http\Controllers\IsoGapAssessmentController::class, 'generateReport'])->name('iso-gap.report');
+
     // User Management Routes (Admin/Auditor specific)
     Route::middleware(['can:is-admin'])->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');

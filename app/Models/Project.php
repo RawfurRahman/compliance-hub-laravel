@@ -57,4 +57,9 @@ class Project extends Model
     {
         return $this->hasMany(ChatMessage::class);
     }
+
+    public function isoGapAssessments()
+    {
+        return $this->hasMany(IsoGapAssessment::class);
+    }
 }
