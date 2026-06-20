@@ -67,36 +67,43 @@ class EvidenceController extends Controller
             'ai_analysis_status' => 'pending',
         ]);
 
-        // ** THE FIX IS HERE **
-        // We now send the file directly as a multipart/form-data attachment.
-        // This is a more standard and efficient way to handle file uploads.
-        // ** FIXED: NON-BLOCKING TRIGGER **
-        // We use a 1-second timeout to "fire and forget" this request. 
-        // This prevents a deadlock in single-threaded php artisan serve.
-        $n8nScanWebhookUrl = env('N8N_FILE_SCAN_WEBHOOK_URL', 'http://localhost:5678/webhook/file-scan');
-        if ($n8nScanWebhookUrl) {
+        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', 'http://localhost:5678/webhook/evidence-processing');
+        if ($n8nWebhookUrl) {
             try {
+                $auditor = \App\Models\User::whereHas('roles', fn($q) => $q->where('name', 'Auditor'))->first();
+                $auditorEmail = $auditor ? $auditor->email : 'default-auditor@example.com';
+                $reviewLink = route('evidence.show', ['project' => $project->id]) . '#evidence-file-' . $evidence->id;
+                $fileContents = Storage::disk('public')->get($path);
+
                 Http::timeout(1)->retry(0)
                     ->attach(
                         'file',
-                        Storage::disk('public')->get($path),
+                        $fileContents,
                         $evidence->original_filename
                     )
-                    ->attach('evidence_file_id', $evidence->id)
-                    ->attach('project_id', $project->id)
-                    ->post($n8nScanWebhookUrl);
+                    ->attach('file_base64', base64_encode($fileContents))
+                    ->attach('mime_type', $evidence->mime_type)
+                    ->attach('requirement_text', optional($evidence->requirement)->req_description ?? '')
+                    ->attach('evidence_file_id', (string) $evidence->id)
+                    ->attach('project_name', $project->name)
+                    ->attach('requirement_num', optional($evidence->requirement)->req_num ?? '')
+                    ->attach('original_filename', $evidence->original_filename)
+                    ->attach('auditor_email', $auditorEmail)
+                    ->attach('review_link', $reviewLink)
+                    ->attach('gemini_api_key', env('GEMINI_API_KEY', ''))
+                    ->post($n8nWebhookUrl);
 
-                Log::info("n8n file scan webhook triggered for evidence_file_id: {$evidence->id}");
+                Log::info("n8n unified evidence processing webhook triggered for evidence_file_id: {$evidence->id}");
             } catch (\Exception $e) {
                 // If it's just a timeout, n8n likely received it and is processing.
-                Log::info('n8n scan trigger hit 1s timeout (expected): ' . $e->getMessage());
+                Log::info('n8n unified trigger hit 1s timeout (expected): ' . $e->getMessage());
             }
         } else {
-            Log::warning('N8N_FILE_SCAN_WEBHOOK_URL is not set in .env');
+            Log::warning('N8N_UNIFIED_WEBHOOK_URL is not set in .env');
             $evidence->update(['scan_status' => 'n8n_not_configured']);
         }
 
-        return back()->with('success', 'File uploaded and sent for security scanning.');
+        return back()->with('success', 'File uploaded and sent for security scanning and AI analysis.');
     }
 
     /**
@@ -141,30 +148,11 @@ class EvidenceController extends Controller
         }
 
         if ($evidenceFile->scan_status === 'clean') {
-            $n8nAiAnalysisWebhookUrl = env('N8N_AI_ANALYSIS_WEBHOOK_URL');
-            if ($n8nAiAnalysisWebhookUrl) {
-                try {
-                    // ** FIXED: NON-BLOCKING TRIGGER **
-                    Http::timeout(1)->retry(0)
-                        ->attach(
-                            'file',
-                            Storage::disk('public')->get($evidenceFile->file_path),
-                            $evidenceFile->original_filename
-                        )
-                        ->attach('evidence_file_id', $evidenceFile->id)
-                        ->attach('requirement_text', optional($evidenceFile->requirement)->req_description ?? '')
-                        ->attach('original_filename', $evidenceFile->original_filename)
-                        ->post($n8nAiAnalysisWebhookUrl);
-
-                    $evidenceFile->update(['ai_analysis_status' => 'processing']);
-                    Log::info("n8n AI analysis webhook triggered for evidence_file_id: {$evidenceFile->id}");
-                } catch (\Exception $e) {
-                    Log::info('n8n AI trigger hit 1s timeout (expected): ' . $e->getMessage());
-                }
-            } else {
-                Log::warning('N8N_AI_ANALYSIS_WEBHOOK_URL is not set in .env');
-                $evidenceFile->update(['ai_analysis_status' => 'n8n_not_configured']);
-            }
+            // Since we are using the Unified Evidence Processing Workflow in n8n,
+            // the workflow itself automatically proceeds to the Gemini AI Analysis step.
+            // We just need to mark the AI status as 'processing'.
+            $evidenceFile->update(['ai_analysis_status' => 'processing']);
+            Log::info("EvidenceFile ID {$evidenceFile->id} is clean. AI analysis is being processed automatically by n8n.");
         } else {
             $evidenceFile->update(['ai_analysis_status' => 'skipped_due_to_scan']);
         }
@@ -249,8 +237,8 @@ class EvidenceController extends Controller
             ]);
         }
 
-        $n8nAiAnalysisWebhookUrl = env('N8N_AI_ANALYSIS_WEBHOOK_URL');
-        if ($n8nAiAnalysisWebhookUrl) {
+        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', 'http://localhost:5678/webhook/evidence-processing');
+        if ($n8nWebhookUrl) {
             try {
                 $fileContents = '';
                 if (Storage::disk('public')->exists($evidenceFile->file_path)) {
@@ -259,18 +247,30 @@ class EvidenceController extends Controller
                     $fileContents = 'Re-analysis requested for ' . $evidenceFile->original_filename;
                 }
 
+                $auditor = \App\Models\User::whereHas('roles', fn($q) => $q->where('name', 'Auditor'))->first();
+                $auditorEmail = $auditor ? $auditor->email : 'default-auditor@example.com';
+                $reviewLink = route('evidence.show', ['project' => $evidenceFile->project_id]) . '#evidence-file-' . $evidenceFile->id;
+
                 Http::timeout(2)->retry(0)
                     ->attach(
                         'file',
                         $fileContents,
                         $evidenceFile->original_filename
                     )
-                    ->attach('evidence_file_id', (string) $evidenceFile->id)
+                    ->attach('file_base64', base64_encode($fileContents))
+                    ->attach('mime_type', $evidenceFile->mime_type ?? 'application/octet-stream')
                     ->attach('requirement_text', optional($evidenceFile->requirement)->req_description ?? '')
+                    ->attach('evidence_file_id', (string) $evidenceFile->id)
+                    ->attach('project_name', optional($evidenceFile->project)->name ?? '')
+                    ->attach('requirement_num', optional($evidenceFile->requirement)->req_num ?? '')
                     ->attach('original_filename', $evidenceFile->original_filename)
-                    ->post($n8nAiAnalysisWebhookUrl);
+                    ->attach('auditor_email', $auditorEmail)
+                    ->attach('review_link', $reviewLink)
+                    ->attach('gemini_api_key', env('GEMINI_API_KEY', ''))
+                    ->post($n8nWebhookUrl);
 
                 $evidenceFile->update([
+                    'scan_status' => 'pending',
                     'ai_analysis_status' => 'processing',
                     'ai_observations' => 'Re-analysis in progress...',
                     'ai_recommendations' => '',
@@ -281,6 +281,7 @@ class EvidenceController extends Controller
                 // Timeout is expected with fire-and-forget pattern
                 Log::info('n8n AI re-trigger timeout (expected): ' . $e->getMessage());
                 $evidenceFile->update([
+                    'scan_status' => 'pending',
                     'ai_analysis_status' => 'processing',
                     'ai_observations' => 'Re-analysis in progress...',
                     'ai_recommendations' => '',
@@ -288,7 +289,7 @@ class EvidenceController extends Controller
                 ]);
             }
         } else {
-            Log::warning('N8N_AI_ANALYSIS_WEBHOOK_URL is not set in .env');
+            Log::warning('N8N_UNIFIED_WEBHOOK_URL is not set in .env');
             $evidenceFile->update([
                 'ai_analysis_status' => 'n8n_not_configured',
             ]);

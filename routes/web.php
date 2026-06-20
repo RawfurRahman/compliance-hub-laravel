@@ -8,6 +8,7 @@ use App\Http\Controllers\PciDssController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EvidenceController;
+use App\Http\Controllers\RequiredDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,6 +73,12 @@ Route::middleware(['auth'])->group(function () {
     // Chat Message Routes (used by Evidence Hub real-time chat)
     Route::get('/projects/{project}/chat/messages', [EvidenceController::class, 'getMessages'])->name('evidence.chat.get');
     Route::post('/projects/{project}/chat/messages', [EvidenceController::class, 'postMessage'])->name('evidence.chat.post');
+
+    // Required Documents Routes
+    Route::get('/projects/{project}/required-documents',                       [RequiredDocumentController::class, 'index'])->name('required-documents.index');
+    Route::post('/projects/{project}/required-documents/import',               [RequiredDocumentController::class, 'import'])->name('required-documents.import');
+    Route::get('/projects/{project}/required-documents/{list}',                [RequiredDocumentController::class, 'show'])->name('required-documents.show');
+    Route::delete('/projects/{project}/required-documents/{list}',             [RequiredDocumentController::class, 'destroy'])->name('required-documents.destroy');
 
     // Meeting Routes
     Route::get('/projects/{project}/meetings', [\App\Http\Controllers\MeetingController::class, 'index'])->name('meetings.index');

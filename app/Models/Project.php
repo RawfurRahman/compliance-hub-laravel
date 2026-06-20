@@ -65,16 +65,21 @@ class Project extends Model
 
     public function assessments()
     {
-        return $this->hasMany(ProjectAssessment::class);
+        return $this->hasMany(Assessment::class);
     }
 
     public function gapAssessment()
     {
-        return $this->hasOne(ProjectAssessment::class)->where('type', 'gap')->latest();
+        return $this->hasOne(Assessment::class)->where('assessment_type', 'Gap')->latest();
     }
 
     public function finalAssessment()
     {
-        return $this->hasOne(ProjectAssessment::class)->where('type', 'final')->latest();
+        return $this->hasOne(Assessment::class)->where('assessment_type', 'Final')->latest();
+    }
+
+    public function requiredDocumentLists()
+    {
+        return $this->hasMany(RequiredDocumentList::class);
     }
 }

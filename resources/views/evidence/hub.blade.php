@@ -124,110 +124,150 @@
             <table class="w-full text-left border-collapse table-fixed min-w-[1200px]">
                 <thead>
                     <tr class="evidence-table">
-                        <th class="w-[16%]">Framework Requirement</th>
-                        <th class="w-[16%]">Evidence ID / File Name</th>
-                        <th class="w-[12%]">Upload Date & Time</th>
-                        <th class="w-[11%]">Security Status (ClamAV)</th>
-                        <th class="w-[11%]">AI Preliminary Assessment</th>
-                        <th class="w-[16%]">AI Evidence Observation</th>
-                        <th class="w-[18%]">Auditor Determination</th>
-                        <th class="w-[16%]">Auditor Feedback / Notes</th>
+                        <th class="w-[11%]">Framework Requirement</th>
+                        <th class="w-[12%]">Evidence ID / File Name</th>
+                        <th class="w-[9%]">Upload Date & Time</th>
+                        <th class="w-[9%]">Security Status (ClamAV)</th>
+                        <th class="w-[10%]">AI Preliminary Assessment</th>
+                        <th class="w-[27%]">AI Evidence Observation</th>
+                        <th class="w-[12%]">Auditor Determination</th>
+                        <th class="w-[10%]">Auditor Feedback / Notes</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                     <template x-for="file in files" :key="file.id">
-                        <tr class="hover:bg-slate-50/50 transition-colors">
+                        <tr class="hover:bg-slate-50/50 transition-colors group">
                             
                             {{-- Col 1: Framework Req --}}
                             <td class="px-4 py-4">
-                                <div class="text-xs font-semibold text-slate-800" x-text="file.requirement ? file.requirement.req_num + ' ' + (file.requirement.description || file.requirement.req_description) : 'General'"></div>
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="inline-flex items-center w-fit px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold uppercase tracking-wider" x-text="file.requirement ? file.requirement.req_num : 'General'"></span>
+                                    <span class="text-xs font-semibold text-slate-700 leading-normal" x-text="file.requirement ? (file.requirement.description || file.requirement.req_description) : 'General Evidence File'"></span>
+                                </div>
                             </td>
 
                             {{-- Col 2: File Name --}}
                             <td class="px-4 py-4">
                                 <div class="flex items-start">
-                                    <div class="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mr-3 mt-0.5 flex-shrink-0 shadow-sm">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 mr-2.5 mt-0.5 flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
                                         <i class="fas" :class="getFileIcon(file.original_filename)"></i>
                                     </div>
-                                    <div class="min-w-0">
-                                        <div class="text-xs font-bold text-slate-800 truncate" x-text="file.original_filename" :title="file.original_filename"></div>
-                                        <div class="text-[9px] font-semibold text-slate-400 mt-1 uppercase" x-text="'ID: #' + file.id"></div>
+                                    <div class="min-w-0 flex-1">
+                                        <a :href="'/api/evidence/file/' + file.id" target="_blank" 
+                                           class="text-xs font-bold text-sky-600 hover:text-sky-800 hover:underline block truncate" 
+                                           :title="'Download ' + file.original_filename">
+                                            <span x-text="file.original_filename"></span>
+                                            <i class="fas fa-download text-[9px] ml-1 text-sky-500 opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                                        </a>
+                                        <span class="inline-block text-[9px] font-bold text-slate-400 mt-1 uppercase" x-text="'ID: #' + file.id"></span>
                                     </div>
                                 </div>
                             </td>
                             
                             {{-- Col 3: Upload Date --}}
-                            <td class="px-4 py-4 text-slate-600 font-medium text-xs">
-                                <span x-text="formatDate(file.created_at)"></span>
+                            <td class="px-4 py-4 text-slate-500 font-semibold text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="far fa-calendar-alt text-slate-400 text-[10px]"></i>
+                                    <span x-text="formatDate(file.created_at)"></span>
+                                </div>
                             </td>
                             
                             {{-- Col 4: ClamAV --}}
                             <td class="px-4 py-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full" 
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                                     :class="file.scan_status === 'clean' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : (file.scan_status === 'infected' ? 'bg-rose-50 text-rose-700 border-rose-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60')">
+                                    <span class="w-1.5 h-1.5 rounded-full" 
                                           :class="file.scan_status === 'clean' ? 'bg-emerald-500' : (file.scan_status === 'infected' ? 'bg-rose-500' : 'bg-amber-400')"></span>
-                                    <span class="text-xs font-bold"
-                                          :class="file.scan_status === 'clean' ? 'text-emerald-700' : (file.scan_status === 'infected' ? 'text-rose-700' : 'text-amber-700')"
-                                          x-text="file.scan_status === 'clean' ? 'Clean (Scanned)' : (file.scan_status === 'infected' ? 'Quarantined (Infected)' : 'Scanning...')"></span>
+                                    <span x-text="file.scan_status === 'clean' ? 'Clean' : (file.scan_status === 'infected' ? 'Infected' : 'Scanning')"></span>
                                 </div>
                             </td>
                             
                             {{-- Col 5: AI Assessment --}}
                             <td class="px-4 py-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full" :class="getAssessmentDot(file)"></span>
-                                    <span class="text-xs font-bold" :class="getAssessmentTextClass(file)" x-text="getAssessmentLabel(file)"></span>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                                     :class="getAssessmentBadgeClass(file)">
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="getAssessmentDot(file)"></span>
+                                    <span x-text="getAssessmentLabel(file)"></span>
                                 </div>
                             </td>
                             
                             {{-- Col 6: AI Observation --}}
                             <td class="px-4 py-4">
-                                <template x-if="file.scan_status === 'infected'">
-                                    <div>
-                                        <span class="text-xs font-extrabold text-slate-800 block">Blocked</span>
-                                        <p class="text-xs text-rose-600 font-medium mt-0.5" x-text="file.ai_observations"></p>
-                                    </div>
-                                </template>
-                                <template x-if="file.scan_status !== 'infected'">
-                                    <p class="text-xs text-slate-600 font-medium leading-relaxed" x-text="file.ai_observations || 'Analysis pending...'"></p>
-                                </template>
+                                <div class="flex flex-col gap-2">
+                                    <template x-if="file.scan_status === 'infected'">
+                                        <div class="p-3 rounded-xl bg-rose-50/50 border border-rose-100">
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 uppercase tracking-wider mb-1">
+                                                <i class="fas fa-shield-virus"></i> Blocked by ClamAV
+                                            </span>
+                                            <p class="text-xs text-rose-600 font-medium leading-relaxed" x-text="file.ai_observations || 'Threat detected: file containing malware was deleted.'"></p>
+                                        </div>
+                                    </template>
+                                    <template x-if="file.scan_status !== 'infected'">
+                                        <div class="flex flex-col gap-2.5">
+                                            {{-- Observation Container --}}
+                                            <div class="p-3.5 rounded-xl bg-indigo-50/30 border border-indigo-100/50 hover:border-indigo-200/60 transition shadow-sm">
+                                                <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-indigo-700 uppercase tracking-widest mb-1.5">
+                                                    <i class="fas fa-robot text-[10px]"></i> AI Observation
+                                                </span>
+                                                <p class="text-xs text-slate-700 leading-relaxed font-medium" x-text="file.ai_observations || 'Analysis pending...'"></p>
+                                            </div>
+                                            
+                                            {{-- Recommendation Container (if generated) --}}
+                                            <template x-if="file.ai_recommendations && file.ai_recommendations !== 'None' && file.ai_recommendations.trim() !== ''">
+                                                <div class="p-3.5 rounded-xl bg-amber-50/30 border border-amber-100/50 hover:border-amber-200/60 transition shadow-sm">
+                                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-700 uppercase tracking-widest mb-1.5">
+                                                        <i class="fas fa-lightbulb text-[10px]"></i> Actionable Recommendation
+                                                    </span>
+                                                    <p class="text-xs text-slate-600 leading-relaxed font-medium" x-text="file.ai_recommendations"></p>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
                             </td>
                             
                             {{-- Col 7: Auditor Determination --}}
                             <td class="px-4 py-4">
-                                <div class="flex flex-col gap-2">
-                                    <span class="text-xs font-extrabold uppercase tracking-wider" 
-                                          :class="file.hitl_status === 'accepted' ? 'text-emerald-700' : (file.hitl_status === 'action_required' ? 'text-rose-700' : 'text-slate-500')">
-                                        <span x-text="file.hitl_status === 'accepted' ? 'Accepted' : (file.hitl_status === 'action_required' ? 'Request Customer Action' : 'Pending Review')"></span>
-                                    </span>
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full"
+                                              :class="file.hitl_status === 'accepted' ? 'bg-emerald-500' : (file.hitl_status === 'action_required' ? 'bg-rose-500' : 'bg-slate-400')"></span>
+                                        <span class="text-xs font-bold uppercase tracking-wider" 
+                                              :class="file.hitl_status === 'accepted' ? 'text-emerald-700' : (file.hitl_status === 'action_required' ? 'text-rose-700' : 'text-slate-500')">
+                                            <span x-text="file.hitl_status === 'accepted' ? 'Accepted' : (file.hitl_status === 'action_required' ? 'Action Req.' : 'Pending Review')"></span>
+                                        </span>
+                                    </div>
                                     
                                     {{-- Action Buttons --}}
                                     <div class="flex flex-col gap-1.5 w-full">
                                         <template x-if="file.hitl_status === 'accepted'">
-                                            <div class="flex gap-1.5 w-full">
-                                                <button class="flex-1 py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-gray" disabled>Acknowledge</button>
-                                                <button @click="openViewDetails(file)" class="flex-1 py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-blue">View Details</button>
+                                            <div class="flex flex-col gap-1 w-full">
+                                                <div class="w-full py-1.5 px-2 text-[10px] font-extrabold uppercase tracking-wider rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/50 flex items-center justify-center gap-1.5 select-none">
+                                                    <i class="fas fa-check-circle text-emerald-600"></i> Validated
+                                                </div>
+                                                <button @click="openViewDetails(file)" class="w-full py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-blue transition-transform hover:scale-[1.02] shadow-sm flex items-center justify-center gap-1">
+                                                    <i class="fas fa-expand-alt"></i> Details
+                                                </button>
                                             </div>
                                         </template>
                                         
                                         <template x-if="file.hitl_status !== 'accepted' && file.scan_status !== 'infected'">
-                                            <div class="flex flex-col gap-1 w-full">
-                                                <button @click="updateStatus(file, 'accept')" class="w-full py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-green">
-                                                    ✓ Accept & Validate
+                                            <div class="flex flex-col gap-1.5 w-full">
+                                                <button @click="updateStatus(file, 'accept')" class="w-full py-2 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-green transition-transform hover:scale-[1.02] shadow-sm flex items-center justify-center gap-1">
+                                                    <i class="fas fa-check-circle"></i> Accept & Approve
                                                 </button>
-                                                <button @click="openRejectionModal(file, 'ai')" class="w-full py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-orange">
-                                                    ⟳ Reject to AI
+                                                <button @click="openRejectionModal(file, 'ai')" class="w-full py-2 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-orange transition-transform hover:scale-[1.02] shadow-sm flex items-center justify-center gap-1">
+                                                    <i class="fas fa-sync-alt"></i> Re-analyse (AI)
                                                 </button>
-                                                <button @click="openRejectionModal(file, 'customer')" class="w-full py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-red">
-                                                    ✕ Reject to Customer
+                                                <button @click="openRejectionModal(file, 'customer')" class="w-full py-2 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg btn-action-red transition-transform hover:scale-[1.02] shadow-sm flex items-center justify-center gap-1">
+                                                    <i class="fas fa-times-circle"></i> Reject to Client
                                                 </button>
                                             </div>
                                         </template>
                                         
                                         <template x-if="file.scan_status === 'infected'">
-                                            <div>
-                                                <span class="text-xs font-semibold text-slate-400 block">N/A</span>
-                                                <span class="text-[10px] font-semibold text-slate-400 block mt-0.5">Workflow halted.</span>
+                                            <div class="p-2.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-100 flex items-center gap-1.5 text-xs font-bold select-none">
+                                                <i class="fas fa-ban text-rose-600"></i> N/A (Threat)
                                             </div>
                                         </template>
                                     </div>
@@ -238,25 +278,26 @@
                             <td class="px-4 py-4">
                                 <div class="space-y-2">
                                     <template x-if="editingFeedbackId !== file.id">
-                                        <div class="group relative">
-                                            <p class="text-xs text-slate-700 italic bg-slate-50/50 p-2.5 rounded-lg border border-slate-100 leading-relaxed" 
-                                               x-text="getFeedbackText(file) || 'No comments yet.'"></p>
+                                        <div class="group relative flex flex-col gap-1.5">
+                                            <p class="text-xs text-slate-700 bg-slate-50 border border-slate-200/60 p-3 rounded-xl leading-relaxed shadow-sm min-h-[50px] font-medium" 
+                                               x-text="getFeedbackText(file) || 'No comments added.'"></p>
                                             
                                             <button @click="startEditFeedback(file)" 
-                                                    class="mt-2 text-[10px] font-black text-sky-600 hover:text-sky-800 uppercase tracking-widest flex items-center gap-1 transition">
-                                                <i class="fas fa-pencil-alt text-[9px]"></i> Edit Note
+                                                    class="text-[10px] font-black text-sky-600 hover:text-sky-800 uppercase tracking-widest flex items-center gap-1.5 transition self-start">
+                                                <i class="fas fa-edit text-[9px]"></i> Add / Edit Note
                                             </button>
                                         </div>
                                     </template>
                                     
                                     <template x-if="editingFeedbackId === file.id">
-                                        <div class="space-y-1.5">
+                                        <div class="space-y-2">
                                             <textarea x-model="feedbackInput" 
                                                       rows="3" 
-                                                      class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"></textarea>
-                                            <div class="flex gap-1.5">
-                                                <button @click="saveFeedback(file)" class="flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-widest rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition">
-                                                    Save
+                                                      class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition shadow-inner font-medium"
+                                                      placeholder="Write feedback for this evidence..."></textarea>
+                                            <div class="flex gap-2">
+                                                <button @click="saveFeedback(file)" class="flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-widest rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm">
+                                                    Save Note
                                                 </button>
                                                 <button @click="cancelEditFeedback()" class="flex-1 py-1.5 px-2 text-[9px] font-black uppercase tracking-widest rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
                                                     Cancel
@@ -480,6 +521,18 @@ function evidenceHub() {
                 case 'Deficient': return 'text-rose-700';
                 case 'Processing...': return 'text-sky-700';
                 default: return 'text-slate-500';
+            }
+        },
+
+        getAssessmentBadgeClass(file) {
+            if (file.scan_status === 'infected') return 'bg-slate-50 text-slate-500 border-slate-200/60';
+            const label = this.getAssessmentLabel(file);
+            switch (label) {
+                case 'Sufficient': return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+                case 'Partially Compliant': return 'bg-amber-50 text-amber-700 border-amber-200/60';
+                case 'Deficient': return 'bg-rose-50 text-rose-700 border-rose-200/60';
+                case 'Processing...': return 'bg-sky-50 text-sky-700 border-sky-200/60 animate-pulse';
+                default: return 'bg-slate-50 text-slate-500 border-slate-200/60';
             }
         },
 

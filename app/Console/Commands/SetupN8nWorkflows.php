@@ -73,7 +73,7 @@ class SetupN8nWorkflows extends Command
                     'name' => 'Mailpit SMTP',
                     'type' => 'smtp',
                     'data' => [
-                        'host' => 'host.docker.internal',
+                        'host' => '127.0.0.1',
                         'port' => 1025,
                         'secure' => false,
                         'disableStartTls' => true,

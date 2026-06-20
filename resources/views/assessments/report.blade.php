@@ -2,231 +2,176 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $type === 'gap' ? 'Gap' : 'Final' }} Assessment Report &ndash; {{ $project->name }}</title>
+    <title>{{ $assessment->framework }} {{ $type }} Report &ndash; {{ $project->name }}</title>
     <style>
-        /* ------------------------------------------------------------------ */
-        /* Reset & Base                                                        */
-        /* ------------------------------------------------------------------ */
+        /* Reset & Base styles optimized for DomPDF */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
             font-size: 9.5pt;
             color: #1e293b;
-            line-height: 1.55;
+            line-height: 1.5;
             background: #ffffff;
         }
-        .page { padding: 36px 48px; }
+        .page { padding: 40px 50px; }
 
-        /* ------------------------------------------------------------------ */
-        /* Cover / Header                                                      */
-        /* ------------------------------------------------------------------ */
+        /* Report Header & Cover style */
         .report-header {
             text-align: center;
-            padding: 36px 0 28px;
-            border-bottom: 3px solid #1e3a5f;
-            margin-bottom: 28px;
+            padding: 40px 0 30px;
+            border-bottom: 3px solid #0a1e42;
+            margin-bottom: 30px;
         }
         .report-header .org-label {
-            font-size: 9pt;
+            font-size: 8.5pt;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #64748b;
+            font-weight: bold;
         }
         .report-header h1 {
-            font-size: 20pt;
-            font-weight: 800;
-            color: #1e3a5f;
-            margin: 10px 0 6px;
-            line-height: 1.2;
+            font-size: 21pt;
+            font-weight: bold;
+            color: #0a1e42;
+            margin: 12px 0 8px;
+            line-height: 1.25;
         }
         .report-header .subtitle {
-            font-size: 10.5pt;
+            font-size: 11pt;
             color: #475569;
+            margin-bottom: 12px;
         }
         .report-header .meta {
-            margin-top: 14px;
             font-size: 8.5pt;
-            color: #94a3b8;
+            color: #64748b;
         }
-        .report-header .meta strong { color: #475569; }
+        .report-header .meta strong { color: #0a1e42; }
 
-        /* ------------------------------------------------------------------ */
-        /* Meta Info Table                                                     */
-        /* ------------------------------------------------------------------ */
+        /* Meta Information Table */
         .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 9pt;
+        }
+        .meta-table td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            vertical-align: middle;
+        }
+        .meta-table td.label-cell {
+            width: 25%;
+            font-weight: bold;
+            background-color: #0a1e42;
+            color: #ffffff;
+        }
+
+        /* Headings */
+        .section-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #0a1e42;
+            border-bottom: 2px solid #0a1e42;
+            padding-bottom: 6px;
+            margin: 28px 0 14px;
+        }
+        .sub-title {
+            font-size: 10.5pt;
+            font-weight: bold;
+            color: #334155;
+            margin: 16px 0 8px;
+        }
+        p { margin-bottom: 8px; color: #334155; font-size: 9.5pt; text-align: justify; }
+
+        /* Summary Table */
+        .summary-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
             font-size: 9pt;
         }
-        .meta-table td {
-            padding: 6px 10px;
-            border: 1px solid #e2e8f0;
-        }
-        .meta-table td.label {
-            width: 30%;
-            font-weight: 600;
-            background-color: #f8fafc;
-            color: #374151;
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Section Headings                                                    */
-        /* ------------------------------------------------------------------ */
-        .section-title {
-            font-size: 12.5pt;
-            font-weight: 700;
-            color: #1e3a5f;
-            border-bottom: 2px solid #1e3a5f;
-            padding-bottom: 5px;
-            margin: 26px 0 12px;
-        }
-        .sub-title {
-            font-size: 10.5pt;
-            font-weight: 600;
-            color: #334155;
-            margin: 14px 0 6px;
-        }
-        p { margin-bottom: 7px; font-size: 9.5pt; color: #374151; }
-
-        /* ------------------------------------------------------------------ */
-        /* Tables                                                              */
-        /* ------------------------------------------------------------------ */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9pt; }
-        thead th {
-            background-color: #1e3a5f;
-            color: #ffffff;
-            padding: 7px 10px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 8.5pt;
-            letter-spacing: 0.3px;
-        }
-        tbody td {
-            padding: 6px 10px;
-            border: 1px solid #e2e8f0;
-            vertical-align: top;
-        }
-        tbody tr:nth-child(even) td { background-color: #f8fafc; }
-
-        /* ------------------------------------------------------------------ */
-        /* Stat Summary Boxes                                                  */
-        /* ------------------------------------------------------------------ */
-        .stat-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 16px;
-        }
-        .stat-box {
-            display: table-cell;
-            width: 25%;
-            padding: 12px 10px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            vertical-align: middle;
-        }
-        .stat-box .stat-value {
-            font-size: 22pt;
-            font-weight: 800;
-            color: #1e3a5f;
-            display: block;
-        }
-        .stat-box .stat-label {
-            font-size: 7.5pt;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Badges                                                              */
-        /* ------------------------------------------------------------------ */
-        .badge {
-            display: inline-block;
-            padding: 2px 7px;
-            border-radius: 3px;
-            font-size: 7.5pt;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-        }
-        .badge-high        { background: #fee2e2; color: #991b1b; }
-        .badge-medium      { background: #fef3c7; color: #92400e; }
-        .badge-low         { background: #d1fae5; color: #065f46; }
-        .badge-none        { background: #f1f5f9; color: #475569; }
-        .badge-compliant   { background: #d1fae5; color: #065f46; }
-        .badge-partial     { background: #fef3c7; color: #92400e; }
-        .badge-noncompliant{ background: #fee2e2; color: #991b1b; }
-        .badge-na          { background: #f1f5f9; color: #475569; }
-        .badge-open        { background: #fee2e2; color: #991b1b; }
-        .badge-progress    { background: #dbeafe; color: #1e40af; }
-        .badge-closed      { background: #d1fae5; color: #065f46; }
-
-        /* ------------------------------------------------------------------ */
-        /* Finding Cards                                                       */
-        /* ------------------------------------------------------------------ */
-        .finding-card {
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            margin-bottom: 18px;
-            page-break-inside: avoid;
-        }
-        .finding-card-header {
-            background-color: #1e3a5f;
+        .summary-table th {
+            background-color: #0a1e42;
             color: #ffffff;
             padding: 8px 12px;
-            border-radius: 3px 3px 0 0;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #0a1e42;
         }
-        .finding-card-header .fc-serial {
-            font-size: 8pt;
-            opacity: 0.75;
-            margin-bottom: 2px;
+        .summary-table td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            vertical-align: middle;
         }
-        .finding-card-header .fc-title {
-            font-size: 10.5pt;
-            font-weight: 700;
-        }
-        .finding-card-body table { margin: 0; }
-        .finding-card-body td { border: 1px solid #e2e8f0; }
-        .finding-card-body td.label-cell {
-            width: 28%;
-            font-weight: 600;
-            font-size: 8.5pt;
-            color: #374151;
+        .summary-table tr:nth-child(even) td {
             background-color: #f8fafc;
         }
 
-        /* ------------------------------------------------------------------ */
-        /* Progress Bar                                                        */
-        /* ------------------------------------------------------------------ */
-        .progress-bar-wrap {
-            background: #e2e8f0;
-            border-radius: 4px;
-            height: 10px;
+        /* Detailed Gaps Table */
+        .finding-table {
             width: 100%;
-            margin: 6px 0 12px;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            page-break-inside: avoid; /* Prevents awkward splits */
         }
-        .progress-bar-fill {
-            background: #4f46e5;
+        .finding-table td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+            font-size: 9pt;
+        }
+        .finding-table td.label-cell {
+            background-color: #0a1e42;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .finding-table td.value-cell {
+            background-color: #ffffff;
+            color: #1e293b;
+        }
+
+        /* Badges & Text styles */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
             border-radius: 4px;
-            height: 10px;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-high        { background-color: #fee2e2; color: #991b1b; }
+        .badge-medium      { background-color: #fef3c7; color: #92400e; }
+        .badge-low         { background-color: #d1fae5; color: #065f46; }
+        .badge-none        { background-color: #f1f5f9; color: #475569; }
+        
+        .badge-open        { background-color: #fee2e2; color: #991b1b; }
+        .badge-progress    { background-color: #dbeafe; color: #1e40af; }
+        .badge-closed      { background-color: #d1fae5; color: #065f46; }
+
+        .text-high         { color: #dc2626; font-weight: bold; }
+        .text-medium       { color: #ea580c; font-weight: bold; }
+        .text-low          { color: #16a34a; font-weight: bold; }
+        .text-none         { color: #64748b; font-weight: bold; }
+
+        .page-break { page-break-after: always; }
+
+        /* Rich Text overrides for PDF list layout */
+        .rich-content ul, .rich-content ol {
+            margin-left: 18px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+        .rich-content li {
+            margin-bottom: 2px;
         }
 
-        /* ------------------------------------------------------------------ */
-        /* Page Utilities                                                      */
-        /* ------------------------------------------------------------------ */
-        .page-break { page-break-after: always; }
-        .no-break   { page-break-inside: avoid; }
-
-        /* ------------------------------------------------------------------ */
-        /* Footer                                                              */
-        /* ------------------------------------------------------------------ */
         .report-footer {
-            margin-top: 36px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #cbd5e1;
             text-align: center;
             font-size: 7.5pt;
-            color: #94a3b8;
+            color: #64748b;
         }
     </style>
 </head>
@@ -234,232 +179,181 @@
 <div class="page">
 
     {{-- ================================================================== --}}
-    {{-- COVER / HEADER                                                      --}}
+    {{-- COVER / HEADER                                                     --}}
     {{-- ================================================================== --}}
     <div class="report-header">
-        <div class="org-label">Compliance Hub &mdash; Confidential</div>
-        <h1>
-            {{ $assessment->framework === 'iso_27001' ? 'ISO 27001:2022' : 'HITRUST CSF' }}
-            {{ $type === 'gap' ? 'Gap' : 'Final' }} Assessment Report
-        </h1>
-        <div class="subtitle">Information Security Management System (ISMS)</div>
+        <div class="org-label">Compliance Hub &mdash; CONFIDENTIAL AUDIT REPORT</div>
+        <h1>{{ $assessment->framework }} {{ $type }} Assessment Report</h1>
+        <div class="subtitle">Information Security & Compliance Posture Report</div>
         <div class="meta">
             Project: <strong>{{ $project->name }}</strong>
             &nbsp;&bull;&nbsp;
             Generated: <strong>{{ now()->format('d F Y') }}</strong>
-            &nbsp;&bull;&nbsp;
-            Classification: <strong>Confidential</strong>
         </div>
     </div>
 
-    {{-- Assessment Meta --}}
+    {{-- Assessment Meta Table --}}
     <table class="meta-table">
         <tr>
-            <td class="label">Assessment Type</td>
-            <td>{{ $type === 'gap' ? 'Gap Assessment' : 'Final Assessment' }}</td>
-            <td class="label">Framework</td>
-            <td>{{ $assessment->framework === 'iso_27001' ? 'ISO 27001:2022' : 'HITRUST CSF' }}</td>
+            <td class="label-cell">Assessment Type</td>
+            <td>{{ $type }} Assessment</td>
+            <td class="label-cell">Framework</td>
+            <td>{{ $assessment->framework }}</td>
         </tr>
         <tr>
-            <td class="label">Project</td>
+            <td class="label-cell">Project Name</td>
             <td>{{ $project->name }}</td>
-            <td class="label">Assessment Period</td>
+            <td class="label-cell">Assessment Period</td>
             <td>{{ $assessment->start_date->format('d M Y') }} &ndash; {{ $assessment->end_date->format('d M Y') }}</td>
         </tr>
         <tr>
-            <td class="label">Report Date</td>
-            <td>{{ now()->format('d F Y') }}</td>
-            <td class="label">Classification</td>
+            <td class="label-cell">Report Status</td>
+            <td>{{ $stats['open'] === 0 ? 'Closed (Compliant)' : 'Open' }}</td>
+            <td class="label-cell">Classification</td>
             <td>Confidential</td>
         </tr>
     </table>
 
     {{-- ================================================================== --}}
-    {{-- 1. EXECUTIVE SUMMARY                                                --}}
+    {{-- 1. EXECUTIVE SUMMARY                                               --}}
     {{-- ================================================================== --}}
     <div class="section-title">1. Executive Summary</div>
 
     <div class="sub-title">1.1 Introduction</div>
     <p>
-        This report presents the findings of a
-        {{ $assessment->framework === 'iso_27001' ? 'ISO 27001:2022' : 'HITRUST CSF' }}
-        {{ $type === 'gap' ? 'Gap' : 'Final' }} Assessment conducted for
-        <strong>{{ $project->name }}</strong>. The assessment was performed to evaluate the
-        organisation's current information security posture against the requirements of the
-        {{ $assessment->framework === 'iso_27001' ? 'ISO/IEC 27001:2022 standard' : 'HITRUST Common Security Framework (CSF)' }}
-        and to identify areas requiring remediation.
+        This formal audit report details the findings from the {{ $assessment->framework }} {{ $type }} Assessment conducted for 
+        <strong>{{ $project->name }}</strong>. The assessment was performed to measure the organization's adherence 
+        to safety and privacy controls mandated by the {{ $assessment->framework }} framework.
     </p>
 
-    <div class="sub-title">1.2 Purpose</div>
+    <div class="sub-title">1.2 Scope & Purpose</div>
     <p>
-        The purpose of this {{ $type === 'gap' ? 'Gap' : 'Final' }} Assessment is to identify and document
-        {{ $type === 'gap' ? 'gaps between the organisation\'s existing controls and the framework requirements' : 'the current compliance posture and remediation progress against identified gaps' }}.
-        The findings and recommendations contained herein are intended to guide the organisation
-        in developing a prioritised remediation roadmap.
+        The scope covers all systems, platforms, and procedural checks assigned under the scope of this project. 
+        The purpose of this review is to catalog critical gaps, impact matrices, standard references, and recommend 
+        remediation pathways to reach a clean compliant state.
     </p>
 
     <div class="sub-title">1.3 Limitations</div>
     <p>
-        This assessment is based on information provided by the organisation's personnel
-        through interviews, document reviews, and process walkthroughs. The findings reflect
-        the state of the ISMS at the time of assessment and may not account for changes
-        implemented after the assessment date. This report does not constitute a formal
-        certification audit.
+        Findings represent a snapshot of the controls in place during the audit window. Continuous monitoring is 
+        strongly recommended to ensure operating effectiveness over time.
     </p>
 
     <div class="page-break"></div>
 
     {{-- ================================================================== --}}
-    {{-- 2. SUMMARY OF FINDINGS                                              --}}
+    {{-- 2. SUMMARY OF FINDINGS                                             --}}
     {{-- ================================================================== --}}
     <div class="section-title">2. Summary of Findings</div>
 
-    {{-- Stat boxes --}}
-    <div class="stat-grid">
-        <div class="stat-box">
-            <span class="stat-value">{{ $stats['total'] }}</span>
-            <span class="stat-label">Total Findings</span>
-        </div>
-        <div class="stat-box">
-            <span class="stat-value" style="color:#065f46;">{{ $stats['compliancePct'] }}%</span>
-            <span class="stat-label">Compliance Score</span>
-        </div>
-        <div class="stat-box">
-            <span class="stat-value" style="color:#991b1b;">{{ $stats['high'] }}</span>
-            <span class="stat-label">High Risk</span>
-        </div>
-        <div class="stat-box">
-            <span class="stat-value" style="color:#92400e;">{{ $stats['open'] }}</span>
-            <span class="stat-label">Open Findings</span>
-        </div>
-    </div>
-
-    {{-- Compliance progress bar --}}
-    <p style="font-size:8.5pt; color:#475569; margin-bottom:4px;">Overall Compliance Score: <strong>{{ $stats['compliancePct'] }}%</strong></p>
-    <div class="progress-bar-wrap">
-        <div class="progress-bar-fill" style="width:{{ $stats['compliancePct'] }}%;"></div>
-    </div>
-
-    {{-- Breakdown table --}}
-    <table>
+    <table class="meta-table">
         <thead>
             <tr>
-                <th style="width:25%">Category</th>
-                <th style="width:25%">Count</th>
-                <th style="width:25%">Category</th>
-                <th style="width:25%">Count</th>
+                <th colspan="4" style="background-color: #0a1e42; color: #ffffff; padding: 8px 12px; text-align: left; font-weight: bold;">
+                    Postures & Metrics Breakdowns
+                </th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><span class="badge badge-compliant">Compliant</span></td>
+                <td class="label-cell">Compliance Score</td>
+                <td style="font-weight: bold; color: #16a34a; font-size: 11pt;">{{ $stats['compliancePct'] }}%</td>
+                <td class="label-cell">Total Findings</td>
+                <td>{{ $stats['total'] }}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Compliant Gaps</td>
                 <td>{{ $stats['compliant'] }}</td>
-                <td><span class="badge badge-high">High Risk</span></td>
-                <td>{{ $stats['high'] }}</td>
-            </tr>
-            <tr>
-                <td><span class="badge badge-partial">Partially Compliant</span></td>
-                <td>{{ $stats['partial'] }}</td>
-                <td><span class="badge badge-medium">Medium Risk</span></td>
-                <td>{{ $stats['medium'] }}</td>
-            </tr>
-            <tr>
-                <td><span class="badge badge-noncompliant">Non-Compliant</span></td>
+                <td class="label-cell">Non-Compliant Gaps</td>
                 <td>{{ $stats['nonCompliant'] }}</td>
-                <td><span class="badge badge-low">Low Risk</span></td>
-                <td>{{ $stats['low'] }}</td>
             </tr>
             <tr>
-                <td><span class="badge badge-na">Not Applicable</span></td>
-                <td>{{ $stats['na'] }}</td>
-                <td><span class="badge badge-open">Open</span> / <span class="badge badge-progress">In Progress</span> / <span class="badge badge-closed">Closed</span></td>
-                <td>{{ $stats['open'] }} / {{ $stats['inProgress'] }} / {{ $stats['closed'] }}</td>
+                <td class="label-cell">High Risk Gaps</td>
+                <td style="color: #dc2626; font-weight: bold;">{{ $stats['high'] }}</td>
+                <td class="label-cell">Medium Risk Gaps</td>
+                <td style="color: #ea580c; font-weight: bold;">{{ $stats['medium'] }}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Low Risk Gaps</td>
+                <td style="color: #16a34a; font-weight: bold;">{{ $stats['low'] }}</td>
+                <td class="label-cell">Audit Gaps status (Open/Closed/Progress)</td>
+                <td>{{ $stats['open'] }} / {{ $stats['closed'] }} / {{ $stats['inProgress'] }}</td>
             </tr>
         </tbody>
     </table>
 
-    {{-- ================================================================== --}}
-    {{-- 3. KEY CRITICAL FINDINGS (HIGH RISK)                                --}}
-    {{-- ================================================================== --}}
-    <div class="section-title">3. Key Critical Findings (High Risk)</div>
-
-    @if($highFindings->isEmpty())
-        <p>No High risk findings were identified during this assessment.</p>
-    @else
-        <p>
-            The following <strong>{{ $highFindings->count() }}</strong> High risk finding(s)
-            require immediate management attention and prioritised remediation:
-        </p>
-        <table>
-            <thead>
+    {{-- Summary Table (Strict Requirement) --}}
+    <div class="sub-title">2.1 Table of Findings Mapping</div>
+    <table class="summary-table">
+        <thead>
+            <tr>
+                <th style="width: 8%;">S.N</th>
+                <th style="width: 20%;">Ref: Clause</th>
+                <th>Observation Title</th>
+                <th style="width: 18%; text-align: center;">Risk Rating</th>
+                <th style="width: 18%; text-align: center;">Compliance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($assessment->findings as $index => $finding)
                 <tr>
-                    <th style="width:9%">Serial</th>
-                    <th style="width:22%">Clause Reference</th>
-                    <th style="width:30%">Observation Title</th>
-                    <th style="width:20%">Compliance Status</th>
-                    <th style="width:19%">Recommendation</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($highFindings as $f)
-                <tr>
-                    <td>{{ $f->serial_no }}</td>
-                    <td>{{ $f->clause_reference }}</td>
-                    <td>{{ $f->observation_title }}</td>
-                    <td>
-                        @if($f->compliance_status === 'Compliant')
-                            <span class="badge badge-compliant">Compliant</span>
-                        @elseif($f->compliance_status === 'Partially Compliant')
-                            <span class="badge badge-partial">Partial</span>
-                        @elseif($f->compliance_status === 'Non-Compliant')
-                            <span class="badge badge-noncompliant">Non-Compliant</span>
+                    <td>{{ $index + 1 }}</td>
+                    <td style="font-family: monospace; font-weight: bold;">{{ $finding->serial_no }}</td>
+                    <td>{{ $finding->observation_title }}</td>
+                    <td style="text-align: center;">
+                        @if($finding->risk_rating === 'High')
+                            <span class="text-high">High</span>
+                        @elseif($finding->risk_rating === 'Medium')
+                            <span class="text-medium">Medium</span>
+                        @elseif($finding->risk_rating === 'Low')
+                            <span class="text-low">Low</span>
                         @else
-                            <span class="badge badge-na">N/A</span>
+                            <span class="text-none">None</span>
                         @endif
                     </td>
-                    <td>{{ $f->recommendation }}</td>
+                    <td style="text-align: center; font-weight: bold; color: {{ $finding->is_compliant ? '#16a34a' : '#dc2626' }};">
+                        {{ $finding->is_compliant ? 'Compliant' : 'Non-Compliant' }}
+                    </td>
                 </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
+            @empty
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #64748b;">No findings documented.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 
     <div class="page-break"></div>
 
     {{-- ================================================================== --}}
-    {{-- 4. DETAILED FINDINGS AND RECOMMENDATIONS                            --}}
+    {{-- 3. DETAILED FINDINGS & OBSERVATIONS                                --}}
     {{-- ================================================================== --}}
-    <div class="section-title">4. Detailed Findings and Recommendations</div>
-    <p>
-        The following section provides a comprehensive breakdown of all
-        <strong>{{ $stats['total'] }}</strong> findings identified during the assessment.
-    </p>
+    <div class="section-title">3. Detailed Audit Findings Report</div>
 
-    @foreach($assessment->findings as $finding)
-    <div class="finding-card no-break">
-        <div class="finding-card-header">
-            <div class="fc-serial">{{ $finding->serial_no }} &mdash; {{ $finding->clause_reference }}</div>
-            <div class="fc-title">{{ $finding->observation_title }}</div>
-        </div>
-        <div class="finding-card-body">
-            <table>
+    @forelse($assessment->findings as $finding)
+        <table class="finding-table">
+            <tbody>
+                <!-- Row 1 -->
                 <tr>
-                    <td class="label-cell">Compliance Status</td>
-                    <td>
-                        @if($finding->compliance_status === 'Compliant')
-                            <span class="badge badge-compliant">Compliant</span>
-                        @elseif($finding->compliance_status === 'Partially Compliant')
-                            <span class="badge badge-partial">Partially Compliant</span>
-                        @elseif($finding->compliance_status === 'Non-Compliant')
-                            <span class="badge badge-noncompliant">Non-Compliant</span>
+                    <td class="w-[18%] label-cell">Serial No:</td>
+                    <td class="w-[32%] value-cell" style="font-weight: bold; font-family: monospace;">{{ $finding->serial_no }}</td>
+                    <td class="w-[18%] label-cell">Status:</td>
+                    <td class="w-[32%] value-cell">
+                        @if($finding->status === 'Open')
+                            <span class="badge badge-open">Open</span>
+                        @elseif($finding->status === 'In Progress')
+                            <span class="badge badge-progress">In Progress</span>
                         @else
-                            <span class="badge badge-na">Not Applicable</span>
+                            <span class="badge badge-closed">Closed</span>
                         @endif
                     </td>
                 </tr>
+                <!-- Row 2 -->
                 <tr>
-                    <td class="label-cell">Risk Rating</td>
-                    <td>
+                    <td class="label-cell">Observation Title:</td>
+                    <td class="value-cell" style="font-weight: bold;">{{ $finding->observation_title }}</td>
+                    <td class="label-cell">Risk Rating:</td>
+                    <td class="value-cell">
                         @if($finding->risk_rating === 'High')
                             <span class="badge badge-high">High</span>
                         @elseif($finding->risk_rating === 'Medium')
@@ -471,47 +365,59 @@
                         @endif
                     </td>
                 </tr>
-                <tr>
-                    <td class="label-cell">Status</td>
-                    <td>
-                        @if($finding->status === 'Open')
-                            <span class="badge badge-open">Open</span>
-                        @elseif($finding->status === 'In Progress')
-                            <span class="badge badge-progress">In Progress</span>
-                        @else
-                            <span class="badge badge-closed">Closed</span>
-                        @endif
-                    </td>
-                </tr>
+                <!-- Row 3 -->
                 <tr>
                     <td class="label-cell">Current State / Observation</td>
-                    <td>{{ $finding->current_state ?: '—' }}</td>
+                    <td class="value-cell rich-content" colspan="3">
+                        {!! $finding->current_state ?: '—' !!}
+                    </td>
                 </tr>
+                <!-- Row 4 -->
                 <tr>
                     <td class="label-cell">Gap Description</td>
-                    <td>{{ $finding->gap_description ?: '—' }}</td>
+                    <td class="value-cell rich-content" colspan="3">
+                        {!! $finding->gap_description ?: '—' !!}
+                    </td>
                 </tr>
+                <!-- Row 5 -->
                 <tr>
                     <td class="label-cell">Impact / Risk</td>
-                    <td>{{ $finding->impact_risk ?: '—' }}</td>
+                    <td class="value-cell rich-content" colspan="3">
+                        {!! $finding->impact_risk ?: '—' !!}
+                    </td>
                 </tr>
+                <!-- Row 6 -->
                 <tr>
                     <td class="label-cell">Recommendation</td>
-                    <td>{{ $finding->recommendation ?: '—' }}</td>
+                    <td class="value-cell rich-content" colspan="3">
+                        {!! $finding->recommendation ?: '—' !!}
+                    </td>
                 </tr>
-            </table>
-        </div>
-    </div>
-    @endforeach
+                <!-- Row 7 -->
+                <tr>
+                    <td class="label-cell">Relevant Standard Reference</td>
+                    <td class="value-cell rich-content" colspan="3">
+                        {!! $finding->standard_reference ?: '—' !!}
+                    </td>
+                </tr>
+                <!-- Row 8 -->
+                <tr>
+                    <td class="label-cell">Is Compliant?</td>
+                    <td class="value-cell" colspan="3" style="font-weight: bold; color: {{ $finding->is_compliant ? '#16a34a' : '#dc2626' }};">
+                        {{ $finding->is_compliant ? 'YES (Compliant)' : 'NO (Non-Compliant)' }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    @empty
+        <p style="text-align: center; color: #64748b; margin-top: 30px;">No detailed findings recorded.</p>
+    @endforelse
 
-    {{-- ================================================================== --}}
-    {{-- FOOTER                                                              --}}
-    {{-- ================================================================== --}}
+    {{-- Footer --}}
     <div class="report-footer">
-        {{ $assessment->framework === 'iso_27001' ? 'ISO 27001:2022' : 'HITRUST CSF' }}
-        {{ $type === 'gap' ? 'Gap' : 'Final' }} Assessment Report &mdash;
+        {{ $assessment->framework }} {{ $type }} Report &mdash;
         {{ $project->name }} &mdash;
-        Generated {{ now()->format('d F Y') }} &mdash; Confidential
+        Confidential
     </div>
 
 </div>
