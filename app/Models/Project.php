@@ -62,4 +62,19 @@ class Project extends Model
     {
         return $this->hasMany(IsoGapAssessment::class);
     }
+
+    public function assessments()
+    {
+        return $this->hasMany(ProjectAssessment::class);
+    }
+
+    public function gapAssessment()
+    {
+        return $this->hasOne(ProjectAssessment::class)->where('type', 'gap')->latest();
+    }
+
+    public function finalAssessment()
+    {
+        return $this->hasOne(ProjectAssessment::class)->where('type', 'final')->latest();
+    }
 }
