@@ -11,3 +11,5 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('compliance:send-scheduled-reports')->daily();
 
+Schedule::command('maturity:snapshot')->weekly();
+
