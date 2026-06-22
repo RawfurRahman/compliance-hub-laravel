@@ -38,6 +38,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/compliance-data', [DashboardController::class, 'submitComplianceData'])->name('compliance.submit');
 
+    // ── Analytics Dashboard API (Super Admin / Admin & Auditor only) ───────
+    Route::prefix('dashboard')->name('dashboard.')->middleware('can:view-dashboard')->group(function () {
+        Route::get('/kpis',                       [DashboardController::class, 'kpis'])->name('kpis');
+        Route::get('/heatmap',                    [DashboardController::class, 'heatmap'])->name('heatmap');
+        Route::get('/top-risks',                  [DashboardController::class, 'topRisks'])->name('top-risks');
+        Route::get('/inherent-vs-residual',       [DashboardController::class, 'inherentVsResidualByDept'])->name('inherent-vs-residual');
+        Route::get('/control-effectiveness',      [DashboardController::class, 'controlEffectiveness'])->name('control-effectiveness');
+        Route::get('/compliance-scorecard',       [DashboardController::class, 'complianceScorecard'])->name('compliance-scorecard');
+        Route::get('/maturity-score',             [DashboardController::class, 'maturityScore'])->name('maturity-score');
+        Route::get('/risk-by-department',         [DashboardController::class, 'riskByDepartment'])->name('risk-by-department');
+        Route::get('/issues-and-remediation',     [DashboardController::class, 'issuesAndRemediation'])->name('issues-and-remediation');
+        Route::get('/risk-acceptance-split',      [DashboardController::class, 'riskAcceptanceSplit'])->name('risk-acceptance-split');
+    });
+
     // Project Management Routes
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');

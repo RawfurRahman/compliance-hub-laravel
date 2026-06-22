@@ -38,5 +38,14 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('is-customer', function (User $user) {
             return $user->hasRole('Customer');
         });
+
+        // Gate for the analytics dashboard: only Super Admin/Admin and
+        // Auditor roles may view it. ('Super Admin' is accepted in addition
+        // to the existing 'Admin' role so either naming works.)
+        Gate::define('view-dashboard', function (User $user) {
+            return $user->hasRole('Super Admin')
+                || $user->hasRole('Admin')
+                || $user->hasRole('Auditor');
+        });
     }
 }
