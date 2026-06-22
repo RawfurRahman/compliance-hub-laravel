@@ -21,27 +21,68 @@ class EvidenceController extends Controller
      */
     public function show(Project $project)
     {
-        $requirements = PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
-        $project->load('evidenceFiles.user', 'evidenceFiles.approvedBy', 'chatMessages.user.roles', 'pciDssDetails.findings');
-        $evidenceByRequirement = $project->evidenceFiles->groupBy('pci_dss_requirement_id');
+        $isPci = $project->module_type === 'pci_dss';
+        if ($isPci) {
+            $requirements = PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
+            $project->load('evidenceFiles.user', 'evidenceFiles.approvedBy', 'chatMessages.user.roles', 'pciDssDetails.findings');
+            $evidenceByRequirement = $project->evidenceFiles->groupBy('pci_dss_requirement_id');
 
-        $findings = $project->pciDssDetails ? $project->pciDssDetails->findings->keyBy('pci_dss_requirement_id') : collect();
+            $findings = $project->pciDssDetails ? $project->pciDssDetails->findings->keyBy('pci_dss_requirement_id') : collect();
 
-        // Filter out non-applicable requirements for everyone in the Evidence Hub.
-        // To toggle scope, the Auditor will use the PCI Assessment form.
-        $requirements = $requirements->filter(function ($req) use ($findings) {
-            $finding = $findings->get($req->id);
-            return !($finding && $finding->is_applicable === false);
-        });
+            // Filter out non-applicable requirements for everyone in the Evidence Hub.
+            $requirements = $requirements->filter(function ($req) use ($findings) {
+                $finding = $findings->get($req->id);
+                return !($finding && $finding->is_applicable === false);
+            });
+
+            // Format for UI
+            $requirementsData = $requirements->map(function ($req) use ($findings) {
+                $finding = $findings->get($req->id);
+                $majorNum = explode('.', $req->req_num)[0];
+                return [
+                    'id' => $req->id,
+                    'req_num' => $req->req_num,
+                    'description' => $req->req_description,
+                    'domain' => 'Requirement ' . $majorNum,
+                    'name' => '',
+                    'is_applicable' => ($finding && $finding->is_applicable === false) ? 0 : 1,
+                ];
+            })->values();
+        } else {
+            // Non-PCI Framework (e.g. ISO 27001:2022)
+            $framework = \App\Models\Framework::where('slug', $project->module_type)->first();
+            $controls = $framework ? \App\Models\FrameworkControl::where('framework_id', $framework->id)->get()->sortBy('control_id', SORT_NATURAL) : collect();
+            
+            $project->load('evidenceFiles.user', 'evidenceFiles.approvedBy', 'chatMessages.user.roles');
+            $evidenceByRequirement = $project->evidenceFiles->groupBy('framework_control_id');
+            
+            // Map requirements for Alpine
+            $requirementsData = $controls->map(function ($control) {
+                $name = $control->control_name;
+                return [
+                    'id' => $control->id,
+                    'req_num' => $control->control_id,
+                    'description' => $control->requirement_description,
+                    'domain' => $control->domain,
+                    'name' => $name,
+                    'is_applicable' => 1, // Framework controls are in scope by default
+                ];
+            })->values();
+        }
+
+        $domains = $requirementsData->pluck('domain')->unique()->values();
 
         return view('evidence.show', [
             'project' => $project,
-            'requirements' => $requirements,
+            'requirements' => $requirementsData,
             'evidenceByRequirement' => $evidenceByRequirement,
             'chatMessages' => $project->chatMessages,
-            'findings' => $findings
+            'isPci' => $isPci,
+            'domains' => $domains,
         ]);
     }
+
+
 
     /**
      * Handle the file upload process and trigger the first n8n workflow.
@@ -49,23 +90,38 @@ class EvidenceController extends Controller
      */
     public function upload(Request $request, Project $project)
     {
-        $request->validate([
+        $isPci = $project->module_type === 'pci_dss';
+        
+        $rules = [
             'file' => 'required|file|max:20480', // Max 20MB
-            'requirement_id' => 'required|exists:pci_dss_requirements,id',
-        ]);
+        ];
+        if ($isPci) {
+            $rules['requirement_id'] = 'required|exists:pci_dss_requirements,id';
+        } else {
+            $rules['requirement_id'] = 'required|exists:framework_controls,id';
+        }
+        
+        $request->validate($rules);
 
         $file = $request->file('file');
         $path = $file->store("evidence/{$project->id}", 'public');
 
-        $evidence = $project->evidenceFiles()->create([
-            'pci_dss_requirement_id' => $request->requirement_id,
+        $data = [
             'user_id' => auth()->id(),
             'file_path' => $path,
             'original_filename' => $file->getClientOriginalName(),
             'mime_type' => $file->getMimeType(),
             'scan_status' => 'pending',
             'ai_analysis_status' => 'pending',
-        ]);
+        ];
+
+        if ($isPci) {
+            $data['pci_dss_requirement_id'] = $request->requirement_id;
+        } else {
+            $data['framework_control_id'] = $request->requirement_id;
+        }
+
+        $evidence = $project->evidenceFiles()->create($data);
 
         $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', 'http://localhost:5678/webhook/evidence-processing');
         if ($n8nWebhookUrl) {
@@ -75,6 +131,13 @@ class EvidenceController extends Controller
                 $reviewLink = route('evidence.show', ['project' => $project->id]) . '#evidence-file-' . $evidence->id;
                 $fileContents = Storage::disk('public')->get($path);
 
+                $reqText = $isPci 
+                    ? (optional($evidence->requirement)->req_description ?? '') 
+                    : (optional($evidence->frameworkControl)->requirement_description ?? '');
+                $reqNum = $isPci 
+                    ? (optional($evidence->requirement)->req_num ?? '') 
+                    : (optional($evidence->frameworkControl)->control_id ?? '');
+
                 Http::timeout(1)->retry(0)
                     ->attach(
                         'file',
@@ -83,10 +146,10 @@ class EvidenceController extends Controller
                     )
                     ->attach('file_base64', base64_encode($fileContents))
                     ->attach('mime_type', $evidence->mime_type)
-                    ->attach('requirement_text', optional($evidence->requirement)->req_description ?? '')
+                    ->attach('requirement_text', $reqText)
                     ->attach('evidence_file_id', (string) $evidence->id)
                     ->attach('project_name', $project->name)
-                    ->attach('requirement_num', optional($evidence->requirement)->req_num ?? '')
+                    ->attach('requirement_num', $reqNum)
                     ->attach('original_filename', $evidence->original_filename)
                     ->attach('auditor_email', $auditorEmail)
                     ->attach('review_link', $reviewLink)
@@ -187,14 +250,21 @@ class EvidenceController extends Controller
         if ($n8nHitlWebhookUrl && $evidenceFile->ai_analysis_status === 'awaiting_review') {
             try {
                 $auditor = \App\Models\User::whereHas('roles', fn($q) => $q->where('name', 'Auditor'))->first();
+                $auditorEmail = $auditor ? $auditor->email : 'default-auditor@example.com';
+                $reviewLink = route('evidence.show', ['project' => $evidenceFile->project_id]) . '#evidence-file-' . $evidenceFile->id;
+
+                $isPci = optional($evidenceFile->project)->module_type === 'pci_dss';
+                $reqNum = $isPci 
+                    ? (optional($evidenceFile->requirement)->req_num ?? '') 
+                    : (optional($evidenceFile->frameworkControl)->control_id ?? '');
 
                 Http::post($n8nHitlWebhookUrl, [
                     'evidence_file_id' => $evidenceFile->id,
                     'file_name' => $evidenceFile->original_filename,
                     'project_name' => optional($evidenceFile->project)->name,
-                    'requirement_num' => optional($evidenceFile->requirement)->req_num,
-                    'auditor_email' => $auditor ? $auditor->email : 'default-auditor@example.com',
-                    'review_link' => route('evidence.show', ['project' => $evidenceFile->project_id]) . '#evidence-file-' . $evidenceFile->id,
+                    'requirement_num' => $reqNum,
+                    'auditor_email' => $auditorEmail,
+                    'review_link' => reviewLink,
                 ]);
                 Log::info("n8n HITL webhook triggered for evidence_file_id: {$evidenceFile->id}");
             } catch (\Exception $e) {
@@ -251,6 +321,14 @@ class EvidenceController extends Controller
                 $auditorEmail = $auditor ? $auditor->email : 'default-auditor@example.com';
                 $reviewLink = route('evidence.show', ['project' => $evidenceFile->project_id]) . '#evidence-file-' . $evidenceFile->id;
 
+                $isPci = optional($evidenceFile->project)->module_type === 'pci_dss';
+                $reqText = $isPci 
+                    ? (optional($evidenceFile->requirement)->req_description ?? '') 
+                    : (optional($evidenceFile->frameworkControl)->requirement_description ?? '');
+                $reqNum = $isPci 
+                    ? (optional($evidenceFile->requirement)->req_num ?? '') 
+                    : (optional($evidenceFile->frameworkControl)->control_id ?? '');
+
                 Http::timeout(2)->retry(0)
                     ->attach(
                         'file',
@@ -259,10 +337,10 @@ class EvidenceController extends Controller
                     )
                     ->attach('file_base64', base64_encode($fileContents))
                     ->attach('mime_type', $evidenceFile->mime_type ?? 'application/octet-stream')
-                    ->attach('requirement_text', optional($evidenceFile->requirement)->req_description ?? '')
+                    ->attach('requirement_text', $reqText)
                     ->attach('evidence_file_id', (string) $evidenceFile->id)
                     ->attach('project_name', optional($evidenceFile->project)->name ?? '')
-                    ->attach('requirement_num', optional($evidenceFile->requirement)->req_num ?? '')
+                    ->attach('requirement_num', $reqNum)
                     ->attach('original_filename', $evidenceFile->original_filename)
                     ->attach('auditor_email', $auditorEmail)
                     ->attach('review_link', $reviewLink)
@@ -390,16 +468,23 @@ class EvidenceController extends Controller
     /**
      * Toggle the 'is_applicable' (In-Scope vs N/A) status for a requirement.
      */
-    public function toggleScope(Request $request, Project $project, PciDssRequirement $requirement)
+    public function toggleScope(Request $request, Project $project, $requirement)
     {
+        $isPci = $project->module_type === 'pci_dss';
+        if (!$isPci) {
+            return response()->json(['status' => 'error', 'message' => 'Scope toggle is not supported for agnostic frameworks.'], 400);
+        }
+        
         if (!auth()->user()->hasRole('Auditor') && !auth()->user()->hasRole('Admin')) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
         $request->validate(['is_applicable' => 'required|boolean']);
 
+        $pciReq = PciDssRequirement::findOrFail($requirement);
+
         if ($project->pciDssDetails) {
             $project->pciDssDetails->findings()->updateOrCreate(
-                ['pci_dss_requirement_id' => $requirement->id],
+                ['pci_dss_requirement_id' => $pciReq->id],
                 ['is_applicable' => $request->is_applicable]
             );
         }
@@ -412,11 +497,22 @@ class EvidenceController extends Controller
      */
     public function getLatestActivities(Project $project)
     {
+        $isPci = $project->module_type === 'pci_dss';
+
         // 1. Latest Uploads
-        $uploads = $project->evidenceFiles()->with('user', 'requirement')->latest()->take(3)->get()->map(fn($f) => [
+        $uploadsQuery = $project->evidenceFiles();
+        if ($isPci) {
+            $uploadsQuery->with('user', 'requirement');
+        } else {
+            $uploadsQuery->with('user', 'frameworkControl');
+        }
+
+        $uploads = $uploadsQuery->latest()->take(3)->get()->map(fn($f) => [
             'type' => 'upload',
             'user' => $f->user->username,
-            'req'  => $f->requirement->req_num,
+            'req'  => $isPci 
+                ? ($f->requirement ? $f->requirement->req_num : '') 
+                : ($f->frameworkControl ? $f->frameworkControl->control_id : ''),
             'time' => $f->created_at->diffForHumans(),
             'icon' => 'fa-cloud-upload-alt text-sky-500'
         ]);
@@ -518,27 +614,43 @@ class EvidenceController extends Controller
      */
     public function hub(\App\Models\Project $project = null)
     {
-        if (!$project) {
-            $project = \App\Models\Project::first();
-        }
+        $projects = \App\Models\Project::latest()->get();
 
         if (!$project) {
-            return redirect()->route('projects.index')->with('error', 'No projects found. Please create a project first.');
+            return view('evidence.hub', [
+                'project' => null,
+                'evidenceFiles' => collect(),
+                'projects' => $projects,
+                'frameworkName' => '',
+            ]);
+        }
+
+        $isPci = $project->module_type === 'pci_dss';
+        $frameworkName = 'PCI DSS';
+        $relations = ['feedbacks', 'user'];
+
+        if ($isPci) {
+            $relations[] = 'requirement';
+        } else {
+            $relations[] = 'frameworkControl';
+            $framework = \App\Models\Framework::where('slug', $project->module_type)->first();
+            if ($framework) {
+                $frameworkName = $framework->name;
+            }
         }
 
         // Only load real evidence uploaded through the project (exclude mock paths)
         $evidenceFiles = $project->evidenceFiles()
             ->where('file_path', 'not like', 'mock/%')
-            ->with(['requirement', 'feedbacks', 'user'])
+            ->with($relations)
             ->latest()
             ->get();
-
-        $projects = \App\Models\Project::latest()->get();
 
         return view('evidence.hub', [
             'project' => $project,
             'evidenceFiles' => $evidenceFiles,
             'projects' => $projects,
+            'frameworkName' => $frameworkName,
         ]);
     }
 }

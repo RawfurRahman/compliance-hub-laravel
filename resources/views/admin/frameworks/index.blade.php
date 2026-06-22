@@ -114,6 +114,9 @@
                         <template x-if="!editing">
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('admin.frameworks.controls.index', $fw) }}" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:border-indigo-200 transition-all text-xs" title="Manage Controls">
+                                        <i class="fas fa-list-ul"></i>
+                                    </a>
                                     <button @click="editing = true" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:border-sky-200 transition-all text-xs">
                                         <i class="fas fa-pen"></i>
                                     </button>

@@ -170,18 +170,34 @@
 
     {{-- Clone to Final Action Banner (Gap only) --}}
     @if($type === 'Gap')
-    <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h3 class="text-sm font-bold text-sky-800">Remediation Completed?</h3>
-                <p class="text-xs text-sky-600 mt-1">Deep-clone all findings from this Gap Assessment into a new Final Assessment to verify your final posture.</p>
+        @if($stats['compliancePct'] == 100)
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 border border-emerald-400 rounded-2xl p-6 text-white shadow-xl hover:shadow-emerald-500/25 transition-all">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center animate-bounce">
+                        <i class="fas fa-trophy text-xl text-yellow-300"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold">Phase 1 Completed!</h3>
+                        <p class="text-xs text-emerald-100 mt-1">The Gap Assessment is 100% compliant. Phase 2 (Final Assessment) has been automatically started and all findings synchronized.</p>
+                    </div>
+                </div>
+                <a href="{{ route('assessments.show', [$project, 'type' => 'final']) }}"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white hover:bg-emerald-50 text-emerald-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md transform hover:scale-105">
+                    Start Phase 2: Final Assessment <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
-            <button @click="showCloneModal = true"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl transition whitespace-nowrap">
-                <i class="fas fa-copy text-xs"></i> Clone to Final Assessment
-            </button>
         </div>
-    </div>
+        @else
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-bold text-sky-850">Gap Assessment Progress</h3>
+                    <p class="text-xs text-sky-650 mt-1">Once all findings are marked as compliant, Phase 2 (Final Assessment) will be automatically started and findings synchronized.</p>
+                </div>
+            </div>
+        </div>
+        @endif
     @endif
 
     {{-- ------------------------------------------------------------------ --}}

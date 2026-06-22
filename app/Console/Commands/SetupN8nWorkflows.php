@@ -104,7 +104,23 @@ class SetupN8nWorkflows extends Command
                 }
 
                 $this->info("Processing workflow file: {$file->getFilename()}");
-                $workflowData = json_decode(File::get($file->getRealPath()), true);
+                $workflowJson = File::get($file->getRealPath());
+
+                // Replace local URL placeholders with Docker internal hostnames
+                $appInternalUrl = env('APP_INTERNAL_URL', 'http://host.docker.internal:8000');
+                $workflowJson = str_replace(
+                    ['http://127.0.0.1:8000', 'http://localhost:8000'],
+                    $appInternalUrl,
+                    $workflowJson
+                );
+
+                $workflowJson = str_replace(
+                    ['http://127.0.0.1:9300', 'http://localhost:9300'],
+                    'http://host.docker.internal:9300',
+                    $workflowJson
+                );
+
+                $workflowData = json_decode($workflowJson, true);
 
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $this->error("Invalid JSON format in {$file->getFilename()}.");

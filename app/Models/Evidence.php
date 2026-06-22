@@ -13,6 +13,7 @@ class Evidence extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'project_id',
         'requirement_id',
         'name', // Original file name
         'path', // Stored file path
@@ -26,5 +27,10 @@ class Evidence extends Model
     public function requirement(): BelongsTo
     {
         return $this->belongsTo(Requirement::class);
+    }
+
+    public function assessmentFindings()
+    {
+        return $this->belongsToMany(AssessmentFinding::class, 'assessment_finding_evidence', 'evidence_id', 'assessment_finding_id');
     }
 }

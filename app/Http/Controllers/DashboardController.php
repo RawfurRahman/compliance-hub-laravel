@@ -33,15 +33,41 @@ class DashboardController extends Controller
 
         if ($user->hasRole('Admin')) {
             $stats['active_projects'] = Project::count();
-            $stats['meetings'] = 0;
+            // Admins can see all upcoming meetings
+            $stats['meetings'] = \App\Models\Meeting::where('scheduled_at', '>=', now())->count();
         } else {
             $projects = $user->assignedProjects()->get();
             $stats['active_projects'] = $projects->count();
             
             // Calculate upcoming meetings where the user is either the creator or an attendee
-            $stats['meetings'] = 0;
+            $stats['meetings'] = \App\Models\Meeting::where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhereHas('users', function ($uq) use ($user) {
+                          $uq->where('users.id', $user->id);
+                      });
+                })
+                ->where('scheduled_at', '>=', now())
+                ->count();
                 
-            // Mocking logic: later we will sum up completed requirements across frameworks
+            $completed = 0;
+            $pending = 0;
+            foreach ($projects as $project) {
+                if ($project->module_type === 'pci_dss') {
+                    if ($project->pciDssDetails) {
+                        $completed += $project->pciDssDetails->findings()->where('is_compliant', true)->count();
+                        $pending += $project->pciDssDetails->findings()->where('is_compliant', false)->count();
+                    }
+                } else {
+                    // For agnostic frameworks, we sum findings of the active Gap assessment
+                    $gap = $project->gapAssessment;
+                    if ($gap) {
+                        $completed += $gap->findings()->where('is_compliant', true)->count();
+                        $pending += $gap->findings()->where('is_compliant', false)->count();
+                    }
+                }
+            }
+            $stats['completed_requirements'] = $completed;
+            $stats['pending_requirements'] = $pending;
         }
 
         return view('dashboard', compact('stats'));

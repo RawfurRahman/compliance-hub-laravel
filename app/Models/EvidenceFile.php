@@ -13,6 +13,7 @@ class EvidenceFile extends Model
     // Ensure 'file_path', 'original_filename', 'mime_type' are also fillable if not using guarded = []
     protected $fillable = [
         'pci_dss_requirement_id',
+        'framework_control_id',
         'project_id',
         'user_id',
         'file_path',
@@ -51,6 +52,11 @@ class EvidenceFile extends Model
     public function requirement()
     {
         return $this->belongsTo(PciDssRequirement::class, 'pci_dss_requirement_id');
+    }
+
+    public function frameworkControl()
+    {
+        return $this->belongsTo(FrameworkControl::class, 'framework_control_id');
     }
     
     /**

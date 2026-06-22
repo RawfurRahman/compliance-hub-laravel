@@ -76,8 +76,9 @@
             <select id="project-switcher" 
                     @change="switchProject($event.target.value)" 
                     class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-sky-500/10 focus:border-sky-300 transition shadow-sm">
+                <option value="" disabled {{ !$project ? 'selected' : '' }}>Select a Project...</option>
                 @foreach($projects as $p)
-                    <option value="{{ $p->id }}" {{ $p->id === $project->id ? 'selected' : '' }}>
+                    <option value="{{ $p->id }}" {{ $project && $p->id === $project->id ? 'selected' : '' }}>
                         {{ $p->name }}
                     </option>
                 @endforeach
@@ -85,66 +86,95 @@
         </div>
     </div>
 
-    {{-- Main Container Card --}}
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        
-        {{-- Card Header matching the Mockup --}}
-        <div class="px-6 py-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" style="background: #f8fafc;">
-            <div class="flex items-center gap-3">
-                <div class="w-2.5 h-6 rounded-full bg-sky-500"></div>
-                <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">
-                    Evidence Tracker - PCI-DSS Assessment ({{ $project->name }})
-                </h2>
+    @if(!$project)
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden p-12 text-center">
+            <div class="w-16 h-16 bg-sky-50 border border-sky-100 rounded-2xl flex items-center justify-center text-sky-500 mx-auto mb-6 shadow-sm">
+                <i class="fas fa-project-diagram text-2xl"></i>
             </div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mb-2">No Project Selected</h2>
+            <p class="text-slate-500 text-sm max-w-md mx-auto mb-8 font-medium">Select a compliance project from the options below or the dropdown at the top to track and validate evidence.</p>
             
-            {{-- Mockup Buttons --}}
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('evidence.export-zip', $project) }}" class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white transition-all shadow-sm" style="background-color: #0f766e; hover:background-color: #0d5f58;">
-                    <i class="fas fa-file-export mr-2"></i> Export Report
-                </a>
-                
-                <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm" style="background-color: #e2f0d9; color: #385723; border: 1px solid #c5e0b4;">
-                    <i class="fas fa-file-excel mr-2"></i> Excel
-                </button>
-                
-                <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm" style="background-color: #fce4d6; color: #c65911; border: 1px solid #f8cbad;">
-                    <i class="fas fa-file-pdf mr-2"></i> PDF
-                </button>
-                
-                <div class="relative">
-                    <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold bg-white text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm">
-                        <i class="fas fa-filter mr-2 text-slate-400"></i> Filter <i class="fas fa-chevron-down ml-2 text-[9px] text-slate-400"></i>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
+                @foreach($projects as $p)
+                    <button @click="switchProject({{ $p->id }})" 
+                            class="p-6 rounded-2xl border border-slate-150 hover:border-sky-400 hover:shadow-lg transition-all text-left bg-white group flex flex-col justify-between shadow-sm min-h-[160px]">
+                        <div class="w-full">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $p->module_type === 'pci_dss' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700' }}">
+                                    {{ $p->module_type === 'pci_dss' ? 'PCI DSS' : strtoupper(str_replace('_', ' ', $p->module_type)) }}
+                                </span>
+                                <span class="text-xs font-semibold text-slate-400 group-hover:text-sky-500 transition-colors">
+                                    Open Tracker <i class="fas fa-arrow-right ml-1"></i>
+                                </span>
+                            </div>
+                            <h3 class="font-extrabold text-slate-800 text-base mb-1 group-hover:text-sky-600 transition-colors">{{ $p->name }}</h3>
+                            <p class="text-xs text-slate-500 line-clamp-2 font-medium">{{ $p->description }}</p>
+                        </div>
                     </button>
-                </div>
+                @endforeach
             </div>
         </div>
+    @else
+        {{-- Main Container Card --}}
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            
+            {{-- Card Header matching the Mockup --}}
+            <div class="px-6 py-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4" style="background: #f8fafc;">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-6 rounded-full bg-sky-500"></div>
+                    <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">
+                        Evidence Tracker - {{ $frameworkName }} Assessment ({{ $project->name }})
+                    </h2>
+                </div>
+                
+                {{-- Mockup Buttons --}}
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('evidence.export-zip', $project) }}" class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white transition-all shadow-sm" style="background-color: #0f766e; hover:background-color: #0d5f58;">
+                        <i class="fas fa-file-export mr-2"></i> Export Report
+                    </a>
+                    
+                    <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm" style="background-color: #e2f0d9; color: #385723; border: 1px solid #c5e0b4;">
+                        <i class="fas fa-file-excel mr-2"></i> Excel
+                    </button>
+                    
+                    <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm" style="background-color: #fce4d6; color: #c65911; border: 1px solid #f8cbad;">
+                        <i class="fas fa-file-pdf mr-2"></i> PDF
+                    </button>
+                    
+                    <div class="relative">
+                        <button class="inline-flex items-center px-4 py-2 text-[11px] font-bold bg-white text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm">
+                            <i class="fas fa-filter mr-2 text-slate-400"></i> Filter <i class="fas fa-chevron-down ml-2 text-[9px] text-slate-400"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-        {{-- Table Element --}}
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse table-fixed min-w-[1200px]">
-                <thead>
-                    <tr class="evidence-table">
-                        <th class="w-[11%]">Framework Requirement</th>
-                        <th class="w-[12%]">Evidence ID / File Name</th>
-                        <th class="w-[9%]">Upload Date & Time</th>
-                        <th class="w-[9%]">Security Status (ClamAV)</th>
-                        <th class="w-[10%]">AI Preliminary Assessment</th>
-                        <th class="w-[27%]">AI Evidence Observation</th>
-                        <th class="w-[12%]">Auditor Determination</th>
-                        <th class="w-[10%]">Auditor Feedback / Notes</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
-                    <template x-for="file in files" :key="file.id">
-                        <tr class="hover:bg-slate-50/50 transition-colors group">
-                            
-                            {{-- Col 1: Framework Req --}}
-                            <td class="px-4 py-4">
-                                <div class="flex flex-col gap-1.5">
-                                    <span class="inline-flex items-center w-fit px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold uppercase tracking-wider" x-text="file.requirement ? file.requirement.req_num : 'General'"></span>
-                                    <span class="text-xs font-semibold text-slate-700 leading-normal" x-text="file.requirement ? (file.requirement.description || file.requirement.req_description) : 'General Evidence File'"></span>
-                                </div>
-                            </td>
+            {{-- Table Element --}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse table-fixed min-w-[1200px]">
+                    <thead>
+                        <tr class="evidence-table">
+                            <th class="w-[11%]">Framework Requirement</th>
+                            <th class="w-[12%]">Evidence ID / File Name</th>
+                            <th class="w-[9%]">Upload Date & Time</th>
+                            <th class="w-[9%]">Security Status (ClamAV)</th>
+                            <th class="w-[10%]">AI Preliminary Assessment</th>
+                            <th class="w-[27%]">AI Evidence Observation</th>
+                            <th class="w-[12%]">Auditor Determination</th>
+                            <th class="w-[10%]">Auditor Feedback / Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        <template x-for="file in files" :key="file.id">
+                            <tr class="hover:bg-slate-50/50 transition-colors group">
+                                
+                                {{-- Col 1: Framework Req --}}
+                                <td class="px-4 py-4">
+                                    <div class="flex flex-col gap-1.5">
+                                        <span class="inline-flex items-center w-fit px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold uppercase tracking-wider" x-text="getRequirementNum(file) + getControlName(file)"></span>
+                                        <span class="text-xs font-semibold text-slate-700 leading-normal" x-text="getRequirementDesc(file)"></span>
+                                    </div>
+                                </td>
 
                             {{-- Col 2: File Name --}}
                             <td class="px-4 py-4">
@@ -338,7 +368,7 @@
                 </div>
                 <div>
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Requirement</h4>
-                    <p class="font-semibold text-slate-700" x-text="selectedFile.requirement ? selectedFile.requirement.req_num + ' - ' + (selectedFile.requirement.description || selectedFile.requirement.req_description) : 'N/A'"></p>
+                    <p class="font-semibold text-slate-700" x-text="getRequirementNum(selectedFile) + getControlName(selectedFile) + ' - ' + getRequirementDesc(selectedFile)"></p>
                 </div>
                 <div>
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">AI Audit Observations</h4>
@@ -404,6 +434,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </div>
 @endsection
@@ -448,6 +479,40 @@ function evidenceHub() {
 
         switchProject(projectId) {
             window.location.href = "{{ url('evidence-hub') }}/" + projectId;
+        },
+
+        getRequirementNum(file) {
+            if (!file) return 'General';
+            if (file.requirement) {
+                return file.requirement.req_num;
+            }
+            const fc = file.framework_control || file.frameworkControl;
+            if (fc) {
+                return fc.control_id;
+            }
+            return 'General';
+        },
+
+        getRequirementDesc(file) {
+            if (!file) return 'General Evidence File';
+            if (file.requirement) {
+                return file.requirement.description || file.requirement.req_description;
+            }
+            const fc = file.framework_control || file.frameworkControl;
+            if (fc) {
+                return fc.requirement_description;
+            }
+            return 'General Evidence File';
+        },
+
+        getControlName(file) {
+            if (!file) return '';
+            if (file.requirement) return '';
+            const fc = file.framework_control || file.frameworkControl;
+            if (fc && fc.control_name) {
+                return ' - ' + fc.control_name;
+            }
+            return '';
         },
 
         getFileIcon(filename) {

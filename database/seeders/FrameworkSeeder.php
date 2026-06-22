@@ -51,5 +51,25 @@ class FrameworkSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        Framework::firstOrCreate(
+            ['slug' => 'hitrust'],
+            [
+                'name' => 'HITRUST',
+                'version' => 'v9.4',
+                'description' => 'Health Information Trust Alliance Common Security Framework',
+                'is_active' => true,
+            ]
+        );
+
+        Framework::firstOrCreate(
+            ['slug' => 'soc2'],
+            [
+                'name' => 'SOC 2',
+                'version' => 'Type II',
+                'description' => 'System and Organization Controls 2',
+                'is_active' => true,
+            ]
+        );
     }
 }

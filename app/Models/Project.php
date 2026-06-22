@@ -63,23 +63,45 @@ class Project extends Model
         return $this->hasMany(IsoGapAssessment::class);
     }
 
+    public function pciGapAssessments()
+    {
+        return $this->hasMany(PciGapAssessment::class);
+    }
+
     public function assessments()
     {
-        return $this->hasMany(Assessment::class);
+        return $this->hasMany(ProjectAssessment::class);
     }
 
     public function gapAssessment()
     {
-        return $this->hasOne(Assessment::class)->where('assessment_type', 'Gap')->latest();
+        return $this->hasOne(ProjectAssessment::class)->where('type', 'Gap');
     }
 
     public function finalAssessment()
     {
-        return $this->hasOne(Assessment::class)->where('assessment_type', 'Final')->latest();
+        return $this->hasOne(ProjectAssessment::class)->where('type', 'Final');
     }
 
     public function requiredDocumentLists()
     {
         return $this->hasMany(RequiredDocumentList::class);
     }
+
+    public function reports()
+    {
+        return $this->hasMany(GeneratedReport::class);
+    }
+
+    public function reportSchedules()
+    {
+        return $this->hasMany(ReportSchedule::class);
+    }
+
+    public function customReportTemplates()
+    {
+        return $this->hasMany(CustomReportTemplate::class);
+    }
 }
+
+

@@ -93,6 +93,7 @@
             <p><strong>Date Assessment Ended:</strong> {{ optional($project->pciDssDetails)->date_assessment_ended ?? 'N/A' }}</p>
         </div>
 
+        @if(!isset($sections) || in_array('executive_summary', $sections))
         <!-- Part I: Assessment Overview -->
         <h2 class="mt-16 section-break">Part I: Assessment Overview</h2>
 
@@ -126,7 +127,9 @@
                 <li>No payment channels specified.</li>
             @endforelse
         </ul>
+        @endif
 
+        @if(!isset($sections) || in_array('metrics', $sections))
         <!-- ** NEW SECTION ** -->
         <h2 class="mt-16 section-break">3. Description of Scope of Work and Approach Taken</h2>
         <h4>3.1 Assessor's Validation of Defined Scope Accuracy</h4>
@@ -221,7 +224,9 @@
         @else
         <p>No internal scan results recorded.</p>
         @endif
+        @endif
 
+        @if(!isset($sections) || in_array('detailed_findings', $sections))
         <!-- Part II: Findings and Observations -->
         <h2 class="mt-16 section-break">Part II: Findings and Observations</h2>
         <h3>7. Findings and Observations</h3>
@@ -281,6 +286,7 @@
                 </table>
             </div>
         @endforeach
+        @endif
     </div>
 
 </body>

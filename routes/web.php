@@ -51,6 +51,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/{project}/gap-assessment',   [\App\Http\Controllers\ProjectHubController::class, 'gapAssessment'])->name('projects.gap-assessment');
     Route::get('/projects/{project}/reporting',        [\App\Http\Controllers\ProjectHubController::class, 'reporting'])->name('projects.reporting');
     Route::get('/projects/{project}/reporting/{type}', [\App\Http\Controllers\ProjectHubController::class, 'report'])->name('projects.report');
+    Route::get('/projects/{project}/reporting/{type}/download', [\App\Http\Controllers\ProjectHubController::class, 'downloadReport'])->name('projects.report.download');
+    Route::post('/projects/{project}/reporting/{type}/share', [\App\Http\Controllers\ProjectHubController::class, 'shareReport'])->name('projects.report.share');
+    Route::post('/projects/{project}/reporting/schedules', [\App\Http\Controllers\ProjectHubController::class, 'storeSchedule'])->name('projects.reporting.schedules.store');
+    Route::delete('/projects/{project}/reporting/schedules/{schedule}', [\App\Http\Controllers\ProjectHubController::class, 'destroySchedule'])->name('projects.reporting.schedules.destroy');
+    Route::post('/projects/{project}/reporting/custom-templates', [\App\Http\Controllers\ProjectHubController::class, 'storeCustomTemplate'])->name('projects.reporting.custom-templates.store');
+    Route::delete('/projects/{project}/reporting/custom-templates/{template}', [\App\Http\Controllers\ProjectHubController::class, 'destroyCustomTemplate'])->name('projects.reporting.custom-templates.destroy');
+    Route::get('/projects/{project}/reporting/custom-templates/{template}/download', [\App\Http\Controllers\ProjectHubController::class, 'downloadCustomTemplate'])->name('projects.reporting.custom-templates.download');
+
+
 
     // PCI DSS Module Routes
     Route::get('/pci/{project}', [PciDssController::class, 'show'])->name('pci.show');
@@ -99,6 +108,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/iso-gap/status/{id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'updateStatus'])->name('iso-gap.update-status');
     Route::get('/iso-gap/{project_id}/report',   [\App\Http\Controllers\IsoGapAssessmentController::class, 'generateReport'])->name('iso-gap.report');
 
+    // PCI DSS Gap Assessment Routes (legacy import-based)
+    Route::get('/pci-gap/{project}',             [\App\Http\Controllers\PciGapAssessmentController::class, 'index'])->name('pci-gap.index');
+    Route::post('/pci-gap/{project}/import',     [\App\Http\Controllers\PciGapAssessmentController::class, 'import'])->name('pci-gap.import');
+    Route::patch('/pci-gap-assessments/{id}',    [\App\Http\Controllers\PciGapAssessmentController::class, 'updateRow'])->name('pci-gap.update-row');
+
     // ── Unified Assessment Module ──────────────────────────────────────────
     Route::prefix('assessments')->name('assessments.')->group(function () {
         // Dashboard (with ?type=gap|final)
@@ -115,6 +129,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/report/{assessment}',          [\App\Http\Controllers\AssessmentController::class, 'report'])->name('report');
     });
 
+    // ── Framework-Agnostic Assessments Module ──────────────────────────────
+    Route::get('/projects/{project}/assessments/{framework_slug}/{type}', [\App\Http\Controllers\UnifiedAssessmentController::class, 'show'])->name('assessments.unified.show');
+    Route::post('/projects/{project}/assessments/{framework_slug}/{type}/initialize', [\App\Http\Controllers\UnifiedAssessmentController::class, 'initialize'])->name('assessments.unified.initialize');
+
+    Route::post('/assessments/findings/{finding}/evidence/upload', [\App\Http\Controllers\UnifiedAssessmentController::class, 'uploadEvidence'])->name('assessments.unified.upload-evidence');
+    Route::post('/assessments/findings/{finding}/evidence/attach', [\App\Http\Controllers\UnifiedAssessmentController::class, 'attachEvidence'])->name('assessments.unified.attach-evidence');
+    Route::post('/assessments/findings/{finding}/evidence/{evidence}/detach', [\App\Http\Controllers\UnifiedAssessmentController::class, 'detachEvidence'])->name('assessments.unified.detach-evidence');
+    Route::get('/assessments/unified/report/{assessment}', [\App\Http\Controllers\UnifiedAssessmentController::class, 'report'])->name('assessments.unified.report');
+
     // User Management Routes (Admin/Auditor specific)
     Route::middleware(['can:is-admin'])->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -129,6 +152,12 @@ Route::middleware(['auth'])->group(function () {
         
         // Dynamic Frameworks Management
         Route::resource('admin/frameworks', \App\Http\Controllers\Admin\FrameworkController::class)->except(['show', 'create', 'edit'])->names('admin.frameworks');
+
+        // Agnostic Framework Controls Management
+        Route::get('admin/frameworks/{framework}/controls', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'index'])->name('admin.frameworks.controls.index');
+        Route::post('admin/frameworks/{framework}/controls', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'store'])->name('admin.frameworks.controls.store');
+        Route::post('admin/frameworks/{framework}/controls/import', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'import'])->name('admin.frameworks.controls.import');
+        Route::delete('admin/frameworks/{framework}/controls/{control}', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'destroy'])->name('admin.frameworks.controls.destroy');
     });
 });
 

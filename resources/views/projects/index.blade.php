@@ -83,6 +83,10 @@
                             <a href="{{ route('pci.show', $project) }}" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-indigo-100">
                                 Assessment
                             </a>
+                        @else
+                            <a href="{{ route('assessments.show', $project) }}" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-indigo-100">
+                                Assessment
+                            </a>
                         @endif
                         <a href="{{ route('evidence.show', $project) }}" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-emerald-100">
                             Evidence <span class="ml-1 opacity-50">Hub</span>

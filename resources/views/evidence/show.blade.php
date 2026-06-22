@@ -52,195 +52,208 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {{-- Left: Requirement List --}}
-        <div class="lg:col-span-3 space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 custom-scrollbar">
-            <template x-for="req in requirements" :key="req.id">
-                <div 
-                    @click="activeReqId = req.id"
-                    :class="activeReqId === req.id ? 'active-ring bg-white' : 'border-white bg-white/40 shadow-sm'"
-                    class="glass-premium rounded-2xl p-5 border cursor-pointer transition-all duration-200 group"
-                >
-                    <div class="flex items-center justify-between mb-1">
-                        <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest" x-text="req.req_num"></h4>
-                        <template x-if="req.is_applicable == 0">
-                            <span class="text-[8px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded uppercase">N/A</span>
-                        </template>
-                    </div>
-                    <p class="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-700" x-text="req.description"></p>
-                    <div class="mt-4 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase">
-                        <span><i class="fas fa-database mr-1"></i> <span x-text="(evidence[req.id] || []).length"></span> provisioned</span>
-                    </div>
-                </div>
-            </template>
-        </div>
+        {{-- Main Column: Quick Jump menu and Control Cards --}}
+        <div class="lg:col-span-9 space-y-8">
+            
+            {{-- Sticky Domain Quick Jump Menu --}}
+            <div class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md border border-slate-200/60 rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm">
+                <template x-for="dom in domains" :key="dom">
+                    <a :href="'#domain-' + slugify(dom)" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm flex items-center">
+                        <span x-text="dom"></span>
+                        <span class="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[8px]" x-text="getReqsByDomain(dom).length"></span>
+                    </a>
+                </template>
+            </div>
 
-        {{-- Center: Active Requirement --}}
-        <div class="lg:col-span-7">
-            <template x-if="activeReqId">
-                <div class="space-y-6">
-                    <div class="glass-premium rounded-[32px] p-10 border border-white shadow-2xl relative overflow-hidden bg-white/60">
-                        <div class="flex items-start justify-between mb-8">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-4 mb-4">
-                                     <h2 class="text-4xl font-black text-slate-900 tracking-tight" x-text="requirements.find(r => r.id === activeReqId).req_num"></h2>
-                                     @can('is-auditor')
-                                     <div class="flex items-center space-x-1 px-2 py-1 bg-white rounded-full border border-slate-100 shadow-sm">
-                                        <button @click="toggleScope(activeReqId, true)" :class="requirements.find(r => r.id === activeReqId).is_applicable == 1 ? 'text-emerald-700 bg-emerald-50' : 'text-slate-300'" class="text-[9px] font-black px-4 py-1.5 rounded-full transition-all">IN-SCOPE</button>
-                                        <button @click="toggleScope(activeReqId, false)" :class="requirements.find(r => r.id === activeReqId).is_applicable == 0 ? 'text-rose-700 bg-rose-50' : 'text-slate-300'" class="text-[9px] font-black px-4 py-1.5 rounded-full transition-all">N/A</button>
-                                     </div>
-                                     @endcan
+            {{-- Controls Grouped by Domain --}}
+            <template x-for="dom in domains" :key="dom">
+                <div :id="'domain-' + slugify(dom)" class="scroll-mt-28">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 border-b border-slate-200 pb-3 flex items-center gap-2">
+                        <i class="fas fa-layer-group text-indigo-500"></i>
+                        <span x-text="dom"></span>
+                    </h3>
+                    
+                    <template x-for="req in getReqsByDomain(dom)" :key="req.id">
+                        <div :id="'req-card-' + req.id" class="glass-premium rounded-[28px] p-8 border border-white shadow-lg relative overflow-hidden bg-white/60 mb-6 hover:shadow-xl transition-all">
+                            
+                            {{-- Card Header --}}
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                                <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                                    <span class="text-2xl font-black text-slate-900 tracking-tight" x-text="req.req_num"></span>
+                                    <span x-show="req.name" class="text-2xl font-bold text-slate-700 tracking-tight" x-text="req.name"></span>
+                                    <template x-if="req.is_applicable == 0">
+                                        <span class="text-[8px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded uppercase">N/A</span>
+                                    </template>
                                 </div>
-                                <p class="text-xl text-slate-600 font-semibold leading-relaxed" x-text="requirements.find(r => r.id === activeReqId).description"></p>
+                                <div class="flex items-center space-x-2">
+                                    @if($isPci)
+                                        @can('is-auditor')
+                                        <div class="flex items-center space-x-1 px-1.5 py-0.5 bg-white rounded-full border border-slate-100 shadow-sm mr-2">
+                                            <button @click="toggleScope(req.id, true)" :class="req.is_applicable == 1 ? 'text-emerald-700 bg-emerald-50' : 'text-slate-300'" class="text-[8px] font-black px-3 py-1 rounded-full transition-all">IN-SCOPE</button>
+                                            <button @click="toggleScope(req.id, false)" :class="req.is_applicable == 0 ? 'text-rose-700 bg-rose-50' : 'text-slate-300'" class="text-[8px] font-black px-3 py-1 rounded-full transition-all">N/A</button>
+                                        </div>
+                                        @endcan
+                                    @endif
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-2">
+                                        <i class="fas fa-database mr-1"></i> <span x-text="(evidence[req.id] || []).length"></span> provisioned
+                                    </span>
+                                    <button @click="activeReqId = req.id; showUploadModal = true" class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-indigo-600 border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100 transition-all flex items-center">
+                                        <i class="fas fa-plus mr-1"></i> Provision
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {{-- Card Description --}}
+                            <p class="text-slate-600 font-semibold leading-relaxed mb-6" x-text="req.description"></p>
+                            
+                            {{-- Evidence Table --}}
+                            <div class="rounded-2xl border border-slate-100 bg-white shadow-inner overflow-hidden">
+                                <table class="min-w-full divide-y divide-slate-100">
+                                    <thead class="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left">Identity / Asset</th>
+                                            <th class="px-5 py-3 text-left">AI Integrity Ingest (Synthesis)</th>
+                                            <th class="px-5 py-3 text-left">HITL Communication</th>
+                                            <th class="px-5 py-3 text-left">Control State</th>
+                                            <th class="px-5 py-3 text-right">Audit Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <template x-for="file in (evidence[req.id] || [])" :key="file.id">
+                                            <tr class="hover:bg-slate-50/40 transition-colors group">
+                                                {{-- Column 1: Asset Info --}}
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mr-3 shadow-sm flex-shrink-0">
+                                                            <i class="fas fa-file-shield text-sm"></i>
+                                                        </div>
+                                                        <div class="min-w-0">
+                                                            <div class="text-[12px] font-bold text-slate-800 truncate" x-text="truncateFilename(file.original_filename)"></div>
+                                                            <div class="text-[8px] font-black text-slate-400 uppercase mt-0.5">
+                                                                <span x-text="new Date(file.created_at).toLocaleDateString()"></span>
+                                                                <span class="mx-1">|</span>
+                                                                <span x-text="file.mime_type || 'Asset'"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {{-- Column 2: AI Analysis (Synthesis) --}}
+                                                <td class="px-5 py-4 align-top max-w-xs">
+                                                    <div class="space-y-2">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <span class="text-[8px] font-black uppercase tracking-widest" :class="file.scan_status === 'clean' ? 'text-emerald-600' : 'text-amber-600'">
+                                                                <i class="fas" :class="file.scan_status === 'clean' ? 'fa-shield-check' : 'fa-radar'"></i>
+                                                                <span x-text="file.scan_status || 'Scanning...'"></span>
+                                                            </span>
+                                                            <span x-show="file.ai_analysis_status === 'awaiting_review'" class="text-[8px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded">AI READY</span>
+                                                        </div>
+                                                        
+                                                        <div x-show="file.ai_observations" class="relative group/obs">
+                                                            <p class="text-[10px] font-semibold text-slate-600 italic line-clamp-2" x-text="file.ai_observations"></p>
+                                                            <div class="hidden group-hover/obs:block absolute z-20 top-full left-0 mt-2 p-4 bg-slate-900 text-white rounded-xl text-[10px] w-64 shadow-2xl">
+                                                                <div class="font-black mb-2 text-indigo-300 uppercase tracking-widest border-b border-white/10 pb-1">Full Synthesis</div>
+                                                                <div x-text="file.ai_observations"></div>
+                                                                <div class="mt-3 font-black text-emerald-400 uppercase tracking-widest border-b border-white/10 pb-1">Recommendations</div>
+                                                                <div x-text="file.ai_recommendations"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {{-- Column 3: HITL Communication --}}
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="space-y-1.5">
+                                                        <template x-if="file.feedbacks && file.feedbacks.length > 0">
+                                                            <div class="space-y-1">
+                                                                <p class="text-[9px] font-bold text-indigo-600 bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/50 leading-relaxed max-w-[180px] truncate" x-text="file.feedbacks[file.feedbacks.length-1].message"></p>
+                                                                <button @click="openFeedback(file)" class="text-[8px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest flex items-center">
+                                                                    <i class="fas fa-comments-alt mr-1"></i> <span x-text="file.feedbacks.length"></span> Messages...
+                                                                </button>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="!file.feedbacks || file.feedbacks.length === 0">
+                                                            <button @click="openFeedback(file)" class="text-[8px] font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest border border-dashed border-slate-200 px-2 py-1 rounded-lg">
+                                                                + Add Feedback
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </td>
+
+                                                {{-- Column 4: Control State --}}
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="flex flex-col">
+                                                        <span :class="getBadgeClass(file.hitl_status)" class="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest shadow-sm max-w-max">
+                                                            <i class="fas fa-dot-circle mr-1 opacity-50"></i>
+                                                            <span x-text="file.hitl_status || 'Waiting'"></span>
+                                                        </span>
+                                                        <div class="w-24 h-1 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                                                            <div class="h-full bg-indigo-600 transition-all duration-1000" :style="{ width: getProgress(file) + '%' }"></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {{-- Column 5: Audit Action --}}
+                                                <td class="px-5 py-4 align-top text-right">
+                                                    @can('is-auditor')
+                                                        <div class="flex flex-col items-end gap-1.5">
+                                                            <div class="flex items-center gap-1">
+                                                                <button 
+                                                                    @click="directAudit(file, 'accept')" 
+                                                                    class="p-1.5 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Accept Evidence"
+                                                                >
+                                                                    <i class="fas fa-check-circle text-xs"></i>
+                                                                </button>
+                                                                <button 
+                                                                    @click="openReview(file)" 
+                                                                    class="p-1.5 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Return for Correction"
+                                                                >
+                                                                    <i class="fas fa-undo-alt text-xs"></i>
+                                                                </button>
+                                                            </div>
+                                                            <button @click="openReview(file)" class="text-[8px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                                                Deep Audit View
+                                                            </button>
+                                                        </div>
+                                                    @endcan
+                                                    @cannot('is-auditor')
+                                                        <button @click="openReview(file)" class="text-[9px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-100 px-3 py-1.5 rounded-lg bg-indigo-50/30 hover:bg-white transition-all">
+                                                            Review Detail
+                                                        </button>
+                                                    @endcannot
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <template x-if="(evidence[req.id] || []).length === 0">
+                                    <div class="p-8 text-center text-slate-300 bg-slate-50/20">
+                                        <i class="fas fa-inbox text-xl mb-2"></i>
+                                        <p class="text-[9px] font-black uppercase tracking-widest">Vault Empty for this requirement</p>
+                                    </div>
+                                </template>
                             </div>
                         </div>
-
-                        {{-- Audit Control Table --}}
-                        <div class="rounded-3xl border border-slate-100 bg-white shadow-inner overflow-hidden">
-                            <table class="min-w-full divide-y divide-slate-100">
-                                <thead class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    <tr>
-                                        <th class="px-6 py-4 text-left">Identity / Asset</th>
-                                        <th class="px-6 py-4 text-left">AI Integrity Ingest (Synthesis)</th>
-                                        <th class="px-6 py-4 text-left">HITL Communication</th>
-                                        <th class="px-6 py-4 text-left">Control State</th>
-                                        <th class="px-6 py-4 text-right">Audit Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    <template x-for="file in (evidence[activeReqId] || [])" :key="file.id">
-                                        <tr class="hover:bg-slate-50/40 transition-colors group">
-                                            {{-- Column 1: Asset Info --}}
-                                            <td class="px-6 py-6 align-top">
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mr-4 shadow-sm">
-                                                        <i class="fas fa-file-shield text-md"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="text-[13px] font-bold text-slate-800" x-text="truncateFilename(file.original_filename)"></div>
-                                                        <div class="text-[9px] font-black text-slate-400 uppercase mt-1">
-                                                            <span x-text="new Date(file.created_at).toLocaleDateString()"></span>
-                                                            <span class="mx-1">|</span>
-                                                            <span x-text="file.mime_type || 'Asset'"></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {{-- Column 2: AI Analysis (Synthesis) --}}
-                                            <td class="px-6 py-6 align-top max-w-xs">
-                                                <div class="space-y-3">
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="text-[9px] font-black uppercase tracking-widest" :class="file.scan_status === 'clean' ? 'text-emerald-600' : 'text-amber-600'">
-                                                            <i class="fas" :class="file.scan_status === 'clean' ? 'fa-shield-check' : 'fa-radar'"></i>
-                                                            <span x-text="file.scan_status || 'Scanning...'"></span>
-                                                        </span>
-                                                        <span x-show="file.ai_analysis_status === 'awaiting_review'" class="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded">AI READY</span>
-                                                    </div>
-                                                    
-                                                    <div x-show="file.ai_observations" class="relative group/obs">
-                                                        <p class="text-[11px] font-semibold text-slate-600 italic line-clamp-2" x-text="file.ai_observations"></p>
-                                                        <div class="hidden group-hover/obs:block absolute z-20 top-full left-0 mt-2 p-4 bg-slate-900 text-white rounded-xl text-[10px] w-64 shadow-2xl">
-                                                            <div class="font-black mb-2 text-indigo-300 uppercase tracking-widest border-b border-white/10 pb-1">Full Synthesis</div>
-                                                            <div x-text="file.ai_observations"></div>
-                                                            <div class="mt-3 font-black text-emerald-400 uppercase tracking-widest border-b border-white/10 pb-1">Recommendations</div>
-                                                            <div x-text="file.ai_recommendations"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {{-- Column 3: HITL Communication --}}
-                                            <td class="px-6 py-6 align-top">
-                                                <div class="space-y-2">
-                                                    <template x-if="file.feedbacks && file.feedbacks.length > 0">
-                                                        <div class="space-y-2">
-                                                            <p class="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/50 leading-relaxed max-w-[200px]" x-text="file.feedbacks[file.feedbacks.length-1].message"></p>
-                                                            <button @click="openFeedback(file)" class="text-[9px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest flex items-center">
-                                                                <i class="fas fa-comments-alt mr-1"></i> <span x-text="file.feedbacks.length"></span> Messages...
-                                                            </button>
-                                                        </div>
-                                                    </template>
-                                                    <template x-if="!file.feedbacks || file.feedbacks.length === 0">
-                                                        <button @click="openFeedback(file)" class="text-[9px] font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest border border-dashed border-slate-200 px-3 py-1 rounded-lg">
-                                                            + Add Feedback
-                                                        </button>
-                                                    </template>
-                                                </div>
-                                            </td>
-
-                                            {{-- Column 4: Control State --}}
-                                            <td class="px-6 py-6 align-top">
-                                                <div class="flex flex-col">
-                                                    <span :class="getBadgeClass(file.hitl_status)" class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black tracking-widest shadow-sm">
-                                                        <i class="fas fa-dot-circle mr-1.5 opacity-50"></i>
-                                                        <span x-text="file.hitl_status || 'Waiting'"></span>
-                                                    </span>
-                                                    <div class="w-full h-1 bg-slate-100 rounded-full mt-3 overflow-hidden">
-                                                        <div class="h-full bg-indigo-600 transition-all duration-1000" :style="{ width: getProgress(file) + '%' }"></div>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {{-- Column 5: Audit Action --}}
-                                            <td class="px-6 py-6 align-top text-right">
-                                                @can('is-auditor')
-                                                    <div class="flex flex-col items-end gap-2">
-                                                        <div class="flex items-center gap-1">
-                                                            <button 
-                                                                @click="directAudit(file, 'accept')" 
-                                                                class="p-2 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                                                title="Accept Evidence"
-                                                            >
-                                                                <i class="fas fa-check-circle"></i>
-                                                            </button>
-                                                            <button 
-                                                                @click="openReview(file)" 
-                                                                class="p-2 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                                                title="Return for Correction"
-                                                            >
-                                                                <i class="fas fa-undo-alt"></i>
-                                                            </button>
-                                                        </div>
-                                                        <button @click="openReview(file)" class="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
-                                                            Deep Audit View
-                                                        </button>
-                                                    </div>
-                                                @endcan
-                                                @cannot('is-auditor')
-                                                    <button @click="openReview(file)" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest border border-indigo-100 px-4 py-2 rounded-xl bg-indigo-50/30 hover:bg-white transition-all">
-                                                        Review Detail
-                                                    </button>
-                                                @endcannot
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                            <template x-if="(evidence[activeReqId] || []).length === 0">
-                                <div class="p-24 text-center text-slate-300 bg-slate-50/20">
-                                    <i class="fas fa-inbox text-4xl mb-4"></i>
-                                    <p class="text-[11px] font-black uppercase tracking-widest">Vault Empty for this requirement</p>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                    </template>
                 </div>
             </template>
         </div>
 
-        {{-- Right: Activity --}}
-        <div class="lg:col-span-2">
+        {{-- Right Column: Pulse Feed --}}
+        <div class="lg:col-span-3 sticky top-28">
             <div class="glass-premium rounded-[32px] p-6 border border-white shadow-xl bg-white/40">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-10 flex items-center">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center">
                     <i class="fas fa-bolt mr-2 text-amber-500"></i> Pulse Feed
                 </h3>
-                <div class="space-y-8">
+                <div class="space-y-6">
                     <template x-for="act in activities" :key="act.time + act.user">
                         <div class="flex gap-4 group">
-                            <div class="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-all">
+                            <div class="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-all flex-shrink-0">
                                 <i :class="'fas ' + act.icon" class="text-[10px] text-slate-400"></i>
                             </div>
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-[11px] font-bold text-slate-800 leading-tight">
                                     <span class="text-indigo-700" x-text="act.user"></span>
                                     <span x-show="act.type==='upload'"> provisioned asset for <span x-text="act.req"></span></span>
@@ -394,8 +407,9 @@
 {{-- JSON DATA STORE --}}
 <script id="integrity-hub-data" type="application/json">
     {
-        "requirements": {!! $requirements->values()->toJson() !!},
-        "evidence": {!! $evidenceByRequirement->toJson() !!}
+        "requirements": {!! json_encode($requirements) !!},
+        "evidence": {!! $evidenceByRequirement->toJson() !!},
+        "domains": {!! json_encode($domains) !!}
     }
 </script>
 
@@ -407,6 +421,7 @@
             projectId: {{ $project->id }},
             requirements: _STORE.requirements,
             evidence: _STORE.evidence,
+            domains: _STORE.domains,
             activeReqId: null,
             activities: [],
             showUploadModal: false,
@@ -512,15 +527,30 @@
             },
 
             async pollLoop() {
-                if (!this.activeReqId) return;
-                const files = this.evidence[this.activeReqId] || [];
-                for (let f of files) {
-                    if (f.hitl_status === 'accepted') continue;
-                    try {
-                        const r = await fetch(`/evidence/${f.id}/status`);
-                        if (r.ok) Object.assign(f, await r.json());
-                    } catch (e) {}
+                // Poll any file on the page that is actively scanning or processing
+                const allFiles = Object.values(this.evidence).flat();
+                for (let f of allFiles) {
+                    if (f.hitl_status === 'accepted' || f.scan_status === 'infected' || f.scan_status === 'failed') continue;
+                    if (f.scan_status === 'pending' || f.ai_analysis_status === 'pending' || f.ai_analysis_status === 'processing') {
+                        try {
+                            const r = await fetch(`/evidence/${f.id}/status`);
+                            if (r.ok) Object.assign(f, await r.json());
+                        } catch (e) {}
+                    }
                 }
+            },
+
+            slugify(text) {
+                return text.toString().toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w\-]+/g, '')
+                    .replace(/\-\-+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
+            },
+
+            getReqsByDomain(dom) {
+                return this.requirements.filter(r => r.domain === dom);
             },
 
             truncateFilename(n) { if (!n) return ''; return n.length > 25 ? n.substring(0, 12) + '...' + n.slice(-10) : n; }

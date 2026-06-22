@@ -49,6 +49,15 @@
                         </div>
                     @endif
 
+                    @if(session('error'))
+                        <div class="alert-error mb-6 fade-in-up">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-exclamation-circle text-rose-500"></i>
+                                <span>{{ session('error') }}</span>
+                            </div>
+                        </div>
+                    @endif
+
                     @if($errors->any())
                         <div class="alert-error mb-6 fade-in-up">
                             <div class="flex items-start gap-2">
