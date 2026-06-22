@@ -194,26 +194,37 @@ class DashboardMetricsService
      */
     public function complianceScorecard(): Collection
     {
-        return Framework::where('is_active', true)
+        $activeFrameworks = Framework::where('is_active', true)->get();
+        $activeFrameworkIds = $activeFrameworks->pluck('id');
+
+        // Fetch all relevant assessments at once with findings eager-loaded
+        $latestAssessments = ProjectAssessment::with('findings')
+            ->whereIn('framework_id', $activeFrameworkIds)
+            ->whereIn('type', ['Gap', 'Final'])
             ->get()
-            ->map(function (Framework $framework) {
-                $gap = $this->latestAssessment($framework->id, 'Gap');
-                $final = $this->latestAssessment($framework->id, 'Final');
+            ->groupBy(fn ($a) => $a->framework_id . '|' . $a->type)
+            ->map(fn ($group) => $group->sortByDesc('id')->first());
 
-                $gapPct   = $gap ? $gap->stats()['compliancePct'] : 0.0;
-                $finalPct = $final ? $final->stats()['compliancePct'] : 0.0;
+        return $activeFrameworks->map(function (Framework $framework) use ($latestAssessments) {
+            $gapKey = $framework->id . '|Gap';
+            $finalKey = $framework->id . '|Final';
 
-                $phase = $this->derivePhase($gap, $gapPct, $final, $finalPct);
+            $gap = $latestAssessments->get($gapKey);
+            $final = $latestAssessments->get($finalKey);
 
-                return [
-                    'framework'       => $framework->name,
-                    'slug'            => $framework->slug ?? null,
-                    'percentage'      => $final ? $finalPct : $gapPct,
-                    'phase'           => $phase,
-                    'fully_compliant' => $phase === 'final_done',
-                ];
-            })
-            ->values();
+            $gapPct   = $gap ? $gap->stats()['compliancePct'] : 0.0;
+            $finalPct = $final ? $final->stats()['compliancePct'] : 0.0;
+
+            $phase = $this->derivePhase($gap, $gapPct, $final, $finalPct);
+
+            return [
+                'framework'       => $framework->name,
+                'slug'            => $framework->slug ?? null,
+                'percentage'      => $final ? $finalPct : $gapPct,
+                'phase'           => $phase,
+                'fully_compliant' => $phase === 'final_done',
+            ];
+        })->values();
     }
 
     /**
@@ -222,12 +233,19 @@ class DashboardMetricsService
      */
     public function maturityScore(): array
     {
+        $risk = $this->maturityScoreService->calculateRiskManagementMaturity()['score_value'];
+        $control = $this->maturityScoreService->calculateControlDesignMaturity()['score_value'];
+        $remediation = $this->maturityScoreService->calculateRemediationVelocity()['score_value'];
+        $evidence = $this->maturityScoreService->calculateEvidenceAuditMaturity()['score_value'];
+
+        $composite = round(($risk + $control + $remediation + $evidence) / 4, 1);
+
         return [
-            'composite'           => $this->maturityScoreService->calculateCompositeScore()['score_value'],
-            'risk_management'     => $this->maturityScoreService->calculateRiskManagementMaturity()['score_value'],
-            'control_design'      => $this->maturityScoreService->calculateControlDesignMaturity()['score_value'],
-            'remediation_velocity' => $this->maturityScoreService->calculateRemediationVelocity()['score_value'],
-            'evidence_audit'      => $this->maturityScoreService->calculateEvidenceAuditMaturity()['score_value'],
+            'composite'            => $composite,
+            'risk_management'      => $risk,
+            'control_design'       => $control,
+            'remediation_velocity' => $remediation,
+            'evidence_audit'       => $evidence,
         ];
     }
 
