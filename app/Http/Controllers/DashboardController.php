@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use App\Models\ProjectPciDssDetail;
 use App\Models\PciSscProduct;
 use App\Models\PciTpsp;
@@ -13,9 +14,103 @@ use App\Models\PciExternalScan;
 use App\Models\PciInternalScan;
 use App\Models\PciDssFinding;
 use App\Models\Project;
+use App\Services\DashboardMetricsService;
+use App\Http\Resources\Dashboard\KpiResource;
+use App\Http\Resources\Dashboard\HeatmapCellResource;
+use App\Http\Resources\Dashboard\TopRiskResource;
+use App\Http\Resources\Dashboard\InherentVsResidualResource;
+use App\Http\Resources\Dashboard\ControlEffectivenessResource;
+use App\Http\Resources\Dashboard\ComplianceScorecardResource;
+use App\Http\Resources\Dashboard\MaturityScoreResource;
+use App\Http\Resources\Dashboard\RiskByDepartmentResource;
+use App\Http\Resources\Dashboard\IssuesAndRemediationResource;
+use App\Http\Resources\Dashboard\RiskAcceptanceSplitResource;
 
 class DashboardController extends Controller
 {
+    /** Cache TTL (seconds) for the two heaviest endpoints. */
+    private const HEAVY_CACHE_TTL = 300;
+
+    public function __construct(
+        private DashboardMetricsService $metrics
+    ) {
+    }
+
+    /* --------------------------------------------------------------- *
+     *  Analytics API (consumed by dashboard charts)
+     * --------------------------------------------------------------- */
+
+    /** Headline KPI counters. Cached 5 minutes (heavy). */
+    public function kpis()
+    {
+        $data = Cache::remember(
+            'dashboard.kpis',
+            self::HEAVY_CACHE_TTL,
+            fn () => $this->metrics->kpis()
+        );
+
+        return new KpiResource($data);
+    }
+
+    /** Risk heatmap cells. Cached 5 minutes (heavy). */
+    public function heatmap()
+    {
+        $data = Cache::remember(
+            'dashboard.heatmap',
+            self::HEAVY_CACHE_TTL,
+            fn () => $this->metrics->heatmap()
+        );
+
+        return HeatmapCellResource::collection($data);
+    }
+
+    /** Highest-risk open findings. */
+    public function topRisks()
+    {
+        return TopRiskResource::collection($this->metrics->topRisks());
+    }
+
+    /** Inherent vs residual risk per domain. */
+    public function inherentVsResidualByDept()
+    {
+        return InherentVsResidualResource::collection($this->metrics->inherentVsResidualByDept());
+    }
+
+    /** Effective / partial / ineffective control split. */
+    public function controlEffectiveness()
+    {
+        return new ControlEffectivenessResource($this->metrics->controlEffectiveness());
+    }
+
+    /** Per-framework compliance percentage AND lifecycle phase. */
+    public function complianceScorecard()
+    {
+        return ComplianceScorecardResource::collection($this->metrics->complianceScorecard());
+    }
+
+    /** Maturity composite + four dimension scores. */
+    public function maturityScore()
+    {
+        return new MaturityScoreResource($this->metrics->maturityScore());
+    }
+
+    /** Open finding count and weighted risk score per domain. */
+    public function riskByDepartment()
+    {
+        return RiskByDepartmentResource::collection($this->metrics->riskByDepartment());
+    }
+
+    /** Issue / remediation status breakdown. */
+    public function issuesAndRemediation()
+    {
+        return new IssuesAndRemediationResource($this->metrics->issuesAndRemediation());
+    }
+
+    /** Accepted / mitigated / open risk-treatment split. */
+    public function riskAcceptanceSplit()
+    {
+        return new RiskAcceptanceSplitResource($this->metrics->riskAcceptanceSplit());
+    }
     /**
      * Show the application dashboard.
      *
