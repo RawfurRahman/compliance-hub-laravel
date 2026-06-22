@@ -3,40 +3,26 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Framework;
-use App\Imports\FrameworkControlImport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\FrameworkControl;
 
 /**
  * FrameworkControlSeeder
  *
  * Reads a "Control Mapping" Excel workbook and seeds FrameworkControl rows
- * for the four frameworks below.  The workbook is expected at:
+ * for the four frameworks below. The workbook is expected at:
  *
  *   storage/app/seeders/control_mapping.xlsx
  *
- * Expected columns (fuzzy-matched by FrameworkControlImport):
- *   - Control ID / Control No / Control Ref / Clause
- *   - Control Description / Requirement / Description / Desc
- *   - Domain  (optional)
- *   - Required Evidence / Evidence / Proof  (optional)
- *
- * The PCI DSS Status, ISO 27001 Status, BB ICT Status, and SWIFT CSCF
- * Status columns in the source sheet are informational only; they are not
- * stored in framework_controls (no matching column exists in the schema).
- * If you need them later, add a nullable JSON column and extend the import.
+ * It parses the side-by-side multi-framework columns from the sheet.
  *
  * Run:
  *   php artisan db:seed --class=FrameworkControlSeeder
- *
- * Or place it in DatabaseSeeder::$seeders so it runs with db:seed.
  */
 class FrameworkControlSeeder extends Seeder
 {
     /**
      * The four frameworks that must exist before controls are imported.
-     * Each entry maps a slug to the firstOrCreate attributes.
      */
     private array $frameworks = [
         'pci_dss_v4' => [
@@ -96,78 +82,75 @@ class FrameworkControlSeeder extends Seeder
 
         // ----------------------------------------------------------------
         // 3. Import controls for each framework
-        //
-        // The workbook may be organised in one of two ways:
-        //   (a) One sheet per framework — sheet names must contain the
-        //       framework slug or a recognisable keyword (see mapping below).
-        //   (b) A single sheet with all controls — imported into every
-        //       framework (useful when the sheet already has status columns
-        //       that distinguish frameworks).
-        //
-        // Adjust $sheetToSlug to match your actual sheet names.
         // ----------------------------------------------------------------
-        $sheetToSlug = [
-            // Sheet name keyword (lowercase)  =>  framework slug
-            'pci'    => 'pci_dss_v4',
-            'iso'    => 'iso_27001_2022',
-            'bb'     => 'bb_ict',
-            'swift'  => 'swift_cscf_2026',
-        ];
-
         try {
-            $reader    = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($absolutePath);
-            $sheetNames = $reader->listWorksheetNames($absolutePath);
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($absolutePath);
+            $sheet = $spreadsheet->getSheetByName('Control Mapping');
+            if (!$sheet) {
+                $this->command->error("Sheet 'Control Mapping' not found in {$absolutePath}");
+                return;
+            }
         } catch (\Exception $e) {
-            $this->command->error('Could not read sheet names: ' . $e->getMessage());
+            $this->command->error('Could not read Excel file: ' . $e->getMessage());
             return;
         }
 
-        if (count($sheetNames) === 1) {
-            // Single-sheet workbook: import into all four frameworks
-            $this->command->info('Single-sheet workbook detected — importing into all four frameworks.');
-            foreach ($frameworkModels as $slug => $framework) {
-                $this->importSheet($absolutePath, $sheetNames[0], $framework->id, $slug);
-            }
-        } else {
-            // Multi-sheet workbook: match each sheet to a framework by keyword
-            foreach ($sheetNames as $sheetName) {
-                $lower = strtolower($sheetName);
-                $matched = false;
-                foreach ($sheetToSlug as $keyword => $slug) {
-                    if (str_contains($lower, $keyword)) {
-                        $framework = $frameworkModels[$slug];
-                        $this->importSheet($absolutePath, $sheetName, $framework->id, $slug);
-                        $matched = true;
-                        break;
+        $frameworksMap = [
+            'pci_dss_v4' => ['ref_col' => 0, 'desc_col' => 1, 'domain' => 'PCI DSS'],
+            'iso_27001_2022' => ['ref_col' => 3, 'desc_col' => 4, 'domain' => 'ISO 27001'],
+            'bb_ict' => ['ref_col' => 6, 'desc_col' => 7, 'domain' => 'BB ICT Guidelines'],
+            'swift_cscf_2026' => ['ref_col' => 9, 'desc_col' => 10, 'domain' => 'SWIFT CSCF'],
+        ];
+
+        $totalRows = $sheet->getHighestRow();
+        $this->command->info("Parsing 'Control Mapping' sheet ({$totalRows} rows)...");
+
+        $counts = [
+            'pci_dss_v4' => 0,
+            'iso_27001_2022' => 0,
+            'bb_ict' => 0,
+            'swift_cscf_2026' => 0,
+        ];
+
+        for ($r = 3; $r <= $totalRows; $r++) {
+            foreach ($frameworksMap as $slug => $cols) {
+                $refVal = $sheet->getCellByColumnAndRow($cols['ref_col'] + 1, $r)->getValue();
+                $descVal = $sheet->getCellByColumnAndRow($cols['desc_col'] + 1, $r)->getValue();
+
+                $refVal = trim((string)$refVal);
+                $descVal = trim((string)$descVal);
+
+                if (empty($refVal) || strtolower($refVal) === 'no relevant control match found' || strtolower($refVal) === 'n/a') {
+                    continue;
+                }
+
+                // Support comma-separated references in the Ref columns
+                $refs = array_map('trim', explode(',', $refVal));
+                foreach ($refs as $singleRef) {
+                    if (empty($singleRef)) {
+                        continue;
                     }
-                }
-                if (! $matched) {
-                    $this->command->warn("Sheet '{$sheetName}' did not match any framework keyword — skipped.");
+
+                    FrameworkControl::updateOrCreate(
+                        [
+                            'framework_id' => $frameworkModels[$slug]->id,
+                            'control_id'   => $singleRef,
+                        ],
+                        [
+                            'domain'                  => $cols['domain'],
+                            'requirement_description' => $descVal,
+                            'required_evidence'       => null,
+                        ]
+                    );
+                    $counts[$slug]++;
                 }
             }
+        }
+
+        foreach ($counts as $slug => $count) {
+            $this->command->info("  Imported/Updated {$count} controls for {$slug}.");
         }
 
         $this->command->info('FrameworkControlSeeder complete.');
-    }
-
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
-
-    private function importSheet(string $path, string $sheet, int $frameworkId, string $slug): void
-    {
-        $this->command->info("  Importing sheet '{$sheet}' -> framework slug '{$slug}' (id={$frameworkId})");
-        try {
-            Excel::import(
-                new FrameworkControlImport($frameworkId),
-                $path,
-                null,
-                \Maatwebsite\Excel\Excel::XLSX,
-                ['sheet' => $sheet]
-            );
-            $this->command->info("  Done.");
-        } catch (\Exception $e) {
-            $this->command->error("  Failed: " . $e->getMessage());
-        }
     }
 }

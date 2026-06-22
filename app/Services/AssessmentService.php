@@ -34,7 +34,7 @@ class AssessmentService
     {
         $assessment = $finding->projectAssessment;
 
-        if (!$assessment || $assessment->type !== 'Gap') {
+        if (!$assessment || $assessment->type !== 'Gap' || ($assessment->framework && $assessment->framework->slug === 'risk_register')) {
             return;
         }
 

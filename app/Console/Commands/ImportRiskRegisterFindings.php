@@ -8,54 +8,22 @@ use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
+use App\Models\AssessmentFinding;
 use App\Imports\RiskRegisterFindingImport;
+use App\Imports\RiskRegisterFindingMultiImport;
 use Maatwebsite\Excel\Facades\Excel;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
  * ImportRiskRegisterFindings
  *
- * Reads a Risk Register Excel workbook and creates AssessmentFinding rows
- * via Eloquent so that all existing booted() save hooks in AssessmentFinding
- * (Gap-to-Final cloning / rollback in AssessmentService) fire normally.
+ * Reads a Risk Register Excel workbook, groups the findings on the "Risk Register"
+ * sheet by department/Risk Owner, and creates ProjectAssessment (type=Gap) rows
+ * and corresponding AssessmentFinding rows.
  *
  * Usage:
  *   php artisan import:risk-register \
  *       --project-id=1 \
  *       --file=storage/app/imports/risk_register.xlsx
- *
- * Options:
- *   --project-id   ID of the Project to attach assessments to.
- *                  If omitted, a sentinel project named
- *                  "Risk Register Import" is found-or-created.
- *   --file         Absolute or storage-relative path to the Excel file.
- *                  Defaults to storage/app/imports/risk_register.xlsx
- *   --fresh        Drop existing Risk Register findings for this project
- *                  before importing (useful for re-runs).
- *
- * Sheet layout:
- *   Each worksheet tab is treated as one department.  The command creates
- *   one ProjectAssessment (type=Gap) per sheet, named implicitly by the
- *   framework + project combination.  The assessment name is surfaced via
- *   the sheet name stored in overall_status for easy identification.
- *
- * Expected Excel columns (fuzzy-matched — exact names may vary):
- *   #, Asset/Process, Risk Owner, Date, Asset Value, Threat, Threat Level,
- *   Vulnerability, Impact C/I/A, Existing Control, Vuln Level, TV,
- *   Likelihood, Inherent Risk Rating, Risk Acceptance Status,
- *   Proposed Control, Communication, Impl From, Impl To,
- *   Implementation Status, Residual TV, Residual Likelihood,
- *   Residual Risk Rating, Follow-up Note
- *
- * Field mapping (see RiskRegisterFindingImport for full details):
- *   Inherent Risk Rating      -> risk_rating         (High/Medium/Low/None)
- *   Implementation Status     -> status              (Open/In Progress/Closed)
- *   Asset/Process+Threat+Vuln -> observation         (concatenated)
- *   Existing+Proposed Control -> recommendation      (concatenated)
- *   Impact C/I/A              -> impact
- *   Follow-up Note            -> gap_description
- *   Risk Acceptance Status    -> is_compliant        (true when "Accepted")
- *   (sentinel control)        -> framework_control_id
  */
 class ImportRiskRegisterFindings extends Command
 {
@@ -115,10 +83,6 @@ class ImportRiskRegisterFindings extends Command
 
         // ----------------------------------------------------------------
         // 4. Ensure a sentinel FrameworkControl exists
-        //
-        //    AssessmentFinding.framework_control_id is a NOT NULL FK.
-        //    Risk Register rows are not tied to a specific control, so we
-        //    use one sentinel control per framework as the FK target.
         // ----------------------------------------------------------------
         $sentinelControl = FrameworkControl::firstOrCreate(
             [
@@ -134,30 +98,47 @@ class ImportRiskRegisterFindings extends Command
         $this->info("Sentinel control id={$sentinelControl->id}");
 
         // ----------------------------------------------------------------
-        // 5. Read sheet names from the workbook
+        // 5. Load and process the Risk Register sheet
         // ----------------------------------------------------------------
+        $importer = new RiskRegisterFindingImport();
+        $this->line("Loading sheet 'Risk Register'...");
+
         try {
-            $reader     = IOFactory::createReaderForFile($filePath);
-            $sheetNames = $reader->listWorksheetNames($filePath);
+            Excel::import(new RiskRegisterFindingMultiImport($importer), $filePath);
         } catch (\Exception $e) {
-            $this->error('Could not read sheet names: ' . $e->getMessage());
+            $this->error("Import failed: " . $e->getMessage());
             return self::FAILURE;
         }
 
-        $this->info('Sheets found: ' . implode(', ', $sheetNames));
+        $rows = $importer->rows;
+        $this->info("Found " . $rows->count() . " total rows in sheet.");
 
-        // ----------------------------------------------------------------
-        // 6. Process each sheet as one department / assessment
-        // ----------------------------------------------------------------
+        // Group by Risk Owner
+        $grouped = $rows->groupBy(function ($row) {
+            $owner = $this->pick($row->toArray(), ['risk_owner', 'riskowner', 'owner']);
+            return $owner ? trim($owner) : 'Unknown';
+        });
+
         $totalImported = 0;
+        $assessmentsCreated = 0;
 
-        foreach ($sheetNames as $sheetName) {
-            $department = trim($sheetName);
-            $this->line("\nProcessing sheet: {$department}");
+        foreach ($grouped as $departmentRaw => $deptRows) {
+            if ($departmentRaw === 'Unknown') {
+                continue;
+            }
 
-            // Find or create a Gap assessment for this project + framework.
-            // overall_status stores the department/sheet name so the record
-            // is identifiable in the UI without a dedicated name column.
+            // Normalize department name to clean short format
+            $department = trim($departmentRaw);
+            if (stripos($department, 'IT') === 0) $department = 'IT';
+            elseif (stripos($department, 'HR') === 0) $department = 'HR';
+            elseif (stripos($department, 'Compliance') === 0) $department = 'Compliance';
+            elseif (stripos($department, 'Procurement') === 0) $department = 'Procurement';
+            elseif (stripos($department, 'Facilities') === 0) $department = 'Facilities';
+            elseif (stripos($department, 'Marketing') === 0) $department = 'Marketing';
+            elseif (stripos($department, 'CISO') === 0) $department = 'CISO';
+
+            $this->line("\nProcessing department: {$department} (Raw: {$departmentRaw})");
+
             $assessment = ProjectAssessment::firstOrCreate(
                 [
                     'project_id'   => $project->id,
@@ -170,31 +151,181 @@ class ImportRiskRegisterFindings extends Command
                     'end_date'   => now()->addYear(),
                 ]
             );
+
+            if ($assessment->wasRecentlyCreated) {
+                $assessmentsCreated++;
+            }
             $this->line("  Assessment id={$assessment->id} (" . ($assessment->wasRecentlyCreated ? 'created' : 'found') . ")");
 
-            // Optionally wipe existing findings for a clean re-import
             if ($this->option('fresh')) {
                 $deleted = $assessment->findings()->delete();
                 $this->line("  --fresh: deleted {$deleted} existing findings.");
             }
 
-            // Run the import for this sheet
-            $importer = new RiskRegisterFindingImport($assessment->id, $sentinelControl->id);
+            foreach ($deptRows as $row) {
+                $data = $row->toArray();
 
-            try {
-                Excel::import($importer, $filePath, null, \Maatwebsite\Excel\Excel::XLSX, [
-                    'sheet' => $sheetName,
+                // Skip rows that have no meaningful content
+                $assetProcess = $this->pick($data, ['asset_process_service', 'assetprocessservice', 'asset_process', 'assetprocess', 'asset', 'process']);
+                $threat       = $this->pick($data, ['threat']);
+                if (! $assetProcess && ! $threat) {
+                    continue;
+                }
+
+                // ---- observation (concatenated from three source columns) ----
+                $vulnerability = $this->pick($data, ['vulnerability', 'vuln']);
+                $observationParts = array_filter([
+                    $assetProcess ? 'Asset/Process: ' . $assetProcess : null,
+                    $threat       ? 'Threat: '        . $threat       : null,
+                    $vulnerability ? 'Vulnerability: ' . $vulnerability : null,
                 ]);
-            } catch (\Exception $e) {
-                $this->error("  Import failed for sheet '{$sheetName}': " . $e->getMessage());
-                continue;
-            }
+                $observation = implode("\n", $observationParts);
 
-            $this->info("  Imported {$importer->imported} findings.");
-            $totalImported += $importer->imported;
+                // ---- recommendation (existing + proposed controls) ----------
+                $existingControl = $this->pick($data, ['existing_control', 'existingcontrol', 'existing']);
+                $proposedControl = $this->pick($data, ['proposed_control', 'proposedcontrol', 'proposed']);
+                $recommendationParts = array_filter([
+                    $existingControl ? 'Existing Control: ' . $existingControl : null,
+                    $proposedControl ? 'Proposed Control: ' . $proposedControl : null,
+                ]);
+                $recommendation = implode("\n", $recommendationParts);
+
+                // ---- impact (C/I/A column) ----------------------------------
+                $impactC = $this->pick($data, ['impact_c', 'impactc']);
+                $impactI = $this->pick($data, ['impact_i', 'impacti']);
+                $impactA = $this->pick($data, ['impact_a', 'impacta']);
+                $impactParts = [];
+                if ($impactC) $impactParts[] = 'C: ' . $impactC;
+                if ($impactI) $impactParts[] = 'I: ' . $impactI;
+                if ($impactA) $impactParts[] = 'A: ' . $impactA;
+                $impact = implode(', ', $impactParts);
+
+                // ---- gap_description (follow-up note) ----------------------
+                $gapDescription = $this->pick($data, [
+                    'follow_up_note', 'followupnote', 'followup', 'follow_up',
+                    'notes', 'note',
+                ]);
+
+                // ---- risk_rating (inherent risk rating) --------------------
+                $inherentRaw = $this->pick($data, [
+                    'inherent_risk_rating', 'inherentriskrating', 'inherent_risk',
+                    'inherentrisk', 'risk_rating', 'riskrating', 'risk_rating_avtvlh', 'riskratingavtvlh',
+                ]);
+                $riskRating = $this->normaliseRiskRating($inherentRaw);
+
+                // ---- status (implementation status) ------------------------
+                $implStatusRaw = $this->pick($data, [
+                    'implementation_status', 'implementationstatus',
+                    'impl_status', 'implstatus', 'status', 'impl_status',
+                ]);
+                $status = $this->normaliseStatus($implStatusRaw);
+
+                // ---- is_compliant (risk acceptance status) -----------------
+                $acceptanceRaw = $this->pick($data, [
+                    'risk_acceptance_status', 'riskacceptancestatus',
+                    'acceptance_status', 'acceptancestatus', 'acceptance', 'measurement',
+                ]);
+                $isCompliant = $this->normaliseAcceptance($acceptanceRaw);
+
+                // ---- Persist via Eloquent so booted() hooks fire -----------
+                AssessmentFinding::create([
+                    'project_assessment_id' => $assessment->id,
+                    'framework_control_id'  => $sentinelControl->id,
+                    'status'                => $status,
+                    'risk_rating'           => $riskRating,
+                    'observation'           => $observation ?: null,
+                    'gap_description'       => $gapDescription ?: null,
+                    'impact'                => $impact ?: null,
+                    'recommendation'        => $recommendation ?: null,
+                    'is_compliant'          => $isCompliant,
+                ]);
+
+                $totalImported++;
+            }
         }
 
         $this->info("\nDone. Total findings imported: {$totalImported}");
         return self::SUCCESS;
+    }
+
+    private function pick(array $row, array $candidates): ?string
+    {
+        foreach ($candidates as $key) {
+            if (isset($row[$key]) && $row[$key] !== null && $row[$key] !== '') {
+                return trim((string) $row[$key]);
+            }
+            $stripped = preg_replace('/[^a-z0-9]/', '', strtolower($key));
+            foreach ($row as $rowKey => $value) {
+                $rowStripped = preg_replace('/[^a-z0-9]/', '', strtolower((string)$rowKey));
+                if ($rowStripped === $stripped && $value !== null && $value !== '') {
+                    return trim((string) $value);
+                }
+            }
+        }
+        return null;
+    }
+
+    private function normaliseRiskRating(?string $raw): string
+    {
+        if (! $raw) {
+            return 'None';
+        }
+        $raw = trim($raw);
+        if (is_numeric($raw)) {
+            $val = (int)$raw;
+            if ($val >= 84) {
+                return 'High';
+            }
+            if ($val >= 54) {
+                return 'Medium';
+            }
+            return 'Low';
+        }
+        $lower = strtolower($raw);
+        if (str_contains($lower, 'high') || str_contains($lower, 'critical')) {
+            return 'High';
+        }
+        if (str_contains($lower, 'med') || str_contains($lower, 'moderate')) {
+            return 'Medium';
+        }
+        if (str_contains($lower, 'low') || str_contains($lower, 'minor')) {
+            return 'Low';
+        }
+        return 'None';
+    }
+
+    private function normaliseStatus(?string $raw): string
+    {
+        if (! $raw) {
+            return 'Open';
+        }
+        $lower = strtolower(trim($raw));
+        if (
+            str_contains($lower, 'complet') ||
+            str_contains($lower, 'done') ||
+            str_contains($lower, 'closed') ||
+            str_contains($lower, 'implemented') ||
+            str_contains($lower, 'resolved')
+        ) {
+            return 'Closed';
+        }
+        if (
+            str_contains($lower, 'progress') ||
+            str_contains($lower, 'ongoing') ||
+            str_contains($lower, 'partial') ||
+            str_contains($lower, 'in-progress')
+        ) {
+            return 'In Progress';
+        }
+        return 'Open';
+    }
+
+    private function normaliseAcceptance(?string $raw): bool
+    {
+        if (! $raw) {
+            return false;
+        }
+        $lower = strtolower(trim($raw));
+        return str_contains($lower, 'accept') && !str_contains($lower, 'not');
     }
 }
