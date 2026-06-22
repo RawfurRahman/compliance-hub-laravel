@@ -21,12 +21,16 @@ class AssessmentFinding extends Model
         'gap_description',
         'impact',
         'recommendation',
+        'due_date',
         'is_compliant',
+        'is_applicable',
         'cloned_from_finding_id',
     ];
 
     protected $casts = [
         'is_compliant' => 'boolean',
+        'is_applicable' => 'boolean',
+        'due_date' => 'date',
     ];
 
     public function projectAssessment()

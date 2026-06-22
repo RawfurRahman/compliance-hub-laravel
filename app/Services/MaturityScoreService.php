@@ -85,14 +85,24 @@ class MaturityScoreService
 
         $percentages = [];
 
-        foreach ($activeFrameworkIds as $frameworkId) {
-            $assessment = ProjectAssessment::where('framework_id', $frameworkId)
-                ->latest('id')
-                ->first();
+        // Eager load findings to prevent N+1 queries when calling stats()
+        $assessments = ProjectAssessment::with('findings')
+            ->whereIn('framework_id', $activeFrameworkIds)
+            ->get()
+            ->groupBy('framework_id')
+            ->map(function ($group) {
+                return $group->sortByDesc('id')->first();
+            })
+            ->filter();
 
-            if (! $assessment) {
-                continue;
-            }
+        foreach ($assessments as $assessment) {
+            // Filter findings where is_applicable !== false
+            $applicableFindings = $assessment->findings->filter(function ($finding) {
+                return $finding->is_applicable !== false && $finding->is_applicable !== 0 && $finding->is_applicable !== '0';
+            });
+
+            // Set the relation temporarily so stats() calculates compliance percentage based on applicable controls only.
+            $assessment->setRelation('findings', $applicableFindings);
 
             $percentages[] = $assessment->stats()['compliancePct'];
         }
@@ -182,19 +192,13 @@ class MaturityScoreService
             return $this->result(1.0, 0, 'No findings exist; defaulting to score 1.');
         }
 
-        $auditedControlIds = EvidenceFile::query()
-            ->where('scan_status', 'clean')
-            ->where('hitl_status', 'accepted')
-            ->whereNotNull('framework_control_id')
-            ->distinct()
-            ->pluck('framework_control_id');
-
-        $audited = 0;
-        if ($auditedControlIds->isNotEmpty()) {
-            $audited = AssessmentFinding::query()
-                ->whereIn('framework_control_id', $auditedControlIds)
-                ->count();
-        }
+        $audited = AssessmentFinding::query()
+            ->whereHas('evidence', function ($query) {
+                $query->join('evidence_files', 'evidence.path', '=', 'evidence_files.file_path')
+                    ->where('evidence_files.scan_status', 'clean')
+                    ->where('evidence_files.hitl_status', 'accepted');
+            })
+            ->count();
 
         $percentage = ($audited / $total) * 100;
         $score      = $this->percentageToScore($percentage);
