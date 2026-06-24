@@ -7,6 +7,7 @@ use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Support\Scoring\InherentRiskFormulaConfig;
 use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use App\Modules\RiskManagement\Support\Scoring\InherentRiskResult;
+use Illuminate\Support\Collection;
 
 /**
  * RiskScoringService
@@ -140,6 +141,85 @@ class RiskScoringService
         );
 
         return $this->score($input, $record->formula_version);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Dashboard feeds (read-only)                                         */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Chronological inherent score history for a single risk register entry.
+     *
+     * @return Collection<int, RiskInherentScore>
+     */
+    public function historyForRisk(int $riskRegisterId, int $limit = 50): Collection
+    {
+        return RiskInherentScore::where('risk_register_id', $riskRegisterId)
+            ->orderBy('created_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Before-vs-after-controls comparison for every risk in a project.
+     *
+     * "Before" is the latest recorded inherent score (this engine). "After"
+     * is the residual rating already reconciled onto the risk register by the
+     * control-effectiveness logic. The delta makes the control benefit explicit
+     * for dashboarding and risk-appetite analysis.
+     *
+     * @return array<string,mixed>
+     */
+    public function beforeAfterControls(int $projectId): array
+    {
+        $config = InherentRiskFormulaConfig::forVersion();
+
+        // Latest inherent record per risk for this project.
+        $latestInherent = RiskInherentScore::query()
+            ->whereHas('risk', fn ($q) => $q->where('project_id', $projectId))
+            ->orderBy('created_at')
+            ->get()
+            ->keyBy('risk_register_id');
+
+        $risks = RiskRegister::where('project_id', $projectId)->get();
+
+        $rows = $risks->map(function (RiskRegister $risk) use ($latestInherent, $config) {
+            $record = $latestInherent->get($risk->id);
+            $inherent = $record
+                ? (int) $record->inherent_score
+                : (int) ($risk->computed_risk_rating ?? $risk->risk_rating_avtvlh);
+            $residual = (int) ($risk->computed_residual_rating ?? $risk->residual_rating);
+
+            return [
+                'risk_register_id' => $risk->id,
+                'serial_no'        => $risk->serial_no,
+                'asset'            => $risk->asset_process_service,
+                'category'         => $risk->category,
+                'department'       => $risk->department,
+                'before_controls'  => [
+                    'score' => $inherent,
+                    'band'  => $config->bandFor($inherent),
+                ],
+                'after_controls'   => [
+                    'score' => $residual,
+                    'band'  => $config->bandFor($residual),
+                ],
+                'delta'            => max(0, $inherent - $residual),
+                'appetite_status'  => $record->appetite_status ?? null,
+                'formula_version'  => $record->formula_version ?? $config->version,
+            ];
+        })->values();
+
+        return [
+            'project_id' => $projectId,
+            'totals'     => [
+                'avg_before' => $rows->isNotEmpty() ? round($rows->avg('before_controls.score'), $config->precision) : 0,
+                'avg_after'  => $rows->isNotEmpty() ? round($rows->avg('after_controls.score'), $config->precision) : 0,
+                'avg_delta'  => $rows->isNotEmpty() ? round($rows->avg('delta'), $config->precision) : 0,
+                'risk_count' => $rows->count(),
+            ],
+            'rows'       => $rows,
+        ];
     }
 
     /* ------------------------------------------------------------------ */

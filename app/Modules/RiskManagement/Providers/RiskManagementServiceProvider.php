@@ -2,8 +2,11 @@
 
 namespace App\Modules\RiskManagement\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Models\AssessmentFinding;
+use App\Modules\RiskManagement\Events\ResidualAppetiteCrossed;
+use App\Modules\RiskManagement\Listeners\ResidualAppetiteCrossedListener;
 use App\Modules\RiskManagement\Observers\AssessmentFindingObserver;
 use App\Modules\RiskManagement\Console\Commands\ImportWorkbookRisk;
 use App\Modules\RiskManagement\Console\Commands\SeedWorkbookRisk;
@@ -44,6 +47,8 @@ class RiskManagementServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/../Routes/api.php');
 
         AssessmentFinding::observe(AssessmentFindingObserver::class);
+
+        Event::listen(ResidualAppetiteCrossed::class, ResidualAppetiteCrossedListener::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([

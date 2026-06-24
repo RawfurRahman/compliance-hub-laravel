@@ -3,15 +3,20 @@
 namespace App\Modules\RiskManagement\Services;
 
 use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use Illuminate\Support\Facades\Auth;
 
 class RiskService
 {
     private ScoringEngine $engine;
+    private RiskScoringService $scoringService;
+    private ResidualRiskService $residualService;
 
     public function __construct()
     {
         $this->engine = new ScoringEngine();
+        $this->scoringService = new RiskScoringService();
+        $this->residualService = new ResidualRiskService();
     }
 
     /**
@@ -65,6 +70,23 @@ class RiskService
         $this->autoAdvanceLifecycle($risk);
 
         $risk->saveQuietly();
+
+        // Record a dedicated inherent (before-controls) score for this edit.
+        $this->scoringService->scoreAndRecord(
+            InherentRiskInput::fromRiskRegister($risk),
+            recordedBy: Auth::id() ?? $risk->updated_by,
+            source: 'manual'
+        );
+
+        // Recalculate the residual (after-controls) score. Triggered here so any
+        // change to control effectiveness, remediation state, evidence or
+        // acceptance flows through to a fresh residual history row + events.
+        $this->residualService->scoreAndRecord(
+            $this->residualService->buildInputFromRisk($risk),
+            risk: $risk,
+            recordedBy: Auth::id() ?? $risk->updated_by,
+            source: 'trigger'
+        );
 
         // Record history log entry
         $risk->scoresHistory()->create([

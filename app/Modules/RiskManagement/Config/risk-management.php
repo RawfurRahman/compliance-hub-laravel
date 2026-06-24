@@ -75,6 +75,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Residual Risk Engine (versioned reduction model)
+    |--------------------------------------------------------------------------
+    |
+    | Versioned configuration for the residual (after-controls) scoring engine.
+    | Weights (0-1) control how much each factor moves the residual score away
+    | from the inherent baseline. Add a new version key rather than editing v1
+    | so historical residual records remain reproducible.
+    |
+    */
+    'residual' => [
+        'active_version' => env('RMM_RESIDUAL_VERSION', 'v1'),
+        'formulas' => [
+            'v1' => [
+                'bands' => [
+                    'Critical' => 128,
+                    'High'     => 84,
+                    'Medium'   => 54,
+                    'Low'      => 0,
+                ],
+                'weights' => [
+                    'control_effectiveness' => 0.50,
+                    'treatment'             => 0.25,
+                    'open_remediation'      => 0.15,
+                    'third_party'           => 0.10,
+                    'low_evidence'          => 0.15,
+                ],
+                'max_score' => 250,
+                'precision' => 2,
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Legacy Field Mapping
     |--------------------------------------------------------------------------
     |
