@@ -4,6 +4,8 @@ namespace App\Modules\RiskManagement\Console\Commands;
 
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskSnapshot;
+use App\Modules\RiskManagement\Services\RiskScoringService;
+use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use Illuminate\Console\Command;
 
 class SnapshotRiskExposures extends Command
@@ -17,8 +19,18 @@ class SnapshotRiskExposures extends Command
             ? [(int) $this->option('project-id')]
             : RiskRegister::distinct()->pluck('project_id')->toArray();
 
+        $scoringService = new RiskScoringService();
+
         foreach ($projectIds as $projectId) {
             $risks = RiskRegister::where('project_id', $projectId)->get();
+
+            // Record a point-in-time inherent score for each risk in the snapshot.
+            foreach ($risks as $risk) {
+                $scoringService->scoreAndRecord(
+                    InherentRiskInput::fromRiskRegister($risk),
+                    source: 'snapshot'
+                );
+            }
 
             $totalExposure = $risks->sum('exposure_value');
             $criticalCount = $risks->filter(fn($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 128)->count();

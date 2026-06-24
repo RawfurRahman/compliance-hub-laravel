@@ -9,6 +9,7 @@ use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\HeatmapConfig;
 use App\Modules\RiskManagement\Models\RiskHeatmapSnapshot;
+use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use App\Models\User;
 use App\Models\Project;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -277,8 +278,9 @@ class WorkbookImportService
         }
 
         $importedCount = 0;
-        
-        DB::transaction(function () use ($rows, $lookup, $project, $adminUser, &$importedCount) {
+        $scoringService = new RiskScoringService();
+
+        DB::transaction(function () use ($rows, $lookup, $project, $adminUser, $scoringService, &$importedCount) {
             foreach ($rows as $index => $row) {
                 if ($index < 4) {
                     continue;
@@ -394,7 +396,7 @@ class WorkbookImportService
                 }
 
                 // Create the risk register entry
-                RiskRegister::updateOrCreate(
+                $riskEntry = RiskRegister::updateOrCreate(
                     ['serial_no' => $serialNo, 'project_id' => $project->id],
                     [
                         'framework_control_id' => $frameworkControlId,
@@ -443,6 +445,26 @@ class WorkbookImportService
                             'original_row_number' => $index,
                         ]
                     ]
+                );
+
+                // Record a dedicated inherent (before-controls) score for this
+                // imported row, preserving the formula version + input snapshot.
+                $scoringService->scoreAndRecord(
+                    new InherentRiskInput(
+                        threatLevel: $threatLevel,
+                        vulnerabilityLevel: $vulnLevelAv,
+                        impactDimensions: [
+                            'confidentiality' => $impactC,
+                            'integrity'       => $impactI,
+                            'availability'    => $impactA,
+                        ],
+                        likelihood: $likelihoodLh,
+                        assetValue: $assetValueBdt,
+                        category: 'Cybersecurity',
+                        riskRegisterId: $riskEntry->id
+                    ),
+                    recordedBy: $adminUser->id,
+                    source: 'import'
                 );
 
                 $importedCount++;

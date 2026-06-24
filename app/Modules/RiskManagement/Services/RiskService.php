@@ -3,15 +3,18 @@
 namespace App\Modules\RiskManagement\Services;
 
 use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use Illuminate\Support\Facades\Auth;
 
 class RiskService
 {
     private ScoringEngine $engine;
+    private RiskScoringService $scoringService;
 
     public function __construct()
     {
         $this->engine = new ScoringEngine();
+        $this->scoringService = new RiskScoringService();
     }
 
     /**
@@ -65,6 +68,13 @@ class RiskService
         $this->autoAdvanceLifecycle($risk);
 
         $risk->saveQuietly();
+
+        // Record a dedicated inherent (before-controls) score for this edit.
+        $this->scoringService->scoreAndRecord(
+            InherentRiskInput::fromRiskRegister($risk),
+            recordedBy: Auth::id() ?? $risk->updated_by,
+            source: 'manual'
+        );
 
         // Record history log entry
         $risk->scoresHistory()->create([
