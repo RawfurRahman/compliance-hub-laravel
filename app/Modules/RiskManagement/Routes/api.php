@@ -62,6 +62,10 @@ Route::middleware('auth:sanctum')->prefix('rmm')->name('rmm.')->group(function (
     // Snapshots
     Route::get('/snapshots', [\App\Modules\RiskManagement\Controllers\RiskSnapshotController::class, 'index'])->name('risk.snapshots.index');
     Route::post('/snapshots', [\App\Modules\RiskManagement\Controllers\RiskSnapshotController::class, 'store'])->name('risk.snapshots.store');
+
+    // Executive metrics: financial exposure + remediation (MTTR/SLA)
+    Route::get('/metrics/financial-exposure', [\App\Modules\RiskManagement\Controllers\ExecutiveMetricsController::class, 'financialExposure'])->name('metrics.financial-exposure');
+    Route::get('/metrics/remediation', [\App\Modules\RiskManagement\Controllers\ExecutiveMetricsController::class, 'remediationMetrics'])->name('metrics.remediation');
 });
 
 });

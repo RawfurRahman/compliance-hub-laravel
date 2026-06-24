@@ -17,6 +17,7 @@ use App\Modules\RiskManagement\Console\Commands\ProcessEvidenceAnalysis;
 use App\Modules\RiskManagement\Console\Commands\SnapshotMaturityScores;
 use App\Modules\RiskManagement\Console\Commands\ImportRiskRegisterFindings;
 use App\Modules\RiskManagement\Console\Commands\SnapshotRiskExposures;
+use App\Modules\RiskManagement\Console\Commands\SnapshotExecutiveMetrics;
 use App\Modules\RiskManagement\Console\Commands\ExpireRiskAcceptances;
 
 class RiskManagementServiceProvider extends ServiceProvider
@@ -34,6 +35,8 @@ class RiskManagementServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Modules\RiskManagement\Services\RiskSnapshotService::class);
         $this->app->singleton(\App\Modules\RiskManagement\Services\ThirdPartyVendorService::class);
         $this->app->singleton(\App\Modules\RiskManagement\Services\VendorAssessmentService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\FinancialExposureService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\RemediationMetricsService::class);
     }
 
     public function boot(): void
@@ -61,6 +64,7 @@ class RiskManagementServiceProvider extends ServiceProvider
                 SnapshotMaturityScores::class,
                 ImportRiskRegisterFindings::class,
                 SnapshotRiskExposures::class,
+                SnapshotExecutiveMetrics::class,
                 ExpireRiskAcceptances::class,
             ]);
         }
