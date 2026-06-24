@@ -40,6 +40,11 @@ Route::middleware('auth:sanctum')->prefix('rmm')->name('rmm.')->group(function (
     Route::get('/risk/{risk}/inherent-history', [\App\Modules\RiskManagement\Controllers\RiskInherentScoreController::class, 'history'])->name('risk.inherent-history');
     Route::get('/inherent/before-after', [\App\Modules\RiskManagement\Controllers\RiskInherentScoreController::class, 'beforeAfter'])->name('risk.inherent.before-after');
 
+    // Residual (after-controls) scoring history, trend series + manual override
+    Route::get('/risk/{risk}/residual-history', [\App\Modules\RiskManagement\Controllers\ResidualRiskController::class, 'history'])->name('risk.residual-history');
+    Route::get('/risk/{risk}/residual-trend', [\App\Modules\RiskManagement\Controllers\ResidualRiskController::class, 'trend'])->name('risk.residual-trend');
+    Route::post('/risk/{risk}/residual-override', [\App\Modules\RiskManagement\Controllers\ResidualRiskController::class, 'override'])->name('risk.residual-override');
+
     // Vendors
     Route::get('/vendors', [\App\Modules\RiskManagement\Controllers\VendorController::class, 'index'])->name('vendors.index');
     Route::post('/vendors', [\App\Modules\RiskManagement\Controllers\VendorController::class, 'store'])->name('vendors.store');

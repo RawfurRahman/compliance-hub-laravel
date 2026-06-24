@@ -281,6 +281,46 @@ class ResidualRiskService
             ->first();
     }
 
+    /**
+     * Inherent-vs-residual time series for a single risk, for dashboard charts.
+     *
+     * Reusable by dashboard APIs: returns chronological points plus the current
+     * snapshot (latest residual record), so a chart can plot both lines and a
+     * widget can show the live value without a second query.
+     *
+     * @return array<string,mixed>
+     */
+    public function trendSeries(int $riskRegisterId, int $limit = 50): array
+    {
+        $history = $this->historyForRisk($riskRegisterId, $limit);
+
+        $points = $history->map(fn (RiskResidualScore $r) => [
+            'recorded_at'     => optional($r->created_at)->toIso8601String(),
+            'inherent_score'  => (int) $r->inherent_score,
+            'residual_score'  => (int) $r->residual_score,
+            'reduction_pct'   => (float) $r->reduction_pct,
+            'severity_band'   => $r->severity_band,
+            'appetite_status' => $r->appetite_status,
+            'trend_direction' => $r->trend_direction,
+            'manual_override' => (bool) $r->manual_override,
+        ])->values();
+
+        $latest = $history->last();
+
+        return [
+            'risk_register_id' => $riskRegisterId,
+            'current'          => $latest ? [
+                'inherent_score'  => (int) $latest->inherent_score,
+                'residual_score'  => (int) $latest->residual_score,
+                'reduction_pct'   => (float) $latest->reduction_pct,
+                'severity_band'   => $latest->severity_band,
+                'appetite_status' => $latest->appetite_status,
+                'trend_direction' => $latest->trend_direction,
+            ] : null,
+            'points'           => $points,
+        ];
+    }
+
     /* ------------------------------------------------------------------ */
     /* Internal helpers                                                    */
     /* ------------------------------------------------------------------ */
