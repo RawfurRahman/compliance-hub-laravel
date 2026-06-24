@@ -25,6 +25,15 @@
                     Dashboard
                 </a>
 
+                @can('view-dashboard')
+                <a href="{{ route('dashboard.executive') }}" class="{{ request()->routeIs('dashboard.executive') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('dashboard.executive') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-chart-line text-sm"></i>
+                    </div>
+                    Executive Dashboard
+                </a>
+                @endcan
+
                 <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.index') && !request()->has('module') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('projects.index') && !request()->has('module') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
                         <i class="fas fa-layer-group text-sm"></i>
@@ -43,10 +52,11 @@
                 @php
                     $sidebarFrameworks = \App\Models\Framework::where('is_active', true)->get();
                     $frameworkIcons = [
-                        'pci_dss'   => 'fa-credit-card',
-                        'iso_27001' => 'fa-shield-halved',
-                        'swift_csp' => 'fa-building-columns',
-                        'vapt'      => 'fa-bug',
+                        'pci_dss'          => 'fa-credit-card',
+                        'iso_27001'        => 'fa-shield-halved',
+                        'swift_csp'        => 'fa-building-columns',
+                        'swift_cscf_2026'  => 'fa-building-columns',
+                        'vapt'             => 'fa-bug',
                     ];
                 @endphp
 
@@ -69,6 +79,32 @@
                         @endif
                     </a>
                 @endforeach
+                @endif
+
+                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Risk Management</p>
+                </div>
+                @if(isset($project) && $project->id)
+                <a href="{{ route('risk-register.index', $project) }}" class="{{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-triangle-exclamation text-sm"></i>
+                    </div>
+                    Risk Register
+                </a>
+                <a href="{{ route('risk-register.heatmap', $project) }}" class="{{ request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-fire text-sm"></i>
+                    </div>
+                    Risk Heat Map
+                </a>
+
+                @else
+                <a href="{{ route('projects.index') }}" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-shield text-sm"></i>
+                    </div>
+                    Risk Overview
+                </a>
                 @endif
 
                 {{-- Admin Section --}}

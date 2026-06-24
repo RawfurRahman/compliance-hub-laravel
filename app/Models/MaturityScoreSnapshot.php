@@ -15,6 +15,7 @@ class MaturityScoreSnapshot extends Model
     public const DIMENSION_CONTROL_DESIGN      = 'control_design';
     public const DIMENSION_REMEDIATION_VELOCITY = 'remediation_velocity';
     public const DIMENSION_EVIDENCE_AUDIT      = 'evidence_audit';
+    public const DIMENSION_CONTROL_COVERAGE    = 'control_coverage';
     public const DIMENSION_COMPOSITE           = 'composite';
 
     protected $fillable = [

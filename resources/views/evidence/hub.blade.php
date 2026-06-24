@@ -243,7 +243,7 @@
                                             </div>
                                             
                                             {{-- Recommendation Container (if generated) --}}
-                                            <template x-if="file.ai_recommendations && file.ai_recommendations !== 'None' && file.ai_recommendations.trim() !== ''">
+                                            <template x-if="file.ai_recommendations && file.ai_recommendations.toLowerCase() !== 'none' && file.ai_recommendations.trim() !== ''">
                                                 <div class="p-3.5 rounded-xl bg-amber-50/30 border border-amber-100/50 hover:border-amber-200/60 transition shadow-sm">
                                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-700 uppercase tracking-widest mb-1.5">
                                                         <i class="fas fa-lightbulb text-[10px]"></i> Actionable Recommendation

@@ -1,0 +1,40 @@
+Workbook Column,DB Column,Type,Required,Description,Example
+#,serial_no,string unique,Y,Risk identifier (unique per workbook),1
+Asset / Process / Service,asset_process_service,string,Y,Name of the asset process or service being assessed,Customer Data Management
+Risk Owner,risk_owner,string,Y,Person or team responsible for the risk,IT Security Team
+Date,risk_calculation_date,date,Y,Date when the risk was identified or calculated,2025-01-15
+Asset Value (BDT),asset_value_bdt,decimal(15,2),Y,Monetary value of the asset in Bangladeshi Taka,500000.00
+Threat,threats,json,Y,Array of threat descriptions,"[""Data Breach"",""Unauthorized Access""]"
+Threat Level (T),threat_level_t,tinyint unsigned,Y,Numeric threat level 1-5,4
+Vulnerability,vulnerabilities,json,Y,Array of vulnerability descriptions,"[""Weak Password Policy""]"
+Impact C,impact_confidentiality,tinyint unsigned,Y,Confidentiality impact score 1-5,4
+Impact I,impact_integrity,tinyint unsigned,Y,Integrity impact score 1-5,3
+Impact A,impact_availability,tinyint unsigned,Y,Availability impact score 1-5,3
+Existing Control,existing_control,text,Y,Description of current controls in place,Firewall and IDS
+Vuln. Level (AV),vulnerability_level_av,tinyint unsigned,Vulnerability level score 1-5,4
+TV (T+AV),tv_t_av,tinyint unsigned,Y,Total threat = threat_level_t + vulnerability_level_av,8
+Likelihood (LH),likelihood_lh,tinyint unsigned,Y,Likelihood score 1-5,4
+Risk Rating (AV*TV*LH),risk_rating_avtvlh,int,Y,Inherent risk = vulnerability_level_av * tv_t_av * likelihood_lh,128
+Measurement,measurement,enum('Accepted','Not Accepted'),Y,Treatment decision for the risk,Accepted
+Proposed Control,proposed_control,text,N,Recommended controls to mitigate the risk,Implement MFA
+Communication,communication,text,N,Communication notes about the risk treatment,Reported to management
+Impl. From,implementation_from,date,N,Planned implementation start date,2025-02-01
+Impl. To,implementation_to,date,N,Planned implementation end date,2025-04-30
+Impl. Status,implementation_status,enum('Not Started','Pending','In Progress','Completed'),Y,Current implementation status,In Progress
+Residual TV,residual_tv,tinyint unsigned,Y,Residual threat-vulnerability after controls,3
+Residual LH,residual_lh,tinyint unsigned,Y,Residual likelihood after controls,2
+Residual Rating,residual_rating,int,Y,Residual risk = residual_tv * residual_lh,6
+Follow-up Note,follow_up_note,text,N,Follow-up tracking notes,Fully implemented
+N/A,category,string,Y,Risk categorization (not in workbook directly),IT Security
+N/A,department,string,Y,Department responsible (not in workbook directly),Information Technology
+N/A,owner_user_id,bigint FK nullable,N,User ID of the risk owner,null
+N/A,asset_id,bigint FK nullable,N,Linked asset ID,null
+N/A,evidence_ids,json nullable,N,Array of linked evidence record IDs,null
+N/A,source,enum('manual','import','n8n_ccm','vendor_response','ai_parse'),N,Source of the risk record,import
+N/A,legacy_source_id,string nullable,N,Original ID from legacy system migration,"iso_gap_assessment_42"
+N/A,created_by,bigint FK nullable,N,User ID who created the record,1
+N/A,updated_by,bigint FK nullable,N,User ID who last updated the record,1
+N/A,custom_fields,json nullable,N,Arbitrary key-value metadata for extensibility,"{""region"": ""APAC""}"
+N/A,computed_tv,int nullable,N,Server-computed copy of tv_t_av for reconciliation,8
+N/A,computed_risk_rating,int nullable,N,Server-computed copy of risk_rating_avtvlh for reconciliation,128
+N/A,computed_residual_rating,int nullable,N,Server-computed copy of residual_rating for reconciliation,6

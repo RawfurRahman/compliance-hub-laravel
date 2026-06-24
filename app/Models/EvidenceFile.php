@@ -82,5 +82,11 @@ class EvidenceFile extends Model
     {
         return $this->hasMany(EvidenceFeedback::class);
     }
+
+    public function scopeAccepted($query)
+    {
+        return $query->where('hitl_status', 'accepted')
+            ->where('ai_analysis_status', 'approved');
+    }
 }
 

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Project;
 use App\Models\GeneratedReport;
-use App\Models\Department;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -21,9 +20,9 @@ class ReportExportService
     /**
      * Export report as PDF.
      */
-    public function exportPdf(Project $project, string $type, ?array $sections = null, ?array $filters = null): Response
+    public function exportPdf(Project $project, string $type): Response
     {
-        $content = $this->getReportContent($project, $type, $sections, $filters);
+        $content = $this->getReportContent($project, $type);
         $fileName = $this->generateFileName($project, $type, 'pdf');
 
         $pdf = Pdf::loadView($content['view'], $content['data'])
@@ -44,9 +43,9 @@ class ReportExportService
     /**
      * Export report as HTML (View).
      */
-    public function exportHtml(Project $project, string $type, ?array $sections = null, ?array $filters = null): \Illuminate\View\View
+    public function exportHtml(Project $project, string $type): \Illuminate\View\View
     {
-        $content = $this->getReportContent($project, $type, $sections, $filters);
+        $content = $this->getReportContent($project, $type);
 
         // Update exported formats tracking
         $this->trackExport($project, $type, 'html');
@@ -55,54 +54,47 @@ class ReportExportService
     }
 
     /**
-     * Generate PDF content as binary/string.
-     */
-    public function generatePdfContent(Project $project, string $type, ?array $sections = null, ?array $filters = null): string
-    {
-        $content = $this->getReportContent($project, $type, $sections, $filters);
-
-        $pdf = Pdf::loadView($content['view'], $content['data'])
-            ->setPaper('a4')
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isPhpEnabled' => false,
-                'isRemoteEnabled' => false,
-                'chroot' => public_path(),
-            ]);
-
-        $this->trackExport($project, $type, 'pdf');
-
-        return $pdf->output();
-    }
-
-    /**
-     * Generate HTML content as string.
-     */
-    public function generateHtmlContent(Project $project, string $type, ?array $sections = null, ?array $filters = null): string
-    {
-        $content = $this->getReportContent($project, $type, $sections, $filters);
-
-        $this->trackExport($project, $type, 'html');
-
-        return view($content['view'], $content['data'])->render();
-    }
-
-
-    /**
      * Get report content (view and data).
      */
-    protected function getReportContent(Project $project, string $type, ?array $sections = null, ?array $filters = null): array
+    protected function getReportContent(Project $project, string $type): array
     {
         // Validate report type
         if (!$this->reportGenerationService->validateReportType($project, $type)) {
             abort(404, "Report type '{$type}' not available for this project.");
         }
 
-        $view = $this->reportGenerationService->getReportView($project, $type, $sections, $filters);
+        // Ensure PCI DSS project
+        if ($project->module_type !== 'pci_dss') {
+            abort(404);
+        }
+
+        // Eager load all necessary relationships
+        $project->load(
+            'pciDssDetails.pciSscProducts',
+            'pciDssDetails.tpsps',
+            'pciDssDetails.networks',
+            'pciDssDetails.locations',
+            'pciDssDetails.components',
+            'pciDssDetails.externalScans',
+            'pciDssDetails.internalScans',
+            'pciDssDetails.findings.requirement'
+        );
+
+        // Get all PCI DSS requirements
+        $requirements = \App\Models\PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
+
+        // Get findings keyed by requirement
+        $findings = optional($project->pciDssDetails)->findings->keyBy('pci_dss_requirement_id') ?? collect();
+
+        // Payment channels
+        $paymentChannels = config('compliance.pci_dss.payment_channels', []);
+
+        // Calculate compliance metrics
+        $complianceMetrics = $this->calculateComplianceMetrics($project, $findings);
 
         return [
-            'view' => $view->name(),
-            'data' => $view->getData(),
+            'view' => 'pci.report',
+            'data' => compact('project', 'requirements', 'findings', 'paymentChannels', 'complianceMetrics'),
         ];
     }
 

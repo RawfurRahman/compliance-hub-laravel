@@ -320,8 +320,15 @@ class AssessmentController extends Controller
         $stats     = $assessment->stats();
         $findings  = $assessment->findings;
 
+        $acceptedEvidence = \App\Models\EvidenceFile::where('project_id', $project->id)
+            ->where('hitl_status', 'accepted')
+            ->where('ai_analysis_status', 'approved')
+            ->whereNotNull('framework_control_id')
+            ->get()
+            ->groupBy('framework_control_id');
+
         $pdf = Pdf::loadView('assessments.report-pdf', compact(
-            'assessment', 'project', 'framework', 'stats', 'findings'
+            'assessment', 'project', 'framework', 'stats', 'findings', 'acceptedEvidence'
         ))->setPaper('a4', 'portrait');
 
         $filename = sprintf(

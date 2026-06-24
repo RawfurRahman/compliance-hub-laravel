@@ -26,25 +26,25 @@ class FrameworkControlSeeder extends Seeder
      */
     private array $frameworks = [
         'pci_dss_v4' => [
-            'name'        => 'PCI DSS v4.0',
-            'version'     => 'v4.0',
+            'name'        => 'PCI DSS',
+            'version'     => 'v 4.0',
             'description' => 'Payment Card Industry Data Security Standard v4.0',
-            'is_active'   => true,
+            'is_active'   => false,
         ],
         'iso_27001_2022' => [
             'name'        => 'ISO 27001:2022',
             'version'     => '2022',
             'description' => 'Information Security Management Systems (2022 edition)',
-            'is_active'   => true,
+            'is_active'   => false,
         ],
         'bb_ict' => [
             'name'        => 'BB ICT Guidelines',
             'version'     => 'current',
             'description' => 'Bangladesh Bank ICT Security Guidelines',
-            'is_active'   => true,
+            'is_active'   => false,
         ],
         'swift_cscf_2026' => [
-            'name'        => 'SWIFT CSCF 2026',
+            'name'        => 'SWIFT CSCF',
             'version'     => '2026',
             'description' => 'SWIFT Customer Security Controls Framework 2026',
             'is_active'   => true,

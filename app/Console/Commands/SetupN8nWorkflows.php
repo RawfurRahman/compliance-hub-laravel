@@ -115,8 +115,8 @@ class SetupN8nWorkflows extends Command
                 );
 
                 $workflowJson = str_replace(
-                    ['http://127.0.0.1:9300', 'http://localhost:9300'],
-                    'http://host.docker.internal:9300',
+                    ['http://127.0.0.1:9000', 'http://localhost:9000'],
+                    'http://host.docker.internal:9000',
                     $workflowJson
                 );
 

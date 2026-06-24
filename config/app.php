@@ -47,11 +47,9 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-     
-
-        // ** THE FIX IS HERE **
-        // This line tells your Laravel application to load and use the
-        // RouteServiceProvider, which will in turn load your api.php routes.
+        App\Modules\RiskManagement\Providers\RiskManagementServiceProvider::class,
+        App\Modules\Governance\Providers\GovernanceServiceProvider::class,
+        App\Modules\Compliance\Providers\ComplianceServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
     ],

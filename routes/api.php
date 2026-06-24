@@ -24,3 +24,5 @@ Route::post('/n8n/scan-callback', [EvidenceController::class, 'n8nFileScanCallba
 Route::post('/n8n/ai-callback', [EvidenceController::class, 'n8nAiAnalysisCallback']);
 Route::post('/n8n/send-email', [EvidenceController::class, 'sendAiAnalysisMail']);
 Route::get('/evidence/file/{id}', [EvidenceController::class, 'getFile']);
+
+// @see app/Modules/RiskManagement/Routes/api.php for RMM Control Mapping API routes

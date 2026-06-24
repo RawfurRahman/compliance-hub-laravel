@@ -22,7 +22,7 @@
             <a href="{{ route('projects.scope', $project) }}" class="px-1 py-4 text-sm font-semibold text-sky-600 border-b-2 border-sky-600">
                 Scope
             </a>
-            <a href="{{ route('pci-gap.index', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
+            <a href="{{ route('projects.gap-assessment', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
                 Gap Assessment
             </a>
             <a href="{{ route('projects.reporting', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
@@ -60,7 +60,7 @@
                     <h3 class="text-lg font-bold text-slate-900 mb-4">
                         <i class="fas fa-router text-emerald-600 mr-2"></i>Networks
                     </h3>
-                    @if($project->pciDssDetails && $project->pciDssDetails->networks && $project->pciDssDetails->networks->isNotEmpty())
+                    @if(optional($project->pciDssDetails)->networks->isNotEmpty())
                         <div class="space-y-3">
                             @foreach(optional($project->pciDssDetails)->networks as $network)
                                 <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
@@ -85,7 +85,7 @@
                     <h3 class="text-lg font-bold text-slate-900 mb-4">
                         <i class="fas fa-map-marker-alt text-sky-600 mr-2"></i>Physical Locations
                     </h3>
-                    @if($project->pciDssDetails && $project->pciDssDetails->locations && $project->pciDssDetails->locations->isNotEmpty())
+                    @if(optional($project->pciDssDetails)->locations->isNotEmpty())
                         <div class="space-y-3">
                             @foreach(optional($project->pciDssDetails)->locations as $location)
                                 <div class="p-4 bg-sky-50 border border-sky-200 rounded-lg flex items-center justify-between">
@@ -110,7 +110,7 @@
                     <h3 class="text-lg font-bold text-slate-900 mb-4">
                         <i class="fas fa-cube text-indigo-600 mr-2"></i>System Components
                     </h3>
-                    @if($project->pciDssDetails && $project->pciDssDetails->components && $project->pciDssDetails->components->isNotEmpty())
+                    @if(optional($project->pciDssDetails)->components->isNotEmpty())
                         <div class="space-y-3">
                             @foreach(optional($project->pciDssDetails)->components as $component)
                                 <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-between">
@@ -147,15 +147,15 @@
                 <div class="space-y-4">
                     <div>
                         <p class="text-sm text-slate-600 uppercase tracking-widest font-semibold">Networks</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ $project->pciDssDetails && $project->pciDssDetails->networks ? $project->pciDssDetails->networks->count() : 0 }}</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ optional($project->pciDssDetails)->networks->count() ?? 0 }}</p>
                     </div>
                     <div class="pt-4 border-t border-slate-200">
                         <p class="text-sm text-slate-600 uppercase tracking-widest font-semibold">Locations</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ $project->pciDssDetails && $project->pciDssDetails->locations ? $project->pciDssDetails->locations->count() : 0 }}</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ optional($project->pciDssDetails)->locations->count() ?? 0 }}</p>
                     </div>
                     <div class="pt-4 border-t border-slate-200">
                         <p class="text-sm text-slate-600 uppercase tracking-widest font-semibold">Components</p>
-                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ $project->pciDssDetails && $project->pciDssDetails->components ? $project->pciDssDetails->components->count() : 0 }}</p>
+                        <p class="text-3xl font-bold text-slate-900 mt-1">{{ optional($project->pciDssDetails)->components->count() ?? 0 }}</p>
                     </div>
                 </div>
 

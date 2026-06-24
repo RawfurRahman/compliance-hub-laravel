@@ -413,13 +413,29 @@
                 <tr>
                     <td class="label-cell">Linked Evidence</td>
                     <td class="value-cell" colspan="3">
+                        @php
+                            $ctrlId = $finding->frameworkControl ? $finding->frameworkControl->id : null;
+                            $accepted = $ctrlId && isset($acceptedEvidence[$ctrlId]) ? $acceptedEvidence[$ctrlId] : collect();
+                        @endphp
                         @forelse($finding->evidence as $e)
                             <div style="margin-bottom: 4px; font-weight: bold; color: #0284c7;">
                                 &bull; {{ $e->name }}
                             </div>
                         @empty
-                            <span style="color: #64748b; font-style: italic;">No linked evidence.</span>
+                            @if($accepted->isNotEmpty())
+                                <span style="color: #64748b; font-style: italic;">Attached via evidence analysis</span>
+                            @else
+                                <span style="color: #64748b; font-style: italic;">No linked evidence.</span>
+                            @endif
                         @endforelse
+                        @foreach($accepted as $ef)
+                            <div style="margin-bottom: 4px;">
+                                <span style="font-weight: bold; color: #16a34a;">&bull; {{ $ef->original_filename }}</span>
+                                <span style="font-size: 7.5pt; color: #64748b; margin-left: 4px;">
+                                    (accepted evidence analysis)
+                                </span>
+                            </div>
+                        @endforeach
                     </td>
                 </tr>
                 <!-- Row 9 -->

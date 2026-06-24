@@ -3,149 +3,152 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\Department;
-use App\Models\GapControl;
-use App\Models\EvidenceFile;
-use App\Imports\GapAssessmentImport;
+use App\Models\Framework;
+use App\Models\AssessmentFinding;
+use App\Models\ProjectAssessment;
+use App\Services\GapAssessmentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
 
 class GapAssessmentController extends Controller
 {
-    /**
-     * Display the Gap Assessment Dashboard for a specific project.
-     */
+    protected GapAssessmentService $gapService;
+
+    public function __construct(GapAssessmentService $gapService)
+    {
+        $this->gapService = $gapService;
+    }
+
     public function index(Project $project)
     {
         $this->authorize('view', $project);
 
-        // Eager load gap controls grouped by department
-        $departments = Department::with(['gapControls' => function($q) use ($project) {
-            $q->where('project_id', $project->id)->with('evidenceFiles');
-        }])->get()->filter(function($dept) {
-            return $dept->gapControls->count() > 0;
-        })->values();
+        $framework = $this->resolveFramework($project);
+        if (!$framework) {
+            return redirect()->route('projects.show', $project)
+                ->with('error', 'No framework linked to this project.');
+        }
 
-        $allDepartments = Department::all();
+        $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
 
-        // Calculate progress metrics
-        $totalControls = $project->gapControls()->count();
-        $completedControls = $project->gapControls()->where('status', 'Done')->count();
-        $projectProgress = $totalControls > 0 ? round(($completedControls / $totalControls) * 100) : 0;
+        $groupedFindings = $this->gapService->getGroupedFindings($assessment);
+        $groupedStats    = $this->gapService->getGroupedStats($groupedFindings);
+        $overallStats    = $assessment->stats();
 
-        return view('gap-assessment.index', compact('project', 'departments', 'allDepartments', 'projectProgress', 'totalControls', 'completedControls'));
+        $frameworks = Framework::where('is_active', true)
+            ->where('slug', '!=', 'pci_dss')
+            ->get();
+
+        return view('gap-assessment.index', compact(
+            'project',
+            'assessment',
+            'framework',
+            'groupedFindings',
+            'groupedStats',
+            'overallStats',
+            'frameworks'
+        ));
     }
 
-    /**
-     * Update the status of a specific gap control.
-     */
-    public function updateStatus(Request $request, Project $project, GapControl $control)
+    public function initialize(Project $project, Framework $framework)
     {
         $this->authorize('update', $project);
 
-        $request->validate([
-            'status' => 'required|in:Pending,Done',
+        $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
+        $created    = $this->gapService->initialize($assessment);
+
+        return redirect()->route('gap-assessment.index', $project)
+            ->with('success', "Assessment initialized with {$created} controls.");
+    }
+
+    public function update(Request $request, Project $project, AssessmentFinding $finding)
+    {
+        $this->authorize('update', $project);
+
+        $validated = $request->validate([
+            'status'       => 'sometimes|in:Open,In Progress,Closed',
+            'risk_rating'  => 'sometimes|in:None,Low,Medium,High',
+            'is_compliant' => 'sometimes|boolean',
+            'observation'  => 'sometimes|nullable|string|max:5000',
+            'gap_description' => 'sometimes|nullable|string|max:5000',
+            'impact'       => 'sometimes|nullable|string|max:5000',
+            'recommendation' => 'sometimes|nullable|string|max:5000',
+            'due_date'     => 'sometimes|nullable|date',
+            'is_applicable' => 'sometimes|boolean',
         ]);
 
-        $control->update([
-            'status' => $request->status,
-        ]);
-
-        // Recalculate progress metrics
-        $totalControls = $project->gapControls()->count();
-        $completedControls = $project->gapControls()->where('status', 'Done')->count();
-        $projectProgress = $totalControls > 0 ? round(($completedControls / $totalControls) * 100) : 0;
-
-        // Recalculate department progress
-        $deptControls = $project->gapControls()->where('department_id', $control->department_id)->count();
-        $deptCompleted = $project->gapControls()->where('department_id', $control->department_id)->where('status', 'Done')->count();
-        $deptProgress = $deptControls > 0 ? round(($deptCompleted / $deptControls) * 100) : 0;
+        $finding = $this->gapService->updateFinding($finding, $validated);
 
         return response()->json([
-            'status' => 'success',
-            'control_status' => $control->status,
-            'project_progress' => $projectProgress,
-            'completed_controls' => $completedControls,
-            'department_progress' => $deptProgress,
+            'success' => true,
+            'finding' => $finding->load('frameworkControl'),
         ]);
     }
 
-    /**
-     * Handle the automated Excel import process.
-     */
-    public function importExcel(Request $request, Project $project)
+    public function batchUpdate(Request $request, Project $project)
     {
         $this->authorize('update', $project);
 
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        $validated = $request->validate([
+            'findings' => 'required|array',
         ]);
 
-        $file = $request->file('file');
+        $count = $this->gapService->batchUpdate(
+            $this->gapService->findOrCreateAssessment(
+                $project,
+                $this->resolveFramework($project)
+            ),
+            $validated['findings']
+        );
 
-        try {
-            Excel::import(new GapAssessmentImport($project->id, $file->getRealPath()), $file);
-            return back()->with('success', 'Excel assessment imported and controls populated successfully!');
-        } catch (\Exception $e) {
-            Log::error('Gap assessment import failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to import assessment: ' . $e->getMessage());
-        }
+        return response()->json([
+            'success' => true,
+            'updated' => $count,
+        ]);
     }
 
-    /**
-     * Upload and attach evidence to a specific gap control.
-     */
-    public function attachEvidence(Request $request, Project $project, GapControl $control)
+    public function getFinding(Project $project, AssessmentFinding $finding)
     {
-        $this->authorize('update', $project);
+        $this->authorize('view', $project);
 
-        $request->validate([
-            'file' => 'required|file|max:20480',
+        $finding->load('frameworkControl', 'evidence');
+        $evidenceFiles = $this->gapService->getEvidenceFiles($finding);
+
+        return response()->json([
+            'success' => true,
+            'finding' => $finding,
+            'evidence_files' => $evidenceFiles,
         ]);
+    }
 
-        $file = $request->file('file');
-        $path = $file->store("evidence/{$project->id}", 'public');
+    public function report(Project $project)
+    {
+        $this->authorize('view', $project);
 
-        // Eager load first PCI requirement to satisfy database constraint
-        $firstRequirementId = \App\Models\PciDssRequirement::value('id');
-        if (!$firstRequirementId) {
-            return back()->with('error', 'Please seed PCI DSS requirements first.');
+        $framework  = $this->resolveFramework($project);
+        $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
+        $groupedFindings = $this->gapService->getGroupedFindings($assessment);
+        $overallStats    = $assessment->stats();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('gap-assessment.report', compact(
+            'project', 'assessment', 'framework', 'groupedFindings', 'overallStats'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download("Gap-Assessment-{$project->id}.pdf");
+    }
+
+    private function resolveFramework(Project $project): ?Framework
+    {
+        $moduleType = $project->module_type;
+
+        if ($moduleType && $moduleType !== 'pci_dss') {
+            return Framework::where('slug', $moduleType)->where('is_active', true)->first();
         }
 
-        $evidence = $project->evidenceFiles()->create([
-            'pci_dss_requirement_id' => $firstRequirementId,
-            'user_id' => auth()->id(),
-            'file_path' => $path,
-            'original_filename' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'scan_status' => 'pending',
-            'ai_analysis_status' => 'pending',
-        ]);
-
-        // Attach to gap control
-        $control->evidenceFiles()->attach($evidence->id);
-
-        // Trigger n8n security scan
-        $n8nScanWebhookUrl = env('N8N_FILE_SCAN_WEBHOOK_URL', 'http://localhost:5678/webhook/file-scan');
-        if ($n8nScanWebhookUrl) {
-            try {
-                Http::timeout(1)->retry(0)
-                    ->attach(
-                        'file',
-                        Storage::disk('public')->get($path),
-                        $evidence->original_filename
-                    )
-                    ->attach('evidence_file_id', $evidence->id)
-                    ->attach('project_id', $project->id)
-                    ->post($n8nScanWebhookUrl);
-            } catch (\Exception $e) {
-                // Ignore expected timeout
-            }
+        if ($moduleType === 'pci_dss') {
+            return null;
         }
 
-        return back()->with('success', 'Evidence uploaded and attached to control ' . $control->control_id);
+        return Framework::where('is_active', true)->first();
     }
 }

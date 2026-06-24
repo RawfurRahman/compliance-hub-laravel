@@ -25,6 +25,10 @@ class AssessmentFinding extends Model
         'is_compliant',
         'is_applicable',
         'cloned_from_finding_id',
+        'risk_register_id',
+        'source_type',
+        'source_id',
+        'compliance_state',
     ];
 
     protected $casts = [
@@ -81,6 +85,26 @@ class AssessmentFinding extends Model
     public function getStandardReferenceAttribute()
     {
         return $this->frameworkControl ? $this->frameworkControl->required_evidence : '';
+    }
+
+    public function riskRegister()
+    {
+        return $this->belongsTo(\App\Modules\RiskManagement\Models\RiskRegister::class, 'risk_register_id');
+    }
+
+    public function source()
+    {
+        return $this->morphTo();
+    }
+
+    public function slaTrackers()
+    {
+        return $this->morphMany(\App\Modules\Compliance\Models\SLATracker::class, 'trackable');
+    }
+
+    public function controlTests()
+    {
+        return $this->hasMany(\App\Modules\Compliance\Models\ControlTest::class, 'assessment_finding_id');
     }
 
     protected static function booted()

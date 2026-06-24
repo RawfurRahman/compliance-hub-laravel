@@ -14,25 +14,12 @@
             <a href="{{ route('projects.show', $project) }}" class="px-1 py-4 text-sm font-semibold text-sky-600 border-b-2 border-sky-600">
                 Overview
             </a>
-            @if($project->module_type === 'pci_dss')
-                <a href="{{ route('projects.scope', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
-                    Scope
-                </a>
-                <a href="{{ route('projects.gap-assessment', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
-                    Gap Assessment
-                </a>
-            @elseif($project->module_type === 'iso_27001')
-                <a href="{{ route('iso-gap.index', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
-                    ISO Gap Assessment
-                </a>
-                <a href="{{ route('assessments.show', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
-                    Unified Assessment
-                </a>
-            @elseif($project->module_type === 'hitrust')
-                <a href="{{ route('assessments.show', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
-                    Unified Assessment
-                </a>
-            @endif
+            <a href="{{ route('projects.scope', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
+                Scope
+            </a>
+            <a href="{{ route('projects.gap-assessment', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
+                Gap Assessment
+            </a>
             <a href="{{ route('projects.reporting', $project) }}" class="px-1 py-4 text-sm font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-300 transition-colors">
                 Reports
             </a>
@@ -106,23 +93,9 @@
             <a href="{{ route('meetings.index', $project) }}" class="px-4 py-3 text-center font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-colors">
                 <i class="fas fa-calendar-alt mr-2"></i> Meetings
             </a>
-            <a href="{{ route('required-documents.index', $project) }}" class="px-4 py-3 text-center font-semibold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-lg border border-violet-200 transition-colors">
-                <i class="fas fa-folder-tree mr-2"></i> Required Documents
-            </a>
             @if($project->module_type === 'pci_dss')
                 <a href="{{ route('pci.show', $project) }}" class="px-4 py-3 text-center font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors">
                     <i class="fas fa-shield-alt mr-2"></i> PCI Assessment
-                </a>
-            @elseif($project->module_type === 'iso_27001')
-                <a href="{{ route('iso-gap.index', $project) }}" class="px-4 py-3 text-center font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors">
-                    <i class="fas fa-shield-halved mr-2"></i> ISO Gap Assessment
-                </a>
-                <a href="{{ route('assessments.show', $project) }}" class="px-4 py-3 text-center font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors">
-                    <i class="fas fa-clipboard-check mr-2"></i> Unified Assessment
-                </a>
-            @elseif($project->module_type === 'hitrust')
-                <a href="{{ route('assessments.show', $project) }}" class="px-4 py-3 text-center font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors">
-                    <i class="fas fa-clipboard-check mr-2"></i> Unified Assessment
                 </a>
             @endif
             <a href="{{ route('projects.reporting', $project) }}" class="px-4 py-3 text-center font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 transition-colors">

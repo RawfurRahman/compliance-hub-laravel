@@ -1,0 +1,65 @@
+<?php
+
+return [
+    'enabled' => env('GOVERNANCE_ENABLED', true),
+
+    'policy_statuses' => [
+        'draft',
+        'under_review',
+        'approved',
+        'published',
+        'deprecated',
+        'archived',
+        'expired',
+    ],
+
+    'policy_number_prefix' => env('GOVERNANCE_POLICY_PREFIX', 'GOV-POL-'),
+
+    'review_statuses' => ['pending', 'in_progress', 'completed', 'overdue'],
+    'approval_statuses' => ['pending', 'approved', 'rejected', 'withdrawn'],
+    'waiver_statuses' => ['pending', 'approved', 'rejected', 'expired', 'revoked'],
+    'exception_statuses' => ['pending', 'approved', 'rejected', 'expired', 'revoked'],
+    'approval_types' => ['initial', 're_approval', 'emergency'],
+    'review_types' => ['scheduled', 'ad_hoc', 'pre_approval'],
+    'publication_methods' => ['auto', 'manual'],
+    'ownership_roles' => ['policy_owner', 'reviewer', 'approver', 'stakeholder'],
+    'stakeholder_types' => ['policy_owner', 'subject_matter_expert', 'compliance_officer', 'business_owner'],
+
+    'sla_defaults' => [
+        'review_completion' => env('GOVERNANCE_SLA_REVIEW_HOURS', 48),
+        'approval_completion' => env('GOVERNANCE_SLA_APPROVAL_HOURS', 24),
+        'publication' => env('GOVERNANCE_SLA_PUBLICATION_HOURS', 72),
+    ],
+
+    'audit_events' => [
+        'policy_created',
+        'policy_updated',
+        'policy_submitted_for_review',
+        'policy_returned_to_draft',
+        'policy_review_completed',
+        'policy_approved',
+        'policy_rejected',
+        'policy_published',
+        'policy_deprecated',
+        'policy_archived',
+        'policy_reactivated',
+        'policy_expired',
+        'policy_version_created',
+        'exception_requested',
+        'exception_approved',
+        'exception_rejected',
+        'exception_revoked',
+        'waiver_requested',
+        'waiver_approved',
+        'waiver_rejected',
+        'waiver_revoked',
+        'waiver_expired',
+        'ownership_assigned',
+        'ownership_removed',
+        'stakeholder_added',
+        'stakeholder_removed',
+        'sla_rule_created',
+        'sla_rule_updated',
+        'sla_rule_deleted',
+    ],
+];

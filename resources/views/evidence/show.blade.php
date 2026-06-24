@@ -316,11 +316,11 @@
                                 <div class="grid grid-cols-2 gap-12">
                                     <div class="p-12 bg-indigo-50/50 rounded-[56px] border border-indigo-100 relative overflow-hidden">
                                         <h4 class="text-[11px] font-black text-indigo-700 uppercase tracking-widest mb-8"><i class="fas fa-robot mr-2"></i> AI Perspectives</h4>
-                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-html="reviewFile.ai_observations || 'Mining document observations...'"></div>
+                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-text="reviewFile.ai_observations || 'Mining document observations...'"></div>
                                     </div>
                                     <div class="p-12 bg-emerald-50/50 rounded-[56px] border border-emerald-100 relative overflow-hidden">
                                         <h4 class="text-[11px] font-black text-emerald-700 uppercase tracking-widest mb-8"><i class="fas fa-lightbulb-on mr-2"></i> Integrity Recommendations</h4>
-                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-html="reviewFile.ai_recommendations || 'No critical gaps documented.'"></div>
+                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-text="reviewFile.ai_recommendations || 'No critical gaps documented.'"></div>
                                     </div>
                                 </div>
                                 

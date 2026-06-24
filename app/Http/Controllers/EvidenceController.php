@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\PciDssRequirement;
+use App\Models\PciDssFinding;
+use App\Models\ProjectPciDssDetail;
+use App\Models\AssessmentFinding;
 use App\Models\EvidenceFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -13,9 +16,51 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Config;
+use App\Jobs\AnalyzeEvidenceJob;
 
 class EvidenceController extends Controller
 {
+    /**
+     * Verify n8n webhook signature
+     */
+    private function verifyN8nSignature(Request $request): bool
+    {
+        $timestamp = $request->header('X-Timestamp');
+        $signature = $request->header('X-Hub-Signature');
+        $secret = env('N8N_WEBHOOK_SECRET');
+
+        if (!$timestamp || !$signature || !$secret) {
+            return false;
+        }
+
+        $payload = $timestamp . '.' . ($request->header('X-Event-ID') ?? $request->getContent());
+        $expectedSignature = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+
+        return hash_equals($signature, $expectedSignature);
+    }
+
+    /**
+     * Authenticate n8n callbacks using API key (preferred) or HMAC signature.
+     */
+    private function authenticateN8nCallback(Request $request): bool
+    {
+        // API key check (primary method — n8n sends this easily)
+        $n8nApiKey = $request->header('X-N8n-Api-Key') ?? $request->query('api_key');
+        $expectedApiKey = env('N8N_API_KEY');
+
+        if ($expectedApiKey && $n8nApiKey === $expectedApiKey) {
+            return true;
+        }
+
+        // Fall back to HMAC signature verification
+        if ($this->verifyN8nSignature($request)) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Display the evidence management page for a specific project.
      */
@@ -123,8 +168,11 @@ class EvidenceController extends Controller
 
         $evidence = $project->evidenceFiles()->create($data);
 
-        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', 'http://localhost:5678/webhook/evidence-processing');
-        if ($n8nWebhookUrl) {
+        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', '');
+        $n8nEnabled = env('N8N_ENABLED', false);
+        $n8nSuccess = false;
+
+        if ($n8nEnabled && $n8nWebhookUrl) {
             try {
                 $auditor = \App\Models\User::whereHas('roles', fn($q) => $q->where('name', 'Auditor'))->first();
                 $auditorEmail = $auditor ? $auditor->email : 'default-auditor@example.com';
@@ -138,7 +186,14 @@ class EvidenceController extends Controller
                     ? (optional($evidence->requirement)->req_num ?? '') 
                     : (optional($evidence->frameworkControl)->control_id ?? '');
 
-                Http::timeout(1)->retry(0)
+                $timestamp = time();
+                $signature = hash_hmac('sha256', $timestamp . '.' . $evidence->id, env('N8N_WEBHOOK_SECRET', ''));
+
+                Http::timeout(5)->retry(0)
+                    ->withHeaders([
+                        'X-Timestamp' => $timestamp,
+                        'X-Hub-Signature' => $signature,
+                    ])
                     ->attach(
                         'file',
                         $fileContents,
@@ -157,13 +212,14 @@ class EvidenceController extends Controller
                     ->post($n8nWebhookUrl);
 
                 Log::info("n8n unified evidence processing webhook triggered for evidence_file_id: {$evidence->id}");
+                $n8nSuccess = true;
             } catch (\Exception $e) {
-                // If it's just a timeout, n8n likely received it and is processing.
-                Log::info('n8n unified trigger hit 1s timeout (expected): ' . $e->getMessage());
+                Log::warning('n8n unified trigger failed, falling back to direct analysis: ' . $e->getMessage());
             }
-        } else {
-            Log::warning('N8N_UNIFIED_WEBHOOK_URL is not set in .env');
-            $evidence->update(['scan_status' => 'n8n_not_configured']);
+        }
+
+        if (!$n8nSuccess) {
+            AnalyzeEvidenceJob::dispatch($evidence->id);
         }
 
         return back()->with('success', 'File uploaded and sent for security scanning and AI analysis.');
@@ -174,6 +230,19 @@ class EvidenceController extends Controller
      */
     public function n8nFileScanCallback(Request $request)
     {
+        Log::info('n8n scan-callback received', [
+            'all' => $request->all(),
+            'content' => $request->getContent(),
+            'accept' => $request->header('Accept'),
+            'ip' => $request->ip(),
+        ]);
+
+        // Authenticate: API key (preferred) or HMAC signature
+        if (!$this->authenticateN8nCallback($request)) {
+            Log::warning('Invalid n8n scan-callback signature from IP: ' . $request->ip());
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized: Invalid signature'], 401);
+        }
+
         $request->validate([
             'evidence_file_id' => 'required|exists:evidence_files,id',
             'scan_status' => 'required|string|in:clean,infected,failed',
@@ -226,6 +295,19 @@ class EvidenceController extends Controller
     // ... The rest of the controller methods (AI callback, approval, chat, etc.) remain the same ...
     public function n8nAiAnalysisCallback(Request $request)
     {
+        Log::info('n8n ai-callback received', [
+            'all' => $request->all(),
+            'content' => $request->getContent(),
+            'accept' => $request->header('Accept'),
+            'ip' => $request->ip(),
+        ]);
+
+        // Authenticate: API key (preferred) or HMAC signature
+        if (!$this->authenticateN8nCallback($request)) {
+            Log::warning('Invalid n8n ai-callback signature from IP: ' . $request->ip());
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized: Invalid signature'], 401);
+        }
+
         $request->validate([
             'evidence_file_id' => 'required|exists:evidence_files,id',
             'observations' => 'nullable|string',
@@ -258,17 +340,26 @@ class EvidenceController extends Controller
                     ? (optional($evidenceFile->requirement)->req_num ?? '') 
                     : (optional($evidenceFile->frameworkControl)->control_id ?? '');
 
-                Http::post($n8nHitlWebhookUrl, [
+                $timestamp = time();
+                $signature = hash_hmac('sha256', $timestamp . '.' . $evidenceFile->id, env('N8N_WEBHOOK_SECRET', ''));
+
+                Http::withHeaders([
+                    'X-Timestamp' => $timestamp,
+                    'X-Hub-Signature' => $signature,
+                ])->post($n8nHitlWebhookUrl, [
                     'evidence_file_id' => $evidenceFile->id,
                     'file_name' => $evidenceFile->original_filename,
                     'project_name' => optional($evidenceFile->project)->name,
                     'requirement_num' => $reqNum,
                     'auditor_email' => $auditorEmail,
-                    'review_link' => reviewLink,
+                    'review_link' => $reviewLink,
                 ]);
                 Log::info("n8n HITL webhook triggered for evidence_file_id: {$evidenceFile->id}");
             } catch (\Exception $e) {
-                Log::error('Failed to trigger n8n HITL workflow: ' . $e->getMessage());
+                Log::error('Failed to trigger n8n HITL workflow: ' . $e->getMessage(), [
+                    'evidence_file_id' => $evidenceFile->id,
+                    'exception' => $e
+                ]);
             }
         }
 
@@ -288,6 +379,11 @@ class EvidenceController extends Controller
             'ai_analysis_approved_by' => Auth::id(),
             'ai_analysis_approved_at' => now(),
         ]);
+
+        if ($evidenceFile->hitl_status === 'accepted') {
+            $this->autoComplyFinding($evidenceFile);
+        }
+
         return response()->json(['status' => 'success', 'message' => 'AI analysis approved!']);
     }
 
@@ -307,8 +403,11 @@ class EvidenceController extends Controller
             ]);
         }
 
-        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', 'http://localhost:5678/webhook/evidence-processing');
-        if ($n8nWebhookUrl) {
+        $n8nWebhookUrl = env('N8N_UNIFIED_WEBHOOK_URL', '');
+        $n8nEnabled = env('N8N_ENABLED', false);
+        $n8nSuccess = false;
+
+        if ($n8nEnabled && $n8nWebhookUrl) {
             try {
                 $fileContents = '';
                 if (Storage::disk('public')->exists($evidenceFile->file_path)) {
@@ -329,7 +428,14 @@ class EvidenceController extends Controller
                     ? (optional($evidenceFile->requirement)->req_num ?? '') 
                     : (optional($evidenceFile->frameworkControl)->control_id ?? '');
 
-                Http::timeout(2)->retry(0)
+                $timestamp = time();
+                $signature = hash_hmac('sha256', $timestamp . '.' . $evidenceFile->id, env('N8N_WEBHOOK_SECRET', ''));
+
+                Http::timeout(5)->retry(0)
+                    ->withHeaders([
+                        'X-Timestamp' => $timestamp,
+                        'X-Hub-Signature' => $signature,
+                    ])
                     ->attach(
                         'file',
                         $fileContents,
@@ -347,30 +453,27 @@ class EvidenceController extends Controller
                     ->attach('gemini_api_key', env('GEMINI_API_KEY', ''))
                     ->post($n8nWebhookUrl);
 
-                $evidenceFile->update([
-                    'scan_status' => 'pending',
-                    'ai_analysis_status' => 'processing',
-                    'ai_observations' => 'Re-analysis in progress...',
-                    'ai_recommendations' => '',
-                    'hitl_status' => 'pending_review',
-                ]);
-                Log::info("AI re-analysis triggered for evidence_file_id: {$evidenceFile->id}");
+                Log::info("n8n re-analysis webhook triggered for evidence_file_id: {$evidenceFile->id}");
+                $n8nSuccess = true;
             } catch (\Exception $e) {
-                // Timeout is expected with fire-and-forget pattern
-                Log::info('n8n AI re-trigger timeout (expected): ' . $e->getMessage());
-                $evidenceFile->update([
-                    'scan_status' => 'pending',
-                    'ai_analysis_status' => 'processing',
-                    'ai_observations' => 'Re-analysis in progress...',
-                    'ai_recommendations' => '',
-                    'hitl_status' => 'pending_review',
-                ]);
+                Log::warning('n8n re-analysis trigger failed, falling back to direct analysis: ' . $e->getMessage());
             }
-        } else {
-            Log::warning('N8N_UNIFIED_WEBHOOK_URL is not set in .env');
-            $evidenceFile->update([
-                'ai_analysis_status' => 'n8n_not_configured',
-            ]);
+        }
+
+        if ($evidenceFile->hitl_status === 'accepted' || $evidenceFile->ai_analysis_status === 'approved') {
+            $this->revertFinding($evidenceFile);
+        }
+
+        $evidenceFile->update([
+            'scan_status' => 'pending',
+            'ai_analysis_status' => 'processing',
+            'ai_observations' => 'Re-analysis in progress...',
+            'ai_recommendations' => '',
+            'hitl_status' => 'pending_review',
+        ]);
+
+        if (!$n8nSuccess) {
+            AnalyzeEvidenceJob::dispatch($evidenceFile->id);
         }
 
         return response()->json(['status' => 'success', 'message' => 'AI analysis rejected and re-triggered.']);
@@ -421,7 +524,13 @@ class EvidenceController extends Controller
 
         if ($request->action === 'accept') {
             $evidenceFile->update(['hitl_status' => 'accepted']);
+            if ($evidenceFile->ai_analysis_status === 'approved') {
+                $this->autoComplyFinding($evidenceFile);
+            }
         } elseif ($request->action === 'return') {
+            if ($evidenceFile->hitl_status === 'accepted') {
+                $this->revertFinding($evidenceFile);
+            }
             $evidenceFile->update(['hitl_status' => 'action_required']);
         } elseif ($request->action === 'reply') {
             $evidenceFile->update([
@@ -446,6 +555,91 @@ class EvidenceController extends Controller
         }
 
         return response()->json(['message' => 'Feedback submitted successfully', 'status' => 'success']);
+    }
+
+    /**
+     * When evidence is both HITL-accepted and AI-approved, auto-mark the linked
+     * assessment finding as compliant so it appears as "Compliant" in reports.
+     *
+     * Two paths:
+     * 1. framework_control_id  → marks AssessmentFinding.is_compliant = true (Unified Gap)
+     * 2. pci_dss_requirement_id → creates/updates PciDssFinding as 'In Place' (ROC)
+     */
+    protected function autoComplyFinding(EvidenceFile $evidenceFile): void
+    {
+        if (!$evidenceFile->project_id) {
+            return;
+        }
+
+        // Path 1: Unified Gap Assessment
+        if ($evidenceFile->framework_control_id) {
+            AssessmentFinding::where('framework_control_id', $evidenceFile->framework_control_id)
+                ->whereHas('projectAssessment', function ($q) use ($evidenceFile) {
+                    $q->where('project_id', $evidenceFile->project_id);
+                })
+                ->where('is_compliant', false)
+                ->update(['is_compliant' => true]);
+        }
+
+        // Path 2: PCI DSS → ROC
+        if ($evidenceFile->pci_dss_requirement_id) {
+            $detail = ProjectPciDssDetail::firstOrCreate(
+                ['project_id' => $evidenceFile->project_id],
+                [
+                    'entity_name' => $evidenceFile->project->name,
+                    'assessment_date' => now(),
+                ]
+            );
+
+            $findingDescription = $evidenceFile->ai_observations
+                ? '[Auto-populated from accepted evidence #' . $evidenceFile->id . '] ' . $evidenceFile->ai_observations
+                : 'Accepted evidence #' . $evidenceFile->id . ' demonstrates compliance for this requirement.';
+
+            PciDssFinding::updateOrCreate(
+                [
+                    'project_pci_dss_detail_id' => $detail->id,
+                    'pci_dss_requirement_id' => $evidenceFile->pci_dss_requirement_id,
+                ],
+                [
+                    'assessment_finding' => 'In Place',
+                    'finding_description' => $findingDescription,
+                ]
+            );
+
+            Log::info("ROC finding auto-set to 'In Place' for PCI DSS req #{$evidenceFile->pci_dss_requirement_id} from evidence_file_id: {$evidenceFile->id}");
+        }
+    }
+
+    /**
+     * When evidence is un-accepted (returned or rejected), revert the linked
+     * findings so reports reflect the current state.
+     */
+    protected function revertFinding(EvidenceFile $evidenceFile): void
+    {
+        if (!$evidenceFile->project_id) {
+            return;
+        }
+
+        // Path 1: Unified Gap Assessment
+        if ($evidenceFile->framework_control_id) {
+            AssessmentFinding::where('framework_control_id', $evidenceFile->framework_control_id)
+                ->whereHas('projectAssessment', function ($q) use ($evidenceFile) {
+                    $q->where('project_id', $evidenceFile->project_id);
+                })
+                ->where('is_compliant', true)
+                ->update(['is_compliant' => false]);
+        }
+
+        // Path 2: PCI DSS → ROC
+        if ($evidenceFile->pci_dss_requirement_id) {
+            $detail = ProjectPciDssDetail::where('project_id', $evidenceFile->project_id)->first();
+            if ($detail) {
+                PciDssFinding::where('project_pci_dss_detail_id', $detail->id)
+                    ->where('pci_dss_requirement_id', $evidenceFile->pci_dss_requirement_id)
+                    ->where('assessment_finding', 'In Place')
+                    ->update(['assessment_finding' => 'Not Tested']);
+            }
+        }
     }
 
     /**
@@ -556,6 +750,12 @@ class EvidenceController extends Controller
             $statusLabel = "Awaiting Auditor HITL Validation";
         } elseif ($evidenceFile->hitl_status === 'accepted') {
             $statusLabel = "Evidence Approved & Locked";
+        } elseif ($evidenceFile->ai_analysis_status === 'failed') {
+            $statusLabel = "Analysis Failed — Review Required";
+        } elseif ($evidenceFile->scan_status === 'infected') {
+            $statusLabel = "Malicious Content Detected — Quarantined";
+        } elseif ($evidenceFile->ai_analysis_status === 'skipped_due_to_scan') {
+            $statusLabel = "Skipped Due to Scan Failure";
         }
 
         return response()->json([
@@ -654,3 +854,4 @@ class EvidenceController extends Controller
         ]);
     }
 }
+

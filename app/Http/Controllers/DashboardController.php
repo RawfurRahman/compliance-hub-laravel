@@ -14,17 +14,17 @@ use App\Models\PciExternalScan;
 use App\Models\PciInternalScan;
 use App\Models\PciDssFinding;
 use App\Models\Project;
-use App\Services\DashboardMetricsService;
-use App\Http\Resources\Dashboard\KpiResource;
-use App\Http\Resources\Dashboard\HeatmapCellResource;
-use App\Http\Resources\Dashboard\TopRiskResource;
-use App\Http\Resources\Dashboard\InherentVsResidualResource;
-use App\Http\Resources\Dashboard\ControlEffectivenessResource;
-use App\Http\Resources\Dashboard\ComplianceScorecardResource;
-use App\Http\Resources\Dashboard\MaturityScoreResource;
-use App\Http\Resources\Dashboard\RiskByDepartmentResource;
-use App\Http\Resources\Dashboard\IssuesAndRemediationResource;
-use App\Http\Resources\Dashboard\RiskAcceptanceSplitResource;
+use App\Modules\RiskManagement\Services\DashboardMetricsService;
+use App\Modules\RiskManagement\Resources\Dashboard\KpiResource;
+use App\Modules\RiskManagement\Resources\Dashboard\HeatmapCellResource;
+use App\Modules\RiskManagement\Resources\Dashboard\TopRiskResource;
+use App\Modules\RiskManagement\Resources\Dashboard\InherentVsResidualResource;
+use App\Modules\RiskManagement\Resources\Dashboard\ControlEffectivenessResource;
+use App\Modules\RiskManagement\Resources\Dashboard\ComplianceScorecardResource;
+use App\Modules\RiskManagement\Resources\Dashboard\MaturityScoreResource;
+use App\Modules\RiskManagement\Resources\Dashboard\RiskByDepartmentResource;
+use App\Modules\RiskManagement\Resources\Dashboard\IssuesAndRemediationResource;
+use App\Modules\RiskManagement\Resources\Dashboard\RiskAcceptanceSplitResource;
 
 class DashboardController extends Controller
 {
@@ -41,75 +41,85 @@ class DashboardController extends Controller
      * --------------------------------------------------------------- */
 
     /** Headline KPI counters. Cached 5 minutes (heavy). */
-    public function kpis()
+    public function kpis(Request $request)
     {
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
         $data = Cache::remember(
-            'dashboard.kpis',
+            'dashboard.kpis.' . md5(json_encode($filters)),
             self::HEAVY_CACHE_TTL,
-            fn () => $this->metrics->kpis()
+            fn () => $this->metrics->setFilters($filters)->kpis()
         );
 
         return new KpiResource($data);
     }
 
     /** Risk heatmap cells. Cached 5 minutes (heavy). */
-    public function heatmap()
+    public function heatmap(Request $request)
     {
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
         $data = Cache::remember(
-            'dashboard.heatmap',
+            'dashboard.heatmap.' . md5(json_encode($filters)),
             self::HEAVY_CACHE_TTL,
-            fn () => $this->metrics->heatmap()
+            fn () => $this->metrics->setFilters($filters)->heatmap()
         );
 
         return HeatmapCellResource::collection($data);
     }
 
     /** Highest-risk open findings. */
-    public function topRisks()
+    public function topRisks(Request $request)
     {
-        return TopRiskResource::collection($this->metrics->topRisks());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return TopRiskResource::collection($this->metrics->setFilters($filters)->topRisks());
     }
 
     /** Inherent vs residual risk per domain. */
-    public function inherentVsResidualByDept()
+    public function inherentVsResidualByDept(Request $request)
     {
-        return InherentVsResidualResource::collection($this->metrics->inherentVsResidualByDept());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return InherentVsResidualResource::collection($this->metrics->setFilters($filters)->inherentVsResidualByDept());
     }
 
     /** Effective / partial / ineffective control split. */
-    public function controlEffectiveness()
+    public function controlEffectiveness(Request $request)
     {
-        return new ControlEffectivenessResource($this->metrics->controlEffectiveness());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return new ControlEffectivenessResource($this->metrics->setFilters($filters)->controlEffectiveness());
     }
 
     /** Per-framework compliance percentage AND lifecycle phase. */
-    public function complianceScorecard()
+    public function complianceScorecard(Request $request)
     {
-        return ComplianceScorecardResource::collection($this->metrics->complianceScorecard());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return ComplianceScorecardResource::collection($this->metrics->setFilters($filters)->complianceScorecard());
     }
 
     /** Maturity composite + four dimension scores. */
-    public function maturityScore()
+    public function maturityScore(Request $request)
     {
-        return new MaturityScoreResource($this->metrics->maturityScore());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return new MaturityScoreResource($this->metrics->setFilters($filters)->maturityScore());
     }
 
     /** Open finding count and weighted risk score per domain. */
-    public function riskByDepartment()
+    public function riskByDepartment(Request $request)
     {
-        return RiskByDepartmentResource::collection($this->metrics->riskByDepartment());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return RiskByDepartmentResource::collection($this->metrics->setFilters($filters)->riskByDepartment());
     }
 
     /** Issue / remediation status breakdown. */
-    public function issuesAndRemediation()
+    public function issuesAndRemediation(Request $request)
     {
-        return new IssuesAndRemediationResource($this->metrics->issuesAndRemediation());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return new IssuesAndRemediationResource($this->metrics->setFilters($filters)->issuesAndRemediation());
     }
 
     /** Accepted / mitigated / open risk-treatment split. */
-    public function riskAcceptanceSplit()
+    public function riskAcceptanceSplit(Request $request)
     {
-        return new RiskAcceptanceSplitResource($this->metrics->riskAcceptanceSplit());
+        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+        return new RiskAcceptanceSplitResource($this->metrics->setFilters($filters)->riskAcceptanceSplit());
     }
     /**
      * Show the application dashboard.
@@ -166,6 +176,14 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', compact('stats'));
+    }
+
+    /**
+     * Show the Executive Dashboard.
+     */
+    public function executive()
+    {
+        return view('dashboard.executive');
     }
 
     public function submitComplianceData(Request $request)

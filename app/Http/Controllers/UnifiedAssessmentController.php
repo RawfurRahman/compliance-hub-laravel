@@ -36,14 +36,16 @@ class UnifiedAssessmentController extends Controller
             abort(404);
         }
 
+        $gapAssessment = ProjectAssessment::where('project_id', $project->id)
+            ->where('framework_id', $framework->id)
+            ->where('type', 'Gap')
+            ->first();
+
+        $gapCompleted = ($gapAssessment && $gapAssessment->stats()['compliancePct'] == 100);
+
         // Enforce phase-dependency: Final Assessment (Phase 2) requires a 100% compliant Gap Assessment (Phase 1)
         if ($type === 'Final') {
-            $gapAssessment = ProjectAssessment::where('project_id', $project->id)
-                ->where('framework_id', $framework->id)
-                ->where('type', 'Gap')
-                ->first();
-
-            if (!$gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
+            if (!$gapCompleted) {
                 return redirect()
                     ->route('assessments.unified.show', [$project, $framework->slug, 'gap'])
                     ->with('error', 'Cannot start or access the Final Assessment (Phase 2) until the Gap Assessment (Phase 1) is 100% compliant.');
@@ -59,12 +61,13 @@ class UnifiedAssessmentController extends Controller
         if (!$assessment) {
             // Return view with no assessment so setup screen is displayed
             return view('assessments.unified-dashboard', [
-                'project'    => $project,
-                'framework'  => $framework,
-                'type'       => $type,
-                'assessment' => null,
-                'stats'      => $this->emptyStats(),
-                'ganttJson'  => '[]',
+                'project'      => $project,
+                'framework'    => $framework,
+                'type'         => $type,
+                'assessment'   => null,
+                'stats'        => $this->emptyStats(),
+                'ganttJson'    => '[]',
+                'gapCompleted' => $gapCompleted,
             ]);
         }
 
@@ -82,6 +85,7 @@ class UnifiedAssessmentController extends Controller
             'stats'           => $stats,
             'ganttJson'       => $ganttJson,
             'projectEvidence' => $projectEvidence,
+            'gapCompleted'    => $gapCompleted,
         ]);
     }
 
@@ -261,8 +265,16 @@ class UnifiedAssessmentController extends Controller
         $stats = $assessment->stats();
         $findings = $assessment->findings;
 
+        // Load accepted evidence files indexed by framework_control_id for report display
+        $acceptedEvidence = \App\Models\EvidenceFile::where('project_id', $project->id)
+            ->where('hitl_status', 'accepted')
+            ->where('ai_analysis_status', 'approved')
+            ->whereNotNull('framework_control_id')
+            ->get()
+            ->groupBy('framework_control_id');
+
         $pdf = Pdf::loadView('assessments.report-pdf', compact(
-            'assessment', 'project', 'framework', 'stats', 'findings'
+            'assessment', 'project', 'framework', 'stats', 'findings', 'acceptedEvidence'
         ))->setPaper('a4', 'portrait');
 
         $filename = sprintf(

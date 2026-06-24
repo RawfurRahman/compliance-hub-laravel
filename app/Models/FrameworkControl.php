@@ -15,6 +15,11 @@ class FrameworkControl extends Model
         'domain',
         'requirement_description',
         'required_evidence',
+        'status',
+        'pci_dss_ref',
+        'iso_ref',
+        'bb_ict_ref',
+        'swift_ref',
     ];
 
     protected $appends = ['control_name'];
@@ -27,6 +32,18 @@ class FrameworkControl extends Model
     public function findings()
     {
         return $this->hasMany(AssessmentFinding::class, 'framework_control_id');
+    }
+
+    public function riskControlMappings()
+    {
+        return $this->hasMany(RiskControlMapping::class, 'framework_control_id');
+    }
+
+    public function controls()
+    {
+        return $this->belongsToMany(Control::class, 'comp_framework_control_map', 'framework_control_id', 'control_id')
+            ->withPivot(['mapping_type', 'mapping_notes', 'effectiveness_weight'])
+            ->withTimestamps();
     }
 
     /**

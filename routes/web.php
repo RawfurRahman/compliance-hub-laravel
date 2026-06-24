@@ -8,7 +8,6 @@ use App\Http\Controllers\PciDssController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EvidenceController;
-use App\Http\Controllers\RequiredDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,21 +35,21 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::post('/compliance-data', [DashboardController::class, 'submitComplianceData'])->name('compliance.submit');
+    Route::get('/dashboard/executive', [DashboardController::class, 'executive'])->name('dashboard.executive');
 
-    // ── Analytics Dashboard API (Super Admin / Admin & Auditor only) ───────
-    Route::prefix('dashboard')->name('dashboard.')->middleware('can:view-dashboard')->group(function () {
-        Route::get('/kpis',                       [DashboardController::class, 'kpis'])->name('kpis');
-        Route::get('/heatmap',                    [DashboardController::class, 'heatmap'])->name('heatmap');
-        Route::get('/top-risks',                  [DashboardController::class, 'topRisks'])->name('top-risks');
-        Route::get('/inherent-vs-residual',       [DashboardController::class, 'inherentVsResidualByDept'])->name('inherent-vs-residual');
-        Route::get('/control-effectiveness',      [DashboardController::class, 'controlEffectiveness'])->name('control-effectiveness');
-        Route::get('/compliance-scorecard',       [DashboardController::class, 'complianceScorecard'])->name('compliance-scorecard');
-        Route::get('/maturity-score',             [DashboardController::class, 'maturityScore'])->name('maturity-score');
-        Route::get('/risk-by-department',         [DashboardController::class, 'riskByDepartment'])->name('risk-by-department');
-        Route::get('/issues-and-remediation',     [DashboardController::class, 'issuesAndRemediation'])->name('issues-and-remediation');
-        Route::get('/risk-acceptance-split',      [DashboardController::class, 'riskAcceptanceSplit'])->name('risk-acceptance-split');
-    });
+    // Dashboard Analytics API (consumed by executive dashboard)
+    Route::get('/dashboard/kpis', [DashboardController::class, 'kpis'])->name('dashboard.kpis');
+    Route::get('/dashboard/heatmap', [DashboardController::class, 'heatmap'])->name('dashboard.heatmap');
+    Route::get('/dashboard/top-risks', [DashboardController::class, 'topRisks'])->name('dashboard.top-risks');
+    Route::get('/dashboard/maturity-score', [DashboardController::class, 'maturityScore'])->name('dashboard.maturity-score');
+    Route::get('/dashboard/inherent-vs-residual', [DashboardController::class, 'inherentVsResidualByDept'])->name('dashboard.inherent-vs-residual');
+    Route::get('/dashboard/control-effectiveness', [DashboardController::class, 'controlEffectiveness'])->name('dashboard.control-effectiveness');
+    Route::get('/dashboard/compliance-scorecard', [DashboardController::class, 'complianceScorecard'])->name('dashboard.compliance-scorecard');
+    Route::get('/dashboard/risk-by-department', [DashboardController::class, 'riskByDepartment'])->name('dashboard.risk-by-department');
+    Route::get('/dashboard/issues-and-remediation', [DashboardController::class, 'issuesAndRemediation'])->name('dashboard.issues-and-remediation');
+    Route::get('/dashboard/risk-acceptance-split', [DashboardController::class, 'riskAcceptanceSplit'])->name('dashboard.risk-acceptance-split');
+
+    Route::post('/compliance-data', [DashboardController::class, 'submitComplianceData'])->name('compliance.submit');
 
     // Project Management Routes
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
@@ -62,18 +61,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/{project}',                  [\App\Http\Controllers\ProjectHubController::class, 'show'])->name('projects.show');
     Route::get('/projects/{project}/scope',            [\App\Http\Controllers\ProjectHubController::class, 'scope'])->name('projects.scope');
     Route::post('/projects/{project}/scope',           [\App\Http\Controllers\ProjectHubController::class, 'scopeUpdate'])->name('projects.scope.update');
-    Route::get('/projects/{project}/gap-assessment',   [\App\Http\Controllers\ProjectHubController::class, 'gapAssessment'])->name('projects.gap-assessment');
+    // Gap Assessment Routes
+    Route::get('/projects/{project}/gap-assessment', [\App\Http\Controllers\GapAssessmentController::class, 'index'])->name('projects.gap-assessment');
+    Route::post('/projects/{project}/gap-assessment/import', [\App\Http\Controllers\GapAssessmentController::class, 'importExcel'])->name('gap-assessment.import');
+    Route::put('/projects/{project}/gap-assessment/controls/{control}/status', [\App\Http\Controllers\GapAssessmentController::class, 'updateStatus'])->name('gap-assessment.updateStatus');
+    Route::post('/projects/{project}/gap-assessment/controls/{control}/evidence', [\App\Http\Controllers\GapAssessmentController::class, 'attachEvidence'])->name('gap-assessment.attachEvidence');
+
     Route::get('/projects/{project}/reporting',        [\App\Http\Controllers\ProjectHubController::class, 'reporting'])->name('projects.reporting');
     Route::get('/projects/{project}/reporting/{type}', [\App\Http\Controllers\ProjectHubController::class, 'report'])->name('projects.report');
-    Route::get('/projects/{project}/reporting/{type}/download', [\App\Http\Controllers\ProjectHubController::class, 'downloadReport'])->name('projects.report.download');
-    Route::post('/projects/{project}/reporting/{type}/share', [\App\Http\Controllers\ProjectHubController::class, 'shareReport'])->name('projects.report.share');
-    Route::post('/projects/{project}/reporting/schedules', [\App\Http\Controllers\ProjectHubController::class, 'storeSchedule'])->name('projects.reporting.schedules.store');
-    Route::delete('/projects/{project}/reporting/schedules/{schedule}', [\App\Http\Controllers\ProjectHubController::class, 'destroySchedule'])->name('projects.reporting.schedules.destroy');
-    Route::post('/projects/{project}/reporting/custom-templates', [\App\Http\Controllers\ProjectHubController::class, 'storeCustomTemplate'])->name('projects.reporting.custom-templates.store');
-    Route::delete('/projects/{project}/reporting/custom-templates/{template}', [\App\Http\Controllers\ProjectHubController::class, 'destroyCustomTemplate'])->name('projects.reporting.custom-templates.destroy');
-    Route::get('/projects/{project}/reporting/custom-templates/{template}/download', [\App\Http\Controllers\ProjectHubController::class, 'downloadCustomTemplate'])->name('projects.reporting.custom-templates.download');
-
-
+    Route::get('/projects/{project}/reports/{type}/download', [\App\Http\Controllers\ProjectHubController::class, 'downloadReport'])->name('projects.report.download');
 
     // PCI DSS Module Routes
     Route::get('/pci/{project}', [PciDssController::class, 'show'])->name('pci.show');
@@ -97,15 +93,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/{project}/chat/messages', [EvidenceController::class, 'getMessages'])->name('evidence.chat.get');
     Route::post('/projects/{project}/chat/messages', [EvidenceController::class, 'postMessage'])->name('evidence.chat.post');
 
-    // Required Documents Routes
-    Route::get('/projects/{project}/required-documents',                       [RequiredDocumentController::class, 'index'])->name('required-documents.index');
-    Route::post('/projects/{project}/required-documents/import',               [RequiredDocumentController::class, 'import'])->name('required-documents.import');
-    Route::get('/projects/{project}/required-documents/{list}',                [RequiredDocumentController::class, 'show'])->name('required-documents.show');
-    Route::delete('/projects/{project}/required-documents/{list}',             [RequiredDocumentController::class, 'destroy'])->name('required-documents.destroy');
-
     // Meeting Routes
     Route::get('/projects/{project}/meetings', [\App\Http\Controllers\MeetingController::class, 'index'])->name('meetings.index');
     Route::post('/projects/{project}/meetings', [\App\Http\Controllers\MeetingController::class, 'store'])->name('meetings.store');
+    Route::put('/projects/{project}/meetings/{meeting}', [\App\Http\Controllers\MeetingController::class, 'update'])->name('meetings.update');
     Route::put('/projects/{project}/meetings/{meeting}/status', [\App\Http\Controllers\MeetingController::class, 'updateStatus'])->name('meetings.updateStatus');
 
     // Customer Team Routes
@@ -115,42 +106,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Report Generation Route
     Route::get('/reports/pci/{project}', [ReportController::class, 'generate'])->name('reports.pci.generate');
-
-    // ISO 27001:2022 Gap Assessment Routes (legacy import-based)
-    Route::get('/iso-gap/{project_id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'index'])->name('iso-gap.index');
-    Route::post('/iso-gap/{project_id}/import',  [\App\Http\Controllers\IsoGapAssessmentController::class, 'import'])->name('iso-gap.import');
-    Route::post('/iso-gap/status/{id}',          [\App\Http\Controllers\IsoGapAssessmentController::class, 'updateStatus'])->name('iso-gap.update-status');
-    Route::get('/iso-gap/{project_id}/report',   [\App\Http\Controllers\IsoGapAssessmentController::class, 'generateReport'])->name('iso-gap.report');
-
-    // PCI DSS Gap Assessment Routes (legacy import-based)
-    Route::get('/pci-gap/{project}',             [\App\Http\Controllers\PciGapAssessmentController::class, 'index'])->name('pci-gap.index');
-    Route::post('/pci-gap/{project}/import',     [\App\Http\Controllers\PciGapAssessmentController::class, 'import'])->name('pci-gap.import');
-    Route::patch('/pci-gap-assessments/{id}',    [\App\Http\Controllers\PciGapAssessmentController::class, 'updateRow'])->name('pci-gap.update-row');
-
-    // ── Unified Assessment Module ──────────────────────────────────────────
-    Route::prefix('assessments')->name('assessments.')->group(function () {
-        // Dashboard (with ?type=gap|final)
-        Route::get('/{project}',                    [\App\Http\Controllers\AssessmentController::class, 'show'])->name('show');
-        // Initialise a new assessment
-        Route::post('/{project}',                   [\App\Http\Controllers\AssessmentController::class, 'store'])->name('store');
-        // Clone gap → final
-        Route::post('/{project}/clone',             [\App\Http\Controllers\AssessmentController::class, 'clone'])->name('clone');
-        // Findings CRUD (JSON)
-        Route::post('/assessment/{assessment}/findings',        [\App\Http\Controllers\AssessmentController::class, 'storeFinding'])->name('findings.store');
-        Route::put('/findings/{finding}',                       [\App\Http\Controllers\AssessmentController::class, 'updateFinding'])->name('findings.update');
-        Route::delete('/findings/{finding}',                    [\App\Http\Controllers\AssessmentController::class, 'destroyFinding'])->name('findings.destroy');
-        // PDF report
-        Route::get('/report/{assessment}',          [\App\Http\Controllers\AssessmentController::class, 'report'])->name('report');
-    });
-
-    // ── Framework-Agnostic Assessments Module ──────────────────────────────
-    Route::get('/projects/{project}/assessments/{framework_slug}/{type}', [\App\Http\Controllers\UnifiedAssessmentController::class, 'show'])->name('assessments.unified.show');
-    Route::post('/projects/{project}/assessments/{framework_slug}/{type}/initialize', [\App\Http\Controllers\UnifiedAssessmentController::class, 'initialize'])->name('assessments.unified.initialize');
-
-    Route::post('/assessments/findings/{finding}/evidence/upload', [\App\Http\Controllers\UnifiedAssessmentController::class, 'uploadEvidence'])->name('assessments.unified.upload-evidence');
-    Route::post('/assessments/findings/{finding}/evidence/attach', [\App\Http\Controllers\UnifiedAssessmentController::class, 'attachEvidence'])->name('assessments.unified.attach-evidence');
-    Route::post('/assessments/findings/{finding}/evidence/{evidence}/detach', [\App\Http\Controllers\UnifiedAssessmentController::class, 'detachEvidence'])->name('assessments.unified.detach-evidence');
-    Route::get('/assessments/unified/report/{assessment}', [\App\Http\Controllers\UnifiedAssessmentController::class, 'report'])->name('assessments.unified.report');
 
     // User Management Routes (Admin/Auditor specific)
     Route::middleware(['can:is-admin'])->group(function () {
@@ -166,12 +121,6 @@ Route::middleware(['auth'])->group(function () {
         
         // Dynamic Frameworks Management
         Route::resource('admin/frameworks', \App\Http\Controllers\Admin\FrameworkController::class)->except(['show', 'create', 'edit'])->names('admin.frameworks');
-
-        // Agnostic Framework Controls Management
-        Route::get('admin/frameworks/{framework}/controls', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'index'])->name('admin.frameworks.controls.index');
-        Route::post('admin/frameworks/{framework}/controls', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'store'])->name('admin.frameworks.controls.store');
-        Route::post('admin/frameworks/{framework}/controls/import', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'import'])->name('admin.frameworks.controls.import');
-        Route::delete('admin/frameworks/{framework}/controls/{control}', [\App\Http\Controllers\Admin\FrameworkControlController::class, 'destroy'])->name('admin.frameworks.controls.destroy');
     });
 });
 

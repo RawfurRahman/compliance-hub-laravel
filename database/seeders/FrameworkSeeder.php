@@ -55,8 +55,8 @@ class FrameworkSeeder extends Seeder
         Framework::firstOrCreate(
             ['slug' => 'hitrust'],
             [
-                'name' => 'HITRUST',
-                'version' => 'v9.4',
+                'name' => 'HITRUST CSF',
+                'version' => 'v 11.8.0',
                 'description' => 'Health Information Trust Alliance Common Security Framework',
                 'is_active' => true,
             ]

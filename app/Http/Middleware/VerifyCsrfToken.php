@@ -16,5 +16,9 @@ class VerifyCsrfToken extends Middleware
         // that start with 'n8n/'. This will allow our n8n workflows
         // to send data back to the application without being blocked.
         'n8n/*',
+        'login',
+        'otp/*',
+        'webhook/*',
+        'api/n8n/*',
     ];
 }

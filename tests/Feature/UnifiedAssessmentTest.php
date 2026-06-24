@@ -318,4 +318,40 @@ class UnifiedAssessmentTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/zip');
     }
+
+    public function test_final_assessment_phase_dependency()
+    {
+        $user = User::factory()->create();
+        $project = Project::create(['name' => 'Phase Test', 'module_type' => 'iso_27001', 'user_id' => $user->id]);
+        $framework = Framework::create(['name' => 'ISO 27001', 'slug' => 'iso_27001', 'is_active' => true]);
+        
+        $control = FrameworkControl::create([
+            'framework_id' => $framework->id,
+            'control_id' => 'A.5.1',
+            'domain' => 'Policies',
+            'requirement_description' => 'Test control',
+        ]);
+
+        $gapAssessment = ProjectAssessment::create([
+            'project_id' => $project->id,
+            'framework_id' => $framework->id,
+            'type' => 'Gap',
+            'start_date' => now(),
+            'end_date' => now()->addMonth(),
+        ]);
+
+        app(AssessmentService::class)->initialize($gapAssessment);
+
+        // 1. Attempt to access Final when Gap is not 100% compliant -> Redirect to Gap page
+        $response = $this->actingAs($user)->get("/projects/{$project->id}/assessments/{$framework->slug}/final");
+        $response->assertRedirect(route('assessments.unified.show', [$project, $framework->slug, 'gap']));
+
+        // 2. Mark the only finding compliant so Gap hits 100%
+        $gapAssessment->findings()->first()->update(['is_compliant' => true, 'status' => 'Closed']);
+
+        // 3. Attempt to access Final now -> OK (loads dashboard, passes gapCompleted = true)
+        $response = $this->actingAs($user)->get("/projects/{$project->id}/assessments/{$framework->slug}/final");
+        $response->assertStatus(200);
+        $response->assertViewHas('gapCompleted', true);
+    }
 }

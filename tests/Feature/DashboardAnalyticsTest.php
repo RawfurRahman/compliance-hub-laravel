@@ -214,10 +214,13 @@ class DashboardAnalyticsTest extends TestCase
         $user = $this->userWithRole('Admin');
         Cache::flush();
 
+        // No filters = empty array. Key is dashboard.kpis.<md5 of "[]">
+        $emptyFilterKey = md5(json_encode([]));
+
         $this->actingAs($user)->get('/dashboard/kpis')->assertOk();
-        $this->assertTrue(Cache::has('dashboard.kpis'));
+        $this->assertTrue(Cache::has('dashboard.kpis.' . $emptyFilterKey));
 
         $this->actingAs($user)->get('/dashboard/heatmap')->assertOk();
-        $this->assertTrue(Cache::has('dashboard.heatmap'));
+        $this->assertTrue(Cache::has('dashboard.heatmap.' . $emptyFilterKey));
     }
 }

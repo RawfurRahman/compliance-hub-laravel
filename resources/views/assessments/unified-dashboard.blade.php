@@ -49,8 +49,12 @@
             <a href="{{ route('projects.show', $project) }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest mb-2 transition">
                 <i class="fas fa-arrow-left"></i> Back to Project Hub
             </a>
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 {{ $framework->name }} <span class="gradient-text">Assessment</span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border {{ $type === 'Final' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200' }}">
+                    <i class="fas {{ $type === 'Final' ? 'fa-check-circle' : 'fa-spinner fa-spin' }}"></i>
+                    Phase: {{ $type }} Assessment
+                </span>
             </h1>
             <p class="mt-1 text-sm text-slate-500 font-medium">
                 Project: <span class="font-bold text-slate-700">{{ $project->name }}</span>
@@ -65,15 +69,21 @@
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {{-- Segmented View Toggle --}}
-            <div class="flex bg-slate-200 p-1 rounded-xl self-start">
+            <div class="flex bg-slate-200 p-1 rounded-xl self-start items-center">
                 <a href="{{ route('assessments.unified.show', [$project, $framework->slug, 'gap']) }}" 
                    class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {{ $type === 'Gap' ? 'bg-[#0a1e42] text-white shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
                     Gap Assessment
                 </a>
-                <a href="{{ route('assessments.unified.show', [$project, $framework->slug, 'final']) }}" 
-                   class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {{ $type === 'Final' ? 'bg-[#0a1e42] text-white shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
-                    Final Assessment
-                </a>
+                @if($gapCompleted)
+                    <a href="{{ route('assessments.unified.show', [$project, $framework->slug, 'final']) }}" 
+                       class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all {{ $type === 'Final' ? 'bg-[#0a1e42] text-white shadow-sm' : 'text-slate-600 hover:text-slate-800' }}">
+                        Final Assessment
+                    </a>
+                @else
+                    <div class="px-4 py-2 text-xs font-bold text-slate-400 cursor-not-allowed opacity-60 flex items-center gap-1.5" title="Locked until Gap is 100% compliant">
+                        <i class="fas fa-lock text-[10px]"></i> Final Assessment
+                    </div>
+                @endif
             </div>
 
             @if($assessment)

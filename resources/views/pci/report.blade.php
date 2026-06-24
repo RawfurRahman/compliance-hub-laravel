@@ -93,7 +93,6 @@
             <p><strong>Date Assessment Ended:</strong> {{ optional($project->pciDssDetails)->date_assessment_ended ?? 'N/A' }}</p>
         </div>
 
-        @if(!isset($sections) || in_array('executive_summary', $sections))
         <!-- Part I: Assessment Overview -->
         <h2 class="mt-16 section-break">Part I: Assessment Overview</h2>
 
@@ -127,9 +126,7 @@
                 <li>No payment channels specified.</li>
             @endforelse
         </ul>
-        @endif
 
-        @if(!isset($sections) || in_array('metrics', $sections))
         <!-- ** NEW SECTION ** -->
         <h2 class="mt-16 section-break">3. Description of Scope of Work and Approach Taken</h2>
         <h4>3.1 Assessor's Validation of Defined Scope Accuracy</h4>
@@ -224,9 +221,7 @@
         @else
         <p>No internal scan results recorded.</p>
         @endif
-        @endif
 
-        @if(!isset($sections) || in_array('detailed_findings', $sections))
         <!-- Part II: Findings and Observations -->
         <h2 class="mt-16 section-break">Part II: Findings and Observations</h2>
         <h3>7. Findings and Observations</h3>
@@ -286,7 +281,130 @@
                 </table>
             </div>
         @endforeach
-        @endif
+
+        <!-- Part III: Conclusion & Signature Block -->
+        <h2 class="mt-16 section-break">Part III: Conclusion and Attestation</h2>
+
+        <h3>Compliance Status Summary</h3>
+        <p class="mt-4">
+            <strong>Overall Compliance Result:</strong>
+            @if($complianceMetrics['is_compliant'])
+                <span style="color: green; font-weight: bold;">COMPLIANT</span>
+            @else
+                <span style="color: red; font-weight: bold;">NON-COMPLIANT</span>
+            @endif
+        </p>
+
+        <table class="mt-4">
+            <thead>
+                <tr>
+                    <th>Assessment Metric</th>
+                    <th>Count</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total Requirements Assessed</td>
+                    <td>{{ $complianceMetrics['total_requirements'] }}</td>
+                    <td>100%</td>
+                </tr>
+                <tr>
+                    <td>Requirements: In Place</td>
+                    <td>{{ $complianceMetrics['passed'] }}</td>
+                    <td>{{ $complianceMetrics['total_requirements'] > 0 ? round(($complianceMetrics['passed'] / $complianceMetrics['total_requirements']) * 100, 1) : 0 }}%</td>
+                </tr>
+                <tr>
+                    <td>Requirements: Not Applicable</td>
+                    <td>{{ $complianceMetrics['not_applicable'] }}</td>
+                    <td>{{ $complianceMetrics['total_requirements'] > 0 ? round(($complianceMetrics['not_applicable'] / $complianceMetrics['total_requirements']) * 100, 1) : 0 }}%</td>
+                </tr>
+                <tr>
+                    <td>Requirements: Not Tested</td>
+                    <td>{{ $complianceMetrics['not_tested'] }}</td>
+                    <td>{{ $complianceMetrics['total_requirements'] > 0 ? round(($complianceMetrics['not_tested'] / $complianceMetrics['total_requirements']) * 100, 1) : 0 }}%</td>
+                </tr>
+                <tr style="background-color: #ffcccc;">
+                    <td><strong>Requirements: Not in Place</strong></td>
+                    <td><strong>{{ $complianceMetrics['failed'] }}</strong></td>
+                    <td><strong>{{ $complianceMetrics['total_requirements'] > 0 ? round(($complianceMetrics['failed'] / $complianceMetrics['total_requirements']) * 100, 1) : 0 }}%</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 class="mt-12">Assessment Conclusion</h3>
+        <p class="mt-4">
+            Based on the findings presented in this Report on Compliance, the assessment activities have been completed for the assessed entity
+            <strong>{{ optional($project->pciDssDetails)->ae_company_name ?? 'N/A' }}</strong> as of
+            <strong>{{ optional($project->pciDssDetails)->date_assessment_ended ?? 'N/A' }}</strong>.
+        </p>
+
+        <p class="mt-4">
+            @if($complianceMetrics['is_compliant'])
+                The assessed entity is in compliance with the PCI DSS. All required security controls have been implemented and are operating effectively. This entity may proceed with PCI DSS validation.
+            @else
+                The assessed entity is not in compliance with the PCI DSS. {{ $complianceMetrics['failed'] }} requirement(s) were found to be not in place. Immediate remediation is required for all non-compliant items identified in this report.
+            @endif
+        </p>
+
+        <h3 class="mt-12">Attestation of Compliance</h3>
+        <p class="mt-4">
+            I attest that:
+        </p>
+        <ul>
+            <li>I have conducted an on-site and/or off-site assessment of the entity's compliance to the PCI DSS</li>
+            <li>I have reviewed and tested the adequacy of their security controls</li>
+            <li>This report accurately reflects the findings of that assessment</li>
+            <li>I have no conflicts of interest with the entity</li>
+        </ul>
+
+        <table class="mt-12" style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 50%; vertical-align: bottom;">
+                    <div style="border-top: 1px solid black; height: 80px; margin-top: 40px;">
+                        <p style="margin-top: 4px;"><strong>Qualified Security Assessor Signature</strong></p>
+                    </div>
+                </td>
+                <td style="border: none; width: 50%; text-align: right; vertical-align: bottom;">
+                    <div style="border-top: 1px solid black; height: 80px; margin-top: 40px;">
+                        <p style="margin-top: 4px;"><strong>Date</strong></p>
+                    </div>
+                </td>
+            </tr>
+            <tr style="border: none;">
+                <td style="border: none;">
+                    {{ optional($project->pciDssDetails)->assessor_lead_name ?? '_______________________' }}
+                </td>
+                <td style="border: none; text-align: right;">
+                    {{ optional($project->pciDssDetails)->date_of_report ?? '_______________________' }}
+                </td>
+            </tr>
+        </table>
+
+        <h3 class="mt-12">Entity Representative Acceptance</h3>
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none; width: 50%; vertical-align: bottom;">
+                    <div style="border-top: 1px solid black; height: 80px; margin-top: 40px;">
+                        <p style="margin-top: 4px;"><strong>Entity Representative Signature</strong></p>
+                    </div>
+                </td>
+                <td style="border: none; width: 50%; text-align: right; vertical-align: bottom;">
+                    <div style="border-top: 1px solid black; height: 80px; margin-top: 40px;">
+                        <p style="margin-top: 4px;"><strong>Date</strong></p>
+                    </div>
+                </td>
+            </tr>
+            <tr style="border: none;">
+                <td style="border: none;">
+                    {{ optional($project->pciDssDetails)->ae_contact_name ?? '_______________________' }}
+                </td>
+                <td style="border: none; text-align: right;">
+                    _______________________
+                </td>
+            </tr>
+        </table>
+
     </div>
 
 </body>

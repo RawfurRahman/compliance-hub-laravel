@@ -84,7 +84,7 @@
                                 Assessment
                             </a>
                         @else
-                            <a href="{{ route('assessments.show', $project) }}" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-indigo-100">
+                            <a href="{{ route('projects.gap-assessment', $project) }}" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-indigo-100">
                                 Assessment
                             </a>
                         @endif
