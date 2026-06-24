@@ -44,6 +44,37 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Inherent Risk Engine (versioned formulas)
+    |--------------------------------------------------------------------------
+    |
+    | Versioned configuration for the inherent (before-controls) scoring engine.
+    | Each calculation stores the version it used, and any historical version
+    | can be resolved here so old records remain reproducible even after the
+    | active formula changes. Add a new version key (e.g. 'v2') rather than
+    | editing 'v1' in place.
+    |
+    */
+    'inherent' => [
+        'active_version' => env('RMM_INHERENT_VERSION', 'v1'),
+        'formulas' => [
+            'v1' => [
+                'tv_expression'       => 'threat_level + vulnerability_level',
+                'inherent_expression' => 'vulnerability_level * tv * likelihood',
+                'bands' => [
+                    // Ordered high to low; value is inclusive lower bound.
+                    'Critical' => 128,
+                    'High'     => 84,
+                    'Medium'   => 54,
+                    'Low'      => 0,
+                ],
+                'max_score' => 250, // 5 * (5 + 5) * 5
+                'precision' => 2,
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Legacy Field Mapping
     |--------------------------------------------------------------------------
     |
