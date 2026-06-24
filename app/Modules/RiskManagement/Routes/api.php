@@ -36,6 +36,10 @@ Route::middleware('auth:sanctum')->prefix('rmm')->name('rmm.')->group(function (
     // Risk exposure
     Route::get('/risk/{risk}/exposure', [\App\Modules\RiskManagement\Controllers\RiskExposureController::class, 'show'])->name('risk.exposure');
 
+    // Inherent (before-controls) scoring history + before-vs-after-controls feed
+    Route::get('/risk/{risk}/inherent-history', [\App\Modules\RiskManagement\Controllers\RiskInherentScoreController::class, 'history'])->name('risk.inherent-history');
+    Route::get('/inherent/before-after', [\App\Modules\RiskManagement\Controllers\RiskInherentScoreController::class, 'beforeAfter'])->name('risk.inherent.before-after');
+
     // Vendors
     Route::get('/vendors', [\App\Modules\RiskManagement\Controllers\VendorController::class, 'index'])->name('vendors.index');
     Route::post('/vendors', [\App\Modules\RiskManagement\Controllers\VendorController::class, 'store'])->name('vendors.store');
