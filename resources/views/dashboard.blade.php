@@ -3,13 +3,13 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- Page Header --}}
+        {{-- Page Header --}}
     <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-8 fade-in-up">
         <div>
             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
-                Compliance <span class="gradient-text">Dashboard</span>
+                Governance <span class="gradient-text">Module</span>
             </h1>
-            <p class="mt-1.5 text-sm text-slate-500 font-medium">Real-time overview of your enterprise compliance posture</p>
+            <p class="mt-1.5 text-sm text-slate-500 font-medium">Enterprise governance, risk management, and compliance dashboard</p>
         </div>
         <div class="mt-3 md:mt-0">
             <span class="badge badge-emerald">
@@ -138,24 +138,6 @@
                     <i class="fas fa-arrow-right text-sky-400 text-sm"></i>
                 </div>
             </div>
-        </a>
-
-        {{-- Risk Management --}}
-        <a href="{{ route('projects.index') }}" class="glass-card quick-nav-card block p-5 rounded-2xl border border-white/50 group">
-            <div class="flex items-center">
-                <div class="icon-badge icon-badge-rose w-12 h-12 rounded-xl shadow-md group-hover:shadow-lg group-hover:shadow-rose-500/20 transition-all">
-                    <i class="fas fa-triangle-exclamation text-lg"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-bold text-slate-800 group-hover:text-rose-600 transition-colors">Risk Register</p>
-                    <p class="text-[11px] font-medium text-slate-400 mt-0.5">Manage enterprise risks & controls</p>
-                </div>
-                <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="fas fa-arrow-right text-rose-400 text-sm"></i>
-                </div>
-            </div>
-        </a>
-
         @can('is-admin')
         {{-- Access Control --}}
         <a href="{{ route('users.index') }}" class="glass-card quick-nav-card block p-5 rounded-2xl border border-white/50 group">

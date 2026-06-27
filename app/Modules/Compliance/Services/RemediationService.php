@@ -14,6 +14,7 @@ class RemediationService
     {
         $plan = RiskTreatmentPlan::create([
             'risk_register_id' => $finding->risk_register_id,
+            'assessment_finding_id' => $finding->id,
             'title' => "Remediation: {$finding->observation}",
             'treatment_type' => 'reduce',
             'status' => 'planned',
@@ -57,11 +58,7 @@ class RemediationService
 
     public function getByFinding(AssessmentFinding $finding): Collection
     {
-        if (!$finding->risk_register_id) {
-            return collect();
-        }
-
-        return RiskTreatmentPlan::where('risk_register_id', $finding->risk_register_id)
+        return RiskTreatmentPlan::where('assessment_finding_id', $finding->id)
             ->latest()
             ->get();
     }

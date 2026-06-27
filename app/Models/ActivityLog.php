@@ -15,6 +15,7 @@ class ActivityLog extends Model
 
     protected $fillable = [
         'user_id',
+        'role',
         'action',
         'description',
         'details',
@@ -37,6 +38,16 @@ class ActivityLog extends Model
 
         static::deleting(function ($model) {
             return false;
+        });
+
+        // Automatically capture role when creating a log entry
+        static::creating(function ($log) {
+            if (auth()->check() && auth()->user()) {
+                $log->role = auth()->user()->hasRole('Super Admin') 
+                    ? 'Super Admin' 
+                    : auth()->user()->roles()->pluck('name')->first() 
+                    ?? 'Guest';
+            }
         });
     }
 

@@ -73,12 +73,7 @@ class DashboardController extends Controller
         return TopRiskResource::collection($this->metrics->setFilters($filters)->topRisks());
     }
 
-    /** Inherent vs residual risk per domain. */
-    public function inherentVsResidualByDept(Request $request)
-    {
-        $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
-        return InherentVsResidualResource::collection($this->metrics->setFilters($filters)->inherentVsResidualByDept());
-    }
+
 
     /** Effective / partial / ineffective control split. */
     public function controlEffectiveness(Request $request)
@@ -126,15 +121,21 @@ class DashboardController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+     public function index()
     {
-        $user = auth()->user();
         $stats = [
             'active_projects' => 0,
             'completed_requirements' => 0,
             'pending_requirements' => 0,
             'meetings' => 0,
         ];
+        
+        $user = auth()->user();
+        
+        if (!$user) {
+            logger('Index Dashboard - Not authenticated - redirecting to login');
+            return redirect()->route('login');
+        }
 
         if ($user->hasRole('Admin')) {
             $stats['active_projects'] = Project::count();
@@ -146,8 +147,8 @@ class DashboardController extends Controller
             
             // Calculate upcoming meetings where the user is either the creator or an attendee
             $stats['meetings'] = \App\Models\Meeting::where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->orWhereHas('users', function ($uq) use ($user) {
+                    $q->where('created_by', $user->id)
+                      ->orWhereHas('attendees', function ($uq) use ($user) {
                           $uq->where('users.id', $user->id);
                       });
                 })
@@ -179,18 +180,38 @@ class DashboardController extends Controller
     }
 
     /**
-     * Show the Executive Dashboard.
+     * Inherent vs residual risk per department.
      */
-    public function executive()
+    public function inherentVsResidualByDept(Request $request)
     {
-        return view('dashboard.executive');
+        $user = auth()->user();
+        
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
+        // Check if user has proper permissions or roles for accessing this data
+        $result = $this->metrics->setFilters($request->only(['department', 'framework', 'risk_type', 'owner']))->inherentVsResidualByDept();
+        
+        return InherentVsResidualResource::collection($result);
     }
 
-    public function submitComplianceData(Request $request)
+    /**
+     * Show the Governance Module.
+     */
+     public function governance()
+     {
+         $user = auth()->user();
+         
+         if (!$user) {
+             return redirect()->route('login');
+         }
+         return view('dashboard.governance');
+     }
+
+    public function submitComplianceData(Request $request, Project $project)
     {
-        // For demonstration, let's assume we are updating the PCI DSS details for a specific project.
-        // In a real application, you would get the project ID from the route, session, or request.
-        $projectId = 1; // Replace with actual project ID retrieval logic
+        $projectId = $project->id;
 
         $pciDssDetail = ProjectPciDssDetail::firstOrCreate(
             ['project_id' => $projectId],

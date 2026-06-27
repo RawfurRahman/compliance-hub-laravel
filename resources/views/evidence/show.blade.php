@@ -323,7 +323,32 @@
                                         <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-text="reviewFile.ai_recommendations || 'No critical gaps documented.'"></div>
                                     </div>
                                 </div>
-                                
+
+                                {{-- AI Gap Warnings --}}
+                                <div x-show="reviewFile.gaps && reviewFile.gaps.length > 0"
+                                     x-data="{ showGaps: false }"
+                                     class="p-6 bg-amber-50 border border-amber-200 rounded-2xl">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-bold text-amber-800">AI found potential gaps in this evidence</p>
+                                            <button @click="showGaps = !showGaps"
+                                                    class="text-xs font-semibold text-amber-700 underline hover:text-amber-800 mt-1">
+                                                <span x-text="showGaps ? 'Hide results' : 'See results'"></span>
+                                            </button>
+                                            <div x-show="showGaps" x-transition class="mt-3 space-y-2">
+                                                <template x-for="g in reviewFile.gaps" :key="g.gap">
+                                                    <div class="flex items-start gap-2 text-sm">
+                                                        <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity"></span>
+                                                        <span class="text-slate-700" x-text="g.gap"></span>
+                                                    </div>
+                                                </template>
+                                                <p class="text-[10px] text-slate-400 italic mt-2">AI-generated, please verify</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {{-- Auditor Controls --}}
                                 <div class="p-16 glass-premium rounded-[64px] border border-slate-100 bg-slate-50/30">
                                     <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-12 text-center">Auditor Adjudication</h4>

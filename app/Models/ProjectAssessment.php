@@ -20,11 +20,13 @@ class ProjectAssessment extends Model
         'end_date',
         'overall_status',
         'cloned_from_id',
+        'is_publicly_visible',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
+        'start_date'         => 'date',
+        'end_date'           => 'date',
+        'is_publicly_visible' => 'boolean',
     ];
 
     public function project()

@@ -176,7 +176,7 @@
                     </div>
                 </div>
                 <span class="text-3xl font-extrabold text-slate-800" x-text="`${overallCompliancePct}%`"></span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Compliance</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Finding Compliance</span>
             </div>
 
             <div class="glass-premium rounded-2xl p-6 lg:col-span-3">

@@ -42,10 +42,10 @@
         </div>
 
         <!-- Compliance metrics -->
-        <h2 class="mt-12">1. Compliance Status Summary</h2>
+        <h2 class="mt-12">1. Finding Compliance Status Summary</h2>
         <div class="grid grid-cols-2 gap-6 my-6">
             <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                <span class="text-xs uppercase tracking-wider text-slate-400 font-bold block">Overall Compliance Progress</span>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-bold block">Overall Finding Compliance</span>
                 <span class="text-3xl font-extrabold text-indigo-700 mt-2 block">{{ $complianceMetrics['compliance_percentage'] }}%</span>
             </div>
             <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
@@ -61,7 +61,7 @@
                     <th>Total Controls</th>
                     <th>Pending (Gaps)</th>
                     <th>Done (Compliant)</th>
-                    <th>Compliance %</th>
+                    <th>Finding Compliance %</th>
                 </tr>
             </thead>
             <tbody>

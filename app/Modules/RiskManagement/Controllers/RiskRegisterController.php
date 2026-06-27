@@ -58,6 +58,20 @@ class RiskRegisterController extends Controller
     }
 
     /* ================================================================= *
+     *  Enterprise Risks View (Stage 15)
+     * ================================================================= */
+
+    public function enterprise(Project $project)
+    {
+        $this->authorize('view', $project);
+
+        $entries = $this->service->enterpriseRisksForProject($project->id);
+        $kpis    = $this->service->kpis($project->id);
+
+        return view('risk-management.enterprise-risks', compact('project', 'entries', 'kpis'));
+    }
+
+    /* ================================================================= *
      *  PHASE 5 — Heat Map view
      * ================================================================= */
 

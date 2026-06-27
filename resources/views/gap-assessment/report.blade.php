@@ -64,7 +64,7 @@
         </div>
         <div class="stat-box">
             <div class="stat-value">{{ $overallStats['compliancePct'] }}%</div>
-            <div class="stat-label">Compliance</div>
+            <div class="stat-label">Finding Compliance</div>
         </div>
         <div class="stat-box">
             <div class="stat-value">{{ $overallStats['progressScore'] }}%</div>
@@ -81,7 +81,7 @@
                     <th>Domain</th>
                     <th>Total</th>
                     <th>Compliant</th>
-                    <th>Compliance %</th>
+                    <th>Finding Compliance %</th>
                     <th>High Risk</th>
                     <th>Progress</th>
                 </tr>

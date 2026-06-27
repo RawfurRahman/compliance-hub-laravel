@@ -766,6 +766,7 @@ class EvidenceController extends Controller
             'status_label'        => $statusLabel,
             'ai_observations'     => $evidenceFile->ai_observations,
             'ai_recommendations'  => $evidenceFile->ai_recommendations,
+            'gaps'                => $evidenceFile->ai_gaps ?? [],
             'ai_approved_by'      => optional($evidenceFile->approvedBy)->username,
             'ai_approved_at'      => $evidenceFile->ai_analysis_approved_at?->toDateTimeString(),
         ]);
@@ -803,10 +804,53 @@ class EvidenceController extends Controller
     public function getFile($id)
     {
         $evidenceFile = \App\Models\EvidenceFile::findOrFail($id);
+
+        // If this file is publicly listed on a trust center, verify the visitor has approved access
+        if ($evidenceFile->is_publicly_listed && $evidenceFile->trust_center_id) {
+            $requesterEmail = session('trust_center_requester_email');
+            if (!$requesterEmail) {
+                abort(403, 'You must request access before downloading.');
+            }
+
+            $hasAccess = \App\Modules\TrustCenter\Models\TrustCenterAccessRequest::where('trust_center_id', $evidenceFile->trust_center_id)
+                ->where('requester_email', $requesterEmail)
+                ->where('status', 'Approved')
+                ->exists();
+
+            if (!$hasAccess) {
+                abort(403, 'Your access request has not been approved yet.');
+            }
+        }
+
         if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($evidenceFile->file_path)) {
             abort(404, 'File not found');
         }
         return response()->file(\Illuminate\Support\Facades\Storage::disk('public')->path($evidenceFile->file_path));
+    }
+
+    /**
+     * Toggle whether an evidence file is publicly listed on the trust center.
+     */
+    public function toggleTrustCenterListing(Request $request, \App\Models\EvidenceFile $evidenceFile)
+    {
+        if (!auth()->user()->hasRole('Admin') && !auth()->user()->hasRole('Auditor')) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'is_publicly_listed' => 'required|boolean',
+        ]);
+
+        $trustCenter = \App\Modules\TrustCenter\Models\TrustCenter::where('project_id', $evidenceFile->project_id)->first();
+
+        $evidenceFile->update([
+            'is_publicly_listed' => $data['is_publicly_listed'],
+            'trust_center_id'    => $data['is_publicly_listed'] && $trustCenter
+                ? $trustCenter->id
+                : null,
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -822,6 +866,7 @@ class EvidenceController extends Controller
                 'evidenceFiles' => collect(),
                 'projects' => $projects,
                 'frameworkName' => '',
+                'hasTrustCenter' => false,
             ]);
         }
 
@@ -846,11 +891,14 @@ class EvidenceController extends Controller
             ->latest()
             ->get();
 
+        $trustCenter = \App\Modules\TrustCenter\Models\TrustCenter::where('project_id', $project->id)->first();
+
         return view('evidence.hub', [
             'project' => $project,
             'evidenceFiles' => $evidenceFiles,
             'projects' => $projects,
             'frameworkName' => $frameworkName,
+            'hasTrustCenter' => $trustCenter !== null,
         ]);
     }
 }

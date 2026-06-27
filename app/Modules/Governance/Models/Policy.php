@@ -56,18 +56,16 @@ class Policy extends Model
                 $prefix = config('governance.policy_number_prefix', 'GOV-POL-');
                 $policy->policy_number = $prefix . str_pad((self::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT);
             }
-            if (empty($policy->created_by) && auth()->check()) {
-                $policy->created_by = auth()->id();
+            if (empty($policy->created_by)) {
+                $policy->created_by = auth()->id() ?? 1;
             }
-            if (empty($policy->updated_by) && auth()->check()) {
-                $policy->updated_by = auth()->id();
+            if (empty($policy->updated_by)) {
+                $policy->updated_by = auth()->id() ?? 1;
             }
         });
 
         static::updating(function (self $policy) {
-            if (auth()->check()) {
-                $policy->updated_by = auth()->id();
-            }
+            $policy->updated_by = auth()->id() ?? 1;
         });
     }
 

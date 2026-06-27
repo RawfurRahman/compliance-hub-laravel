@@ -2,21 +2,24 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Modules\Compliance\Controllers\ComplianceDashboardController;
-use App\Modules\Compliance\Controllers\ControlTestController;
+use App\Modules\Compliance\Controllers\ComplianceTestController;
 use App\Modules\Compliance\Controllers\ComplianceFindingController;
 use App\Modules\Compliance\Controllers\RemediationController;
 use App\Modules\Compliance\Controllers\ComplianceSnapshotController;
 use App\Modules\Compliance\Controllers\AuditFindingController;
+use App\Modules\Compliance\Controllers\ProjectIntegrationController;
 
 Route::middleware(['web', 'auth'])->group(function () {
 
     Route::prefix('projects/{project}/compliance')->name('compliance.')->group(function () {
         Route::get('/', [ComplianceDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/tests', [ControlTestController::class, 'index'])->name('tests.index');
-        Route::post('/tests', [ControlTestController::class, 'store'])->name('tests.store');
-        Route::get('/tests/{test}', [ControlTestController::class, 'show'])->name('tests.show');
-        Route::get('/tests/history/{control}', [ControlTestController::class, 'history'])->name('tests.history');
+        Route::get('/tests', [ComplianceTestController::class, 'index'])->name('tests.index');
+        Route::post('/tests', [ComplianceTestController::class, 'store'])->name('tests.store');
+        Route::get('/tests/create', [ComplianceTestController::class, 'create'])->name('tests.create');
+        Route::get('/tests/{test}', [ComplianceTestController::class, 'show'])->name('tests.show');
+        Route::put('/tests/{test}', [ComplianceTestController::class, 'update'])->name('tests.update');
+        Route::delete('/tests/{test}', [ComplianceTestController::class, 'destroy'])->name('tests.destroy');
 
         Route::get('/findings', [ComplianceFindingController::class, 'index'])->name('findings.index');
         Route::post('/findings/{finding}/state', [ComplianceFindingController::class, 'updateState'])->name('findings.state');
@@ -35,6 +38,9 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/audit-findings/{finding}', [AuditFindingController::class, 'show'])->name('audit-findings.show');
         Route::put('/audit-findings/{finding}', [AuditFindingController::class, 'update'])->name('audit-findings.update');
         Route::post('/audit-findings/{finding}/close', [AuditFindingController::class, 'close'])->name('audit-findings.close');
+
+        Route::get('/integrations', [ProjectIntegrationController::class, 'index'])->name('integrations.index');
+        Route::post('/integrations', [ProjectIntegrationController::class, 'store'])->name('integrations.store');
     });
 
     // Mapping import (not project-scoped, admin-like)

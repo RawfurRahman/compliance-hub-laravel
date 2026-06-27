@@ -12,21 +12,34 @@ class DomainAccessPolicy
 
     public function view(User $user, Domain $domain): bool
     {
-        return true;
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor')) {
+            return true;
+        }
+
+        return $domain->ownershipMatrix()
+            ->where('user_id', $user->id)
+            ->where('domain_id', $domain->id)
+            ->whereIn('role', ['owner', 'admin', 'reviewer', 'approver'])
+            ->exists()
+            || $domain->owner_user_id === $user->id;
     }
 
     public function create(User $user): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor');
     }
 
     public function update(User $user, Domain $domain): bool
     {
-        return $user->hasRole('Admin');
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor')) {
+            return true;
+        }
+
+        return $domain->owner_user_id === $user->id;
     }
 
     public function delete(User $user, Domain $domain): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor');
     }
 }

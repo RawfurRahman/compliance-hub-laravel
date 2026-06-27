@@ -38,6 +38,16 @@ class RiskRegisterService
             ->get();
     }
 
+    public function enterpriseRisksForProject(int $projectId): Collection
+    {
+        return RiskRegister::with(['asset', 'ownerUser', 'createdBy', 'updatedBy', 'frameworkControl'])
+            ->where('project_id', $projectId)
+            ->where('is_enterprise_risk', true)
+            ->orderByDesc('risk_rating_avtvlh')
+            ->orderBy('serial_no')
+            ->get();
+    }
+
     public function generateRiskId(int $projectId): string
     {
         $last = RiskRegister::withTrashed()

@@ -32,9 +32,9 @@ class CreateSuperAdmin extends Command
         $this->info('Creating a new Super Admin user...');
 
         // 1. Get User Input
-        $username = $this->ask('Enter a username for the admin');
-        $email = $this->ask('Enter an email for the admin');
-        $password = $this->secret('Enter a password for the admin');
+        $username = $this->ask('Enter a username for the Super Admin');
+        $email = $this->ask('Enter an email for the Super Admin');
+        $password = $this->secret('Enter a password for the Super Admin');
         $confirmPassword = $this->secret('Confirm the password');
 
         // 2. Validate the input
@@ -50,16 +50,16 @@ class CreateSuperAdmin extends Command
         ]);
 
         if ($validator->fails()) {
-            $this->error('Admin user creation failed!');
+            $this->error('Super Admin user creation failed!');
             foreach ($validator->errors()->all() as $error) {
                 $this->line($error);
             }
             return 1; // Return an error code
         }
 
-        // 3. Find or Create the 'Admin' role
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        $this->info('Admin role found or created.');
+        // 3. Find or Create the 'Super Admin' role
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $this->info('Super Admin role found or created.');
 
         // 4. Create the User
         $user = User::create([
@@ -69,11 +69,11 @@ class CreateSuperAdmin extends Command
             'is_verified' => 1,
         ]);
 
-        // 5. Attach the Admin role
-        $user->roles()->attach($adminRole->id);
-        $this->info('User record created and Admin role assigned.');
+        // 5. Attach the Super Admin role
+        $user->roles()->attach($superAdminRole->id);
+        $this->info("User '{$user->username}' created successfully and assigned the 'Super Admin' role.");
 
-        $this->info('Super Admin user created successfully!');
+        $this->info('Super Admin user created successfully with full system privileges!');
         return 0; // Return a success code
     }
 }

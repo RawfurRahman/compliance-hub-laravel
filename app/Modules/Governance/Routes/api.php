@@ -14,7 +14,7 @@ use App\Modules\Governance\Controllers\GovernanceDashboardController;
 
 Route::middleware('api')->prefix('api')->group(function () {
 
-    Route::middleware('auth:sanctum')->prefix('governance')->name('governance-api.')->group(function () {
+    Route::middleware(['web', 'auth'])->prefix('governance')->name('governance-api.')->group(function () {
 
         // Policies
         Route::get('policies', [PolicyController::class, 'index'])->name('policies.index');

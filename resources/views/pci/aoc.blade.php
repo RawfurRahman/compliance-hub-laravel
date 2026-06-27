@@ -87,7 +87,7 @@
         </ul>
 
         <!-- Section 3: Summary of Findings -->
-        <h2 class="mt-12">Section 3: Compliance Metrics Summary</h2>
+        <h2 class="mt-12">Section 3: Finding Compliance Metrics Summary</h2>
         <table>
             <thead>
                 <tr>

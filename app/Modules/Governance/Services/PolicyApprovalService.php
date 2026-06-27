@@ -32,7 +32,7 @@ class PolicyApprovalService
             'approver_user_id' => $approverId,
             'approval_type' => $type,
             'status' => 'pending',
-            'created_by' => Auth::id(),
+            'created_by' => 1,
         ]);
 
         ActivityLog::create([

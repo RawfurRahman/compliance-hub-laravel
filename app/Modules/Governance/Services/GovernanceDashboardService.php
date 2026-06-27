@@ -80,4 +80,127 @@ class GovernanceDashboardService
             ->get()
             ->toArray();
     }
+
+    public function policyGovernanceSummary(?int $projectId = null, ?string $framework = null, ?string $businessUnit = null): array
+    {
+        $query = Policy::query();
+
+        if ($businessUnit) {
+            $query->where('business_unit', $businessUnit);
+        }
+
+        $total = (clone $query)->count();
+        $byStatus = (clone $query)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $domainBreakdown = $this->domainPolicyBreakdown($businessUnit);
+
+        $overdueReviews = (clone $query)
+            ->whereHas('reviews', fn ($q) => $q
+                ->whereIn('status', ['pending', 'in_progress'])
+                ->where('due_date', '<', now()))
+            ->count();
+
+        $pendingApprovals = PolicyApproval::query()
+            ->where('status', 'pending')
+            ->when($businessUnit, fn ($q) => $q->whereHas('policy', fn ($q2) => $q2->where('business_unit', $businessUnit)))
+            ->count();
+
+        return [
+            'total_policies' => $total,
+            'by_status' => [
+                'draft' => (int) $byStatus->get('draft', 0),
+                'under_review' => (int) $byStatus->get('under_review', 0),
+                'approved' => (int) $byStatus->get('approved', 0),
+                'published' => (int) $byStatus->get('published', 0),
+                'deprecated' => (int) $byStatus->get('deprecated', 0),
+                'archived' => (int) $byStatus->get('archived', 0),
+                'expired' => (int) $byStatus->get('expired', 0),
+            ],
+            'active_policies' => (int) (clone $query)->where('is_active', true)->count(),
+            'overdue_reviews' => $overdueReviews,
+            'pending_approvals' => $pendingApprovals,
+            'domain_breakdown' => $domainBreakdown,
+        ];
+    }
+
+    public function ownershipAccountability(?string $businessUnit = null, ?string $framework = null): array
+    {
+        $query = \App\Modules\Governance\Models\OwnershipMatrix::query()->with(['policy', 'user']);
+
+        if ($businessUnit) {
+            $query->where('business_unit', $businessUnit);
+        }
+
+        if ($framework) {
+            $query->whereHas('policy.domain', fn ($q) => $q->where('name', $framework));
+        }
+
+        $totalAssignments = (clone $query)->count();
+        $primaryOwners = (clone $query)->where('is_primary', true)->count();
+
+        $byRole = (clone $query)
+            ->selectRaw('role, COUNT(*) as aggregate')
+            ->groupBy('role')
+            ->pluck('aggregate', 'role');
+
+        $byBusinessUnit = (clone $query)
+            ->selectRaw('business_unit, COUNT(*) as aggregate')
+            ->groupBy('business_unit')
+            ->pluck('aggregate', 'business_unit');
+
+        $coverage = $this->computeCoverage($query);
+
+        return [
+            'total_assignments' => $totalAssignments,
+            'primary_owners' => $primaryOwners,
+            'by_role' => [
+                'owner' => (int) $byRole->get('owner', 0),
+                'reviewer' => (int) $byRole->get('reviewer', 0),
+                'approver' => (int) $byRole->get('approver', 0),
+                'stakeholder' => (int) $byRole->get('stakeholder', 0),
+            ],
+            'by_business_unit' => $byBusinessUnit->toArray(),
+            'coverage_pct' => $coverage['coverage_pct'],
+            'gaps' => $coverage['gaps'],
+        ];
+    }
+
+    private function domainPolicyBreakdown(?string $businessUnit): array
+    {
+        $domains = Domain::withCount(['policies' => function ($q) use ($businessUnit) {
+            if ($businessUnit) {
+                $q->where('business_unit', $businessUnit);
+            }
+        }])->get();
+
+        $breakdown = [];
+        foreach ($domains as $domain) {
+            $breakdown[] = [
+                'domain_id' => $domain->id,
+                'domain_name' => $domain->name,
+                'total_policies' => $domain->policies_count,
+            ];
+        }
+
+        return $breakdown;
+    }
+
+    private function computeCoverage($query): array
+    {
+        $total = \App\Modules\Governance\Models\Domain::count();
+        $covered = (clone $query)
+            ->whereHas('policy.domain')
+            ->get()
+            ->pluck('policy.domain_id')
+            ->unique()
+            ->count();
+
+        return [
+            'coverage_pct' => $total > 0 ? round($covered / $total * 100, 1) : 0.0,
+            'gaps' => max(0, $total - $covered),
+        ];
+    }
 }

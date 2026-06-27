@@ -19,23 +19,27 @@ class EvidenceFile extends Model
         'file_path',
         'original_filename',
         'mime_type',
-        'scan_status', // New: e.g., 'pending', 'clean', 'infected', 'failed'
-        'scan_details', // New: JSON for virus scan report
-        'ai_observations', // New: AI-generated observations
-        'ai_recommendations', // New: AI-generated recommendations
-        'ai_analysis_status', // New: e.g., 'pending', 'completed', 'failed', 'awaiting_review'
-        'ai_analysis_approved_by', // New: User ID of auditor who approved
-        'ai_analysis_approved_at', // New: Timestamp of approval
-        'hitl_status', // pending_review, accepted, action_required
-        'customer_response', // Customer's response text upon re-uploading or answering
+        'trust_center_id',
+        'is_publicly_listed',
+        'scan_status',
+        'scan_details',
+        'ai_observations',
+        'ai_recommendations',
+        'ai_gaps',
+        'ai_analysis_status',
+        'ai_analysis_approved_by',
+        'ai_analysis_approved_at',
+        'hitl_status',
+        'customer_response',
     ];
 
-    // Cast new fields to appropriate types
     protected $casts = [
         'scan_details' => 'array',
-        'ai_observations' => 'string', // Store as text
-        'ai_recommendations' => 'string', // Store as text
+        'ai_observations' => 'string',
+        'ai_recommendations' => 'string',
+        'ai_gaps' => 'array',
         'ai_analysis_approved_at' => 'datetime',
+        'is_publicly_listed' => 'boolean',
     ];
 
     /**
@@ -81,6 +85,11 @@ class EvidenceFile extends Model
     public function feedbacks()
     {
         return $this->hasMany(EvidenceFeedback::class);
+    }
+
+    public function trustCenter()
+    {
+        return $this->belongsTo(\App\Modules\TrustCenter\Models\TrustCenter::class);
     }
 
     public function scopeAccepted($query)

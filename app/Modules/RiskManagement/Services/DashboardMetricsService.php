@@ -6,6 +6,8 @@ use App\Models\AssessmentFinding;
 use App\Models\Framework;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
+use App\Modules\Compliance\Models\ComplianceTest;
+use App\Modules\Compliance\Models\ComplianceTestFrameworkLink;
 use Illuminate\Support\Collection;
 
 /**
@@ -277,7 +279,13 @@ class DashboardMetricsService
             ->groupBy(fn ($a) => $a->framework_id . '|' . $a->type)
             ->map(fn ($group) => $group->sortByDesc('id')->first());
 
-        return $activeFrameworks->map(function (Framework $framework) use ($latestAssessments) {
+        // Pre-fetch compliance test counts per framework for test_pass_rate
+        $testLinks = ComplianceTestFrameworkLink::whereIn('framework_id', $activeFrameworkIds)
+            ->with('complianceTest')
+            ->get()
+            ->groupBy('framework_id');
+
+        return $activeFrameworks->map(function (Framework $framework) use ($latestAssessments, $testLinks) {
             $gapKey = $framework->id . '|Gap';
             $finalKey = $framework->id . '|Final';
 
@@ -289,12 +297,18 @@ class DashboardMetricsService
 
             $phase = $this->derivePhase($gap, $gapPct, $final, $finalPct);
 
+            $links = $testLinks->get($framework->id, collect());
+            $totalTests = $links->count();
+            $passingTests = $links->filter(fn ($l) => $l->complianceTest?->status === 'Passing')->count();
+            $testPassRate = $totalTests > 0 ? round(($passingTests / $totalTests) * 100, 1) : null;
+
             return [
                 'framework'       => $framework->name,
                 'slug'            => $framework->slug ?? null,
                 'percentage'      => $final ? $finalPct : $gapPct,
                 'phase'           => $phase,
                 'fully_compliant' => $phase === 'final_done',
+                'test_pass_rate'  => $testPassRate,
             ];
         })->values();
     }

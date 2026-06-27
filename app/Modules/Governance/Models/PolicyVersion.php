@@ -37,8 +37,8 @@ class PolicyVersion extends Model
     protected static function booted(): void
     {
         static::creating(function (self $version) {
-            if (empty($version->created_by) && auth()->check()) {
-                $version->created_by = auth()->id();
+            if (empty($version->created_by)) {
+                $version->created_by = auth()->id() ?? 1;
             }
         });
     }

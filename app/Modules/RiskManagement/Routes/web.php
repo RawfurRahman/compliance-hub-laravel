@@ -17,6 +17,7 @@ Route::prefix('projects/{project}/risk-register')->name('risk-register.')->group
     Route::put('/{risk}', [RiskRegisterController::class, 'update'])->name('update');
     Route::delete('/{risk}', [RiskRegisterController::class, 'destroy'])->name('destroy');
     Route::get('/heatmap', [RiskRegisterController::class, 'heatmap'])->name('heatmap');
+    Route::get('/enterprise', [RiskRegisterController::class, 'enterprise'])->name('enterprise');
     Route::get('/export-pdf', [RiskRegisterController::class, 'exportPdf'])->name('export-pdf');
     Route::get('/export-csv', [RiskRegisterController::class, 'exportExcel'])->name('export-csv');
     Route::post('/{risk}/transition', [RiskRegisterController::class, 'transition'])->name('transition');
@@ -81,6 +82,10 @@ Route::prefix('projects/{project}/vendors')->name('vendors.')->group(function ()
     Route::delete('/{vendor}/assessments/{assessment}', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'destroy'])->name('assessments.destroy');
     Route::post('/{vendor}/assessments/{assessment}/complete', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'complete'])->name('assessments.complete');
     Route::post('/{vendor}/assessments/{assessment}/responses', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'submitResponse'])->name('assessments.responses');
+    Route::get('/{vendor}/assessments/{assessment}/detail', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'detail'])->name('assessments.detail');
+    Route::get('/{vendor}/assessments/{assessment}/summary', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'summary'])->name('assessments.summary');
+    Route::post('/{vendor}/assessments/{assessment}/run-ai', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'runAiAnalysis'])->name('assessments.run-ai');
+    Route::post('/{vendor}/assessments/{assessment}/responses/{response}/flag', [\App\Modules\RiskManagement\Controllers\VendorAssessmentController::class, 'flagForReview'])->name('assessments.responses.flag');
 });
 
 // Internal Control Catalog (admin)

@@ -12,12 +12,25 @@ class PolicyAccessPolicy
 
     public function view(User $user, Policy $policy): bool
     {
-        return true;
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor')) {
+            return true;
+        }
+
+        return $policy->owner_user_id === $user->id
+            || $policy->created_by === $user->id
+            || $policy->ownershipMatrix()
+                ->where('user_id', $user->id)
+                ->whereIn('role', ['reviewer', 'approver', 'stakeholder'])
+                ->exists();
     }
 
     public function create(User $user): bool
     {
-        return true;
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin') || $user->hasRole('Auditor')) {
+            return true;
+        }
+
+        return $user->hasRole('policy_owner');
     }
 
     public function update(User $user, Policy $policy): bool

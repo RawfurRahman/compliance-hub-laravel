@@ -2,10 +2,13 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Models\Project;
 use App\Modules\RiskManagement\Models\ThirdPartyVendor;
 use App\Modules\RiskManagement\Models\VendorAssessment;
+use App\Modules\RiskManagement\Models\VendorQuestionnaireResponse;
 use App\Modules\RiskManagement\Services\VendorAssessmentService;
 use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
+use App\Services\VendorAssessmentAnalysisService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -100,5 +103,56 @@ class VendorAssessmentController extends Controller
         $this->service->recalculateScore($assessment);
 
         return response()->json(['data' => $created], 201);
+    }
+
+    public function detail(Project $project, ThirdPartyVendor $vendor, VendorAssessment $assessment)
+    {
+        $assessment->loadMissing(['responses', 'vendor', 'assessor']);
+
+        return view('vendor-assessments.show', [
+            'vendor' => $vendor,
+            'assessment' => $assessment,
+            'project' => $vendor->project,
+        ]);
+    }
+
+    public function summary(Project $project, ThirdPartyVendor $vendor, VendorAssessment $assessment)
+    {
+        $assessment->loadMissing('vendor');
+
+        $aiSummary = $assessment->ai_summary;
+
+        if (!$aiSummary || empty($aiSummary['strengths'] ?? []) && empty($aiSummary['weaknesses'] ?? [])) {
+            return response()->json(['summary' => null, 'message' => 'No AI summary available yet.']);
+        }
+
+        return response()->json(['summary' => $aiSummary]);
+    }
+
+    public function flagForReview(Request $request, Project $project, ThirdPartyVendor $vendor, VendorAssessment $assessment, VendorQuestionnaireResponse $response)
+    {
+        if ($response->vendor_assessment_id !== $assessment->id) {
+            return response()->json(['message' => 'Response does not belong to this assessment.'], 422);
+        }
+
+        $response->update([
+            'needs_vendor_review' => !$response->needs_vendor_review,
+        ]);
+
+        return response()->json([
+            'data' => $response->fresh()->only(['id', 'question_key', 'needs_vendor_review']),
+        ]);
+    }
+
+    public function runAiAnalysis(Project $project, ThirdPartyVendor $vendor, VendorAssessment $assessment)
+    {
+        $service = app(VendorAssessmentAnalysisService::class);
+        $result = $service->analyze($assessment);
+
+        if (empty($result)) {
+            return response()->json(['message' => 'AI analysis could not be completed.'], 500);
+        }
+
+        return response()->json(['data' => $result]);
     }
 }

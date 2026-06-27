@@ -61,4 +61,9 @@ class Control extends Model
     {
         return $this->hasMany(\App\Modules\Compliance\Models\ControlEvidence::class, 'control_id');
     }
+
+    public function complianceTests()
+    {
+        return $this->hasMany(\App\Modules\Compliance\Models\ComplianceTest::class, 'control_id');
+    }
 }

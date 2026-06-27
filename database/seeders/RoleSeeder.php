@@ -15,6 +15,7 @@ class RoleSeeder extends Seeder
     {
         // Create the essential roles for the application
         // firstOrCreate prevents duplicate roles from being created
+        Role::firstOrCreate(['name' => 'Super Admin']);
         Role::firstOrCreate(['name' => 'Admin']);
         Role::firstOrCreate(['name' => 'Auditor']);
         Role::firstOrCreate(['name' => 'Customer']);

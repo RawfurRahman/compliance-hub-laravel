@@ -5,6 +5,7 @@ namespace App\Modules\RiskManagement\Observers;
 use App\Models\AssessmentFinding;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskControlMapping;
+use App\Services\Dashboard\DashboardCacheKey;
 
 class AssessmentFindingObserver
 {
@@ -26,6 +27,14 @@ class AssessmentFindingObserver
             && $finding->risk_register_id
         ) {
             $this->closeAssociatedRisk($finding);
+        }
+
+        if ($finding->wasChanged(['is_compliant', 'status', 'risk_rating', 'due_date'])) {
+            DashboardCacheKey::invalidateDomain('kpi');
+            DashboardCacheKey::invalidateDomain('heatmap');
+            DashboardCacheKey::invalidateDomain('risk_ranking');
+            DashboardCacheKey::invalidateDomain('compliance_scorecard');
+            DashboardCacheKey::invalidateDomain('remediation_trend');
         }
     }
 

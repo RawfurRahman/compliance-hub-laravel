@@ -51,7 +51,13 @@ class ControlCatalogController extends Controller
         $frameworks = Framework::where('is_active', true)->orderBy('name')->get();
         $users = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['Admin', 'Auditor']))->get();
 
-        return view('admin.controls.edit', compact('control', 'frameworks', 'users'));
+        $complianceTests = $control->complianceTests()->with('ownerUser')->orderBy('name')->get();
+        $passingCount = $complianceTests->where('status', 'Passing')->count();
+        $totalCount = $complianceTests->count();
+
+        return view('admin.controls.edit', compact(
+            'control', 'frameworks', 'users', 'complianceTests', 'passingCount', 'totalCount'
+        ));
     }
 
     public function update(Request $request, Control $control)

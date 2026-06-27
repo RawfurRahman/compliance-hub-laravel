@@ -17,6 +17,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Project-scoped governance routes
     Route::prefix('projects/{project}/governance')->name('governance.')->group(function () {
 
+        // Bulk import
+        Route::get('/bulk', [PolicyController::class, 'showBulkUploadForm'])->name('policies.bulk');
+        Route::post('/bulk/upload', [PolicyController::class, 'processBulkUpload'])->name('policies.bulk.upload');
+        Route::get('/bulk/review', [PolicyController::class, 'showBulkReview'])->name('policies.bulk.review');
+        Route::post('/bulk/confirm', [PolicyController::class, 'confirmBulkImport'])->name('policies.bulk.confirm');
+
         // Policy CRUD
         Route::get('/', [PolicyController::class, 'index'])->name('policies.index');
         Route::get('/create', [PolicyController::class, 'create'])->name('policies.create');

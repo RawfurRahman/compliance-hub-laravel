@@ -256,7 +256,7 @@
         </thead>
         <tbody>
             <tr>
-                <td class="label-cell">Compliance Score</td>
+                <td class="label-cell">Finding Compliance</td>
                 <td style="font-weight: bold; color: #16a34a; font-size: 11pt;">{{ $stats['compliancePct'] }}%</td>
                 <td class="label-cell">Total Findings</td>
                 <td>{{ $stats['total'] }}</td>

@@ -33,6 +33,7 @@ class ControlTestController extends Controller
             'evidence_summary' => 'nullable|string',
             'framework_version_id' => 'nullable|exists:comp_framework_versions,id',
             'assessment_finding_id' => 'nullable|exists:assessment_findings,id',
+            'project_assessment_id' => 'nullable|exists:project_assessments,id',
         ]);
 
         $test = $this->service->execute(
@@ -45,6 +46,7 @@ class ControlTestController extends Controller
             evidenceSummary: $data['evidence_summary'] ?? null,
             frameworkVersionId: $data['framework_version_id'] ?? null,
             findingId: $data['assessment_finding_id'] ?? null,
+            projectAssessmentId: $data['project_assessment_id'] ?? null,
         );
 
         return response()->json($test->load('control', 'testedBy', 'assessmentFinding'), 201);

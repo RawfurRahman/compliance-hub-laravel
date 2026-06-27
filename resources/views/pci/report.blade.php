@@ -285,9 +285,9 @@
         <!-- Part III: Conclusion & Signature Block -->
         <h2 class="mt-16 section-break">Part III: Conclusion and Attestation</h2>
 
-        <h3>Compliance Status Summary</h3>
+        <h3>Finding Compliance Status Summary</h3>
         <p class="mt-4">
-            <strong>Overall Compliance Result:</strong>
+            <strong>Overall Finding Compliance Result:</strong>
             @if($complianceMetrics['is_compliant'])
                 <span style="color: green; font-weight: bold;">COMPLIANT</span>
             @else

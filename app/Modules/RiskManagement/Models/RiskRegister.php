@@ -93,6 +93,7 @@ class RiskRegister extends Model
         'created_by', 'updated_by', 'custom_fields',
         'computed_tv', 'computed_risk_rating', 'computed_residual_rating',
         'exposure_value',
+        'is_enterprise_risk',
     ];
 
     protected $casts = [
@@ -119,6 +120,7 @@ class RiskRegister extends Model
         'computed_risk_rating' => 'integer',
         'computed_residual_rating' => 'integer',
         'exposure_value' => 'decimal:2',
+        'is_enterprise_risk' => 'boolean',
     ];
 
     // Ensure serializing to JSON includes old field names for the frontend views

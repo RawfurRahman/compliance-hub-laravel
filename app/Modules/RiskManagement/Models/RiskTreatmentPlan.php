@@ -13,7 +13,7 @@ class RiskTreatmentPlan extends Model
     protected $table = 'risk_treatment_plans';
 
     protected $fillable = [
-        'risk_register_id', 'title', 'treatment_type', 'description',
+        'risk_register_id', 'assessment_finding_id', 'title', 'treatment_type', 'description',
         'controls_required', 'responsible_party', 'budget_estimated', 'budget_actual',
         'start_date', 'target_date', 'completion_date', 'status',
         'progress_pct', 'effectiveness_rating', 'notes', 'created_by',
@@ -37,6 +37,11 @@ class RiskTreatmentPlan extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function assessmentFinding()
+    {
+        return $this->belongsTo(\App\Models\AssessmentFinding::class, 'assessment_finding_id');
     }
 
     public function getIsOverdueAttribute(): bool

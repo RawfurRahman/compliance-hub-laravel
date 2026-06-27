@@ -118,6 +118,7 @@ class DirectEvidenceAnalysisService
                 'scan_status' => $scanResult === 'failed' ? 'clean' : $scanResult,
                 'ai_observations' => $observations,
                 'ai_recommendations' => $recommendations,
+                'ai_gaps' => $result['gaps'] ?? [],
                 'ai_analysis_status' => $this->geminiApiKey ? 'awaiting_review' : 'completed',
             ]);
 
@@ -129,6 +130,7 @@ class DirectEvidenceAnalysisService
                 'scan_status' => 'failed',
                 'ai_observations' => 'Analysis error: ' . $e->getMessage(),
                 'ai_recommendations' => 'Analysis could not be completed. Please check the file and try again.',
+                'ai_gaps' => [],
             ]);
         }
 
@@ -140,7 +142,6 @@ class DirectEvidenceAnalysisService
         $base64 = base64_encode($fileContents);
         $mimeType = (new \finfo())->buffer($fileContents, \FILEINFO_MIME_TYPE) ?: 'application/octet-stream';
 
-        // UPDATED PROMPT: Forces strict, short, numbered outputs with literal \n line breaks.
         $prompt = <<<PROMPT
 You are a strict GRC compliance auditor. Analyze the provided evidence file against the compliance requirement below.
 
@@ -149,17 +150,67 @@ Requirement:
 
 File Name: {$fileName}
 
-Respond with ONLY a raw JSON object. 
+Respond with ONLY a raw JSON object.
 CRITICAL FORMATTING INSTRUCTIONS for the JSON values:
 1. Keep the text EXTREMELY short, specific, and directly related to the current state of the evidence.
 2. Format both 'observations' and 'recommendations' as numbered lists (1., 2., 3.).
 3. You MUST use the literal characters "\\n" to create line breaks between each numbered point so it displays cleanly.
 4. Do NOT repeat the evaluation criteria or use conversational filler.
+5. For the 'gaps' field: Identify specific, concrete gaps where the evidence fails to demonstrate compliance with the requirement. Return a JSON array of objects, each with a "gap" string and a "severity" string (high/medium/low). If the evidence fully satisfies the requirement, return an empty array [].
 
 NO markdown formatting, NO code blocks, NO backticks. Just the raw JSON:
-{"observations": "1. First specific observation.\\n2. Second specific observation.", "recommendations": "1. First specific recommendation.\\n2. Second specific recommendation."}
+{"observations": "1. First specific observation.\\n2. Second specific observation.", "recommendations": "1. First specific recommendation.\\n2. Second specific recommendation.", "gaps": [{"gap": "Specific gap description", "severity": "high"}]}
 PROMPT;
 
+        $raw = $this->callGeminiApi([
+            ['text' => $prompt],
+            ['inlineData' => ['mimeType' => $mimeType, 'data' => $base64]],
+        ]);
+
+        return $this->parseGeminiResponse(['candidates' => [['content' => ['parts' => [['text' => $raw]]]]]]);
+    }
+
+    /**
+     * Reusable Gemini PDF extraction (used by policy bulk import).
+     * Sends raw file bytes with a custom prompt, returns parsed JSON array or null.
+     */
+    public function extractFromPdf(string $fileContent, string $mimeType, string $prompt): ?array
+    {
+        if (empty($this->geminiApiKey)) {
+            return null;
+        }
+
+        $base64 = base64_encode($fileContent);
+
+        try {
+            $raw = $this->callGeminiApi([
+                ['inlineData' => ['mimeType' => $mimeType, 'data' => $base64]],
+                ['text' => $prompt],
+            ]);
+
+            $cleaned = trim($raw);
+            $cleaned = preg_replace('/^```(?:json)?\s*/i', '', $cleaned);
+            $cleaned = preg_replace('/\s*```$/', '', $cleaned);
+
+            $decoded = json_decode($cleaned, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::warning('Gemini extractFromPdf JSON decode failed: ' . json_last_error_msg());
+                return null;
+            }
+
+            return $decoded;
+        } catch (\Exception $e) {
+            Log::error('Gemini extractFromPdf failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Core Gemini API call: sends parts array, handles model fallback + retries.
+     * Returns the raw response text from candidates[0].content.parts[0].text.
+     */
+    public function callGeminiApi(array $parts): string
+    {
         $lastError = null;
 
         foreach ($this->models as $model) {
@@ -169,24 +220,9 @@ PROMPT;
             for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
                 try {
                     $response = Http::timeout(self::TIMEOUT)
-                        ->withHeaders([
-                            'Content-Type' => 'application/json',
-                        ])
+                        ->withHeaders(['Content-Type' => 'application/json'])
                         ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$this->geminiApiKey}", [
-                            'contents' => [
-                                [
-                                    'parts' => [
-                                        ['text' => $prompt],
-                                        [
-                                            // CRITICAL FIX: Gemini requires strict camelCase for these keys
-                                            'inlineData' => [
-                                                'mimeType' => $mimeType,
-                                                'data' => $base64,
-                                            ],
-                                        ],
-                                    ],
-                                ],
-                            ],
+                            'contents' => [['parts' => $parts]],
                             'generationConfig' => [
                                 'temperature' => 0.1,
                                 'maxOutputTokens' => 8192,
@@ -194,7 +230,12 @@ PROMPT;
                         ]);
 
                     if ($response->successful()) {
-                        return $this->parseGeminiResponse($response->json());
+                        $json = $response->json();
+                        $text = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                        if ($text !== null) {
+                            return $text;
+                        }
+                        throw new \RuntimeException('Empty Gemini response');
                     }
 
                     $status = $response->status();
@@ -211,7 +252,12 @@ PROMPT;
                     Log::warning("Gemini model {$model} failed: {$status} - {$body}");
 
                     if (in_array($status, [429, 500, 503], true)) {
-                        continue 2; // Move to the next model in the fallback array
+                        continue 2;
+                    }
+
+                    if ($status === 400 || ($body && strpos($body, 'does not support image input') !== false)) {
+                        Log::warning("Gemini model {$model} does not support image input, trying next model");
+                        continue 2;
                     }
 
                     throw new \RuntimeException("Gemini {$model} API error ({$status}): {$body}");
@@ -224,6 +270,30 @@ PROMPT;
         }
 
         throw new \RuntimeException($lastError ?? 'All Gemini models exhausted.');
+    }
+
+    private function parseGeminiResponse(array $responseData): array
+    {
+        $text = $responseData['candidates'][0]['content']['parts'][0]['text'] ?? '';
+        $text = trim($text);
+        $text = preg_replace('/^```(?:json)?\s*/i', '', $text);
+        $text = preg_replace('/\s*```$/', '', $text);
+
+        $decoded = json_decode($text, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                'observations' => $this->extractField($text, 'observations') ?? 'Unable to parse response.',
+                'recommendations' => $this->extractField($text, 'recommendations') ?? 'Unable to parse response.',
+                'gaps' => [],
+            ];
+        }
+
+        return [
+            'observations' => $decoded['observations'] ?? 'No observations generated.',
+            'recommendations' => $decoded['recommendations'] ?? 'No recommendations generated.',
+            'gaps' => $decoded['gaps'] ?? [],
+        ];
     }
 
     private function extractField(string $text, string $field): ?string

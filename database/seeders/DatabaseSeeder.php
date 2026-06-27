@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             AuditorCustomerSeeder::class,
             PciDssRequirementSeeder::class, // Add the new seeder here
             AlexJohnUserSeeder::class,
+            ComplianceTestTemplateSeeder::class,
         ]);
     }
 }

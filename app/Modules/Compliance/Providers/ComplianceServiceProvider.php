@@ -27,6 +27,7 @@ class ComplianceServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Modules\Compliance\Services\ComplianceQueryService::class);
         $this->app->singleton(\App\Modules\Compliance\Services\AuditFindingService::class);
         $this->app->singleton(\App\Modules\Compliance\Services\ControlEvidenceService::class);
+        $this->app->singleton(\App\Modules\Compliance\Services\AuditFindingQueryService::class);
     }
 
     public function boot(): void

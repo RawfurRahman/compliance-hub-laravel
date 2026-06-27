@@ -57,7 +57,7 @@ class GapAssessmentController extends Controller
         $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
         $created    = $this->gapService->initialize($assessment);
 
-        return redirect()->route('gap-assessment.index', $project)
+        return redirect()->route('projects.gap-assessment', $project)
             ->with('success', "Assessment initialized with {$created} controls.");
     }
 

@@ -26,7 +26,7 @@ class PolicyExceptionService
             'title' => $data['title'],
             'description' => $data['description'],
             'justification' => $data['justification'],
-            'requested_by' => Auth::id(),
+            'requested_by' => 1,
             'status' => 'pending',
             'effective_date' => $data['effective_date'],
             'expires_at' => $data['expires_at'],
@@ -35,7 +35,7 @@ class PolicyExceptionService
         ]);
 
         ActivityLog::create([
-            'user_id' => Auth::id(),
+            'user_id' => 1,
             'action' => 'exception_requested',
             'description' => "Exception requested for policy #{$exception->policy_id}",
             'details' => [

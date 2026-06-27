@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Models\AssessmentFinding;
 use App\Modules\RiskManagement\Events\ResidualAppetiteCrossed;
+use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
 use App\Modules\RiskManagement\Listeners\ResidualAppetiteCrossedListener;
+use App\Modules\RiskManagement\Listeners\RunVendorAiSummaryListener;
 use App\Modules\RiskManagement\Observers\AssessmentFindingObserver;
 use App\Modules\RiskManagement\Console\Commands\ImportWorkbookRisk;
 use App\Modules\RiskManagement\Console\Commands\SeedWorkbookRisk;
@@ -17,6 +19,7 @@ use App\Modules\RiskManagement\Console\Commands\ProcessEvidenceAnalysis;
 use App\Modules\RiskManagement\Console\Commands\SnapshotMaturityScores;
 use App\Modules\RiskManagement\Console\Commands\ImportRiskRegisterFindings;
 use App\Modules\RiskManagement\Console\Commands\SnapshotRiskExposures;
+use App\Modules\RiskManagement\Console\Commands\SnapshotExecutiveMetrics;
 use App\Modules\RiskManagement\Console\Commands\ExpireRiskAcceptances;
 
 class RiskManagementServiceProvider extends ServiceProvider
@@ -34,6 +37,10 @@ class RiskManagementServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Modules\RiskManagement\Services\RiskSnapshotService::class);
         $this->app->singleton(\App\Modules\RiskManagement\Services\ThirdPartyVendorService::class);
         $this->app->singleton(\App\Modules\RiskManagement\Services\VendorAssessmentService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\FinancialExposureService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\RemediationMetricsService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\IssueAgingService::class);
+        $this->app->singleton(\App\Modules\RiskManagement\Services\ThirdPartyRiskService::class);
     }
 
     public function boot(): void
@@ -49,6 +56,7 @@ class RiskManagementServiceProvider extends ServiceProvider
         AssessmentFinding::observe(AssessmentFindingObserver::class);
 
         Event::listen(ResidualAppetiteCrossed::class, ResidualAppetiteCrossedListener::class);
+        Event::listen(VendorAssessmentCompleted::class, RunVendorAiSummaryListener::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -61,6 +69,7 @@ class RiskManagementServiceProvider extends ServiceProvider
                 SnapshotMaturityScores::class,
                 ImportRiskRegisterFindings::class,
                 SnapshotRiskExposures::class,
+                SnapshotExecutiveMetrics::class,
                 ExpireRiskAcceptances::class,
             ]);
         }

@@ -37,8 +37,8 @@ class PolicyApproval extends Model
     protected static function booted(): void
     {
         static::creating(function (self $approval) {
-            if (empty($approval->created_by) && auth()->check()) {
-                $approval->created_by = auth()->id();
+            if (empty($approval->created_by)) {
+                $approval->created_by = auth()->id() ?? 1;
             }
         });
     }

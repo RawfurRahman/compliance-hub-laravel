@@ -22,6 +22,7 @@ class ComplianceScorecardResource extends JsonResource
             'percentage'      => (float) $this['percentage'],
             'phase'           => $this['phase'],
             'fully_compliant' => (bool) $this['fully_compliant'],
+            'test_pass_rate'  => $this['test_pass_rate'],
         ];
     }
 }

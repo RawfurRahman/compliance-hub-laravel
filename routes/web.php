@@ -8,6 +8,7 @@ use App\Http\Controllers\PciDssController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EvidenceController;
+use App\Http\Controllers\MySecurityTasksController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,12 +34,13 @@ Route::post('/otp-verify', [AuthController::class, 'verifyOtp'])->name('otp.veri
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Authenticated Routes
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/executive', [DashboardController::class, 'executive'])->name('dashboard.executive');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/my-security-tasks', [MySecurityTasksController::class, 'index'])->name('my-security-tasks');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/governance', [DashboardController::class, 'governance'])->name('dashboard.governance');
 
-    // Dashboard Analytics API (consumed by executive dashboard)
-    Route::get('/dashboard/kpis', [DashboardController::class, 'kpis'])->name('dashboard.kpis');
+        // Dashboard Analytics API (consumed by dashboard)
+        Route::get('/dashboard/kpis', [DashboardController::class, 'kpis'])->name('dashboard.kpis');
     Route::get('/dashboard/heatmap', [DashboardController::class, 'heatmap'])->name('dashboard.heatmap');
     Route::get('/dashboard/top-risks', [DashboardController::class, 'topRisks'])->name('dashboard.top-risks');
     Route::get('/dashboard/maturity-score', [DashboardController::class, 'maturityScore'])->name('dashboard.maturity-score');
@@ -49,7 +51,30 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/issues-and-remediation', [DashboardController::class, 'issuesAndRemediation'])->name('dashboard.issues-and-remediation');
     Route::get('/dashboard/risk-acceptance-split', [DashboardController::class, 'riskAcceptanceSplit'])->name('dashboard.risk-acceptance-split');
 
-    Route::post('/compliance-data', [DashboardController::class, 'submitComplianceData'])->name('compliance.submit');
+    // Dashboard JSON API — v1 (consumed by Vue dashboard frontend)
+    Route::prefix('api/v1/dashboard')->name('dashboard-api.')->group(function () {
+        Route::get('kpis',                    [\App\Http\Controllers\Api\DashboardApiController::class, 'kpis']);
+        Route::get('heatmap',                 [\App\Http\Controllers\Api\DashboardApiController::class, 'heatmap']);
+        Route::get('top-risks',              [\App\Http\Controllers\Api\DashboardApiController::class, 'topRisks']);
+        Route::get('inherent-vs-residual',   [\App\Http\Controllers\Api\DashboardApiController::class, 'inherentVsResidual']);
+        Route::get('control-effectiveness',  [\App\Http\Controllers\Api\DashboardApiController::class, 'controlEffectiveness']);
+        Route::get('compliance-scorecard',   [\App\Http\Controllers\Api\DashboardApiController::class, 'complianceScorecard']);
+        Route::get('audit-findings',         [\App\Http\Controllers\Api\DashboardApiController::class, 'auditFindingsSummary']);
+        Route::get('issues-remediation-trends', [\App\Http\Controllers\Api\DashboardApiController::class, 'issuesAndRemediationTrends']);
+        Route::get('issue-aging',            [\App\Http\Controllers\Api\DashboardApiController::class, 'issueAging']);
+        Route::get('third-party-risk',       [\App\Http\Controllers\Api\DashboardApiController::class, 'thirdPartyRiskSummary']);
+        Route::get('policy-governance',      [\App\Http\Controllers\Api\DashboardApiController::class, 'policyGovernanceSummary']);
+        Route::get('ownership-matrix',       [\App\Http\Controllers\Api\DashboardApiController::class, 'ownershipAccountability']);
+        Route::get('financial-exposure',     [\App\Http\Controllers\Api\DashboardApiController::class, 'financialExposureSnapshot']);
+        Route::get('sla-breach-rate',        [\App\Http\Controllers\Api\DashboardApiController::class, 'slaBreachRate']);
+        Route::get('tests-summary',          [\App\Http\Controllers\Api\DashboardApiController::class, 'testsSummary']);
+        Route::get('trust-center-activity',  [\App\Http\Controllers\Api\DashboardApiController::class, 'trustCenterActivity']);
+        Route::get('metric-history',         [\App\Http\Controllers\Api\DashboardApiController::class, 'metricHistory']);
+        Route::get('user',                   [\App\Http\Controllers\Api\DashboardApiController::class, 'user']);
+    });
+
+    // Compliance Data Routes
+    Route::post('/projects/{project}/compliance-data', [DashboardController::class, 'submitComplianceData'])->name('project.compliance.submit');
 
     // Project Management Routes
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
@@ -63,9 +88,21 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/projects/{project}/scope',           [\App\Http\Controllers\ProjectHubController::class, 'scopeUpdate'])->name('projects.scope.update');
     // Gap Assessment Routes
     Route::get('/projects/{project}/gap-assessment', [\App\Http\Controllers\GapAssessmentController::class, 'index'])->name('projects.gap-assessment');
-    Route::post('/projects/{project}/gap-assessment/import', [\App\Http\Controllers\GapAssessmentController::class, 'importExcel'])->name('gap-assessment.import');
-    Route::put('/projects/{project}/gap-assessment/controls/{control}/status', [\App\Http\Controllers\GapAssessmentController::class, 'updateStatus'])->name('gap-assessment.updateStatus');
-    Route::post('/projects/{project}/gap-assessment/controls/{control}/evidence', [\App\Http\Controllers\GapAssessmentController::class, 'attachEvidence'])->name('gap-assessment.attachEvidence');
+    Route::get('/projects/{project}/gap-assessment/report', [\App\Http\Controllers\GapAssessmentController::class, 'report'])->name('gap-assessment.report');
+    Route::post('/projects/{project}/gap-assessment/initialize/{framework}', [\App\Http\Controllers\GapAssessmentController::class, 'initialize'])->name('gap-assessment.initialize');
+    Route::put('/projects/{project}/gap-assessment/findings/{finding}', [\App\Http\Controllers\GapAssessmentController::class, 'update'])->name('gap-assessment.update');
+    Route::get('/projects/{project}/gap-assessment/findings/{finding}', [\App\Http\Controllers\GapAssessmentController::class, 'getFinding'])->name('gap-assessment.get-finding');
+
+    // PCI Gap Assessment Routes
+    Route::get('/pci-gap/{project}', [\App\Http\Controllers\PciGapAssessmentController::class, 'index'])->name('pci-gap.index');
+    Route::post('/pci-gap/{project}/import', [\App\Http\Controllers\PciGapAssessmentController::class, 'import'])->name('pci-gap.import');
+    Route::post('/pci-gap/update-row/{id}', [\App\Http\Controllers\PciGapAssessmentController::class, 'updateRow'])->name('pci-gap.update-row');
+
+    // ISO Gap Assessment Routes
+    Route::get('/iso-gap/{project_id}', [\App\Http\Controllers\IsoGapAssessmentController::class, 'index'])->name('iso-gap.index');
+    Route::post('/iso-gap/{project_id}/import', [\App\Http\Controllers\IsoGapAssessmentController::class, 'import'])->name('iso-gap.import');
+    Route::post('/iso-gap/update-status/{id}', [\App\Http\Controllers\IsoGapAssessmentController::class, 'updateStatus'])->name('iso-gap.update-status');
+    Route::get('/iso-gap/{project_id}/report', [\App\Http\Controllers\IsoGapAssessmentController::class, 'generateReport'])->name('iso-gap.report');
 
     Route::get('/projects/{project}/reporting',        [\App\Http\Controllers\ProjectHubController::class, 'reporting'])->name('projects.reporting');
     Route::get('/projects/{project}/reporting/{type}', [\App\Http\Controllers\ProjectHubController::class, 'report'])->name('projects.report');
@@ -88,6 +125,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/evidence/{evidenceFile}/status', [EvidenceController::class, 'getStatus'])->name('evidence.get-status');
     Route::post('/evidence/{evidenceFile}/ai/approve', [EvidenceController::class, 'approveAiAnalysis'])->name('evidence.ai.approve');
     Route::post('/evidence/{evidenceFile}/ai/reject', [EvidenceController::class, 'rejectAiAnalysis'])->name('evidence.ai.reject');
+    Route::post('/evidence/{evidenceFile}/trust-center-toggle', [EvidenceController::class, 'toggleTrustCenterListing'])->name('evidence.trust-center-toggle');
 
     // Chat Message Routes (used by Evidence Hub real-time chat)
     Route::get('/projects/{project}/chat/messages', [EvidenceController::class, 'getMessages'])->name('evidence.chat.get');
@@ -104,8 +142,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/team', [\App\Http\Controllers\CustomerTeamController::class, 'store'])->name('team.store');
     Route::delete('/team/{team}', [\App\Http\Controllers\CustomerTeamController::class, 'destroy'])->name('team.destroy');
 
-    // Report Generation Route
-    Route::get('/reports/pci/{project}', [ReportController::class, 'generate'])->name('reports.pci.generate');
+
 
     // User Management Routes (Admin/Auditor specific)
     Route::middleware(['can:is-admin'])->group(function () {
@@ -122,6 +159,14 @@ Route::middleware(['auth'])->group(function () {
         // Dynamic Frameworks Management
         Route::resource('admin/frameworks', \App\Http\Controllers\Admin\FrameworkController::class)->except(['show', 'create', 'edit'])->names('admin.frameworks');
     });
+});
+
+// Profile and Settings Routes (for authenticated users)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/settings', [ProfileController::class, 'settings'])->name('profile.settings');
+    Route::put('/settings', [ProfileController::class, 'updateSettings'])->name('profile.update-settings');
 });
 
 // n8n Webhook Callback Routes (Moved to api.php)

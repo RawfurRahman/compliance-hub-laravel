@@ -50,6 +50,7 @@ return [
         App\Modules\RiskManagement\Providers\RiskManagementServiceProvider::class,
         App\Modules\Governance\Providers\GovernanceServiceProvider::class,
         App\Modules\Compliance\Providers\ComplianceServiceProvider::class,
+        App\Modules\TrustCenter\Providers\TrustCenterServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
     ],

@@ -36,8 +36,8 @@ class PolicyReview extends Model
     protected static function booted(): void
     {
         static::creating(function (self $review) {
-            if (empty($review->created_by) && auth()->check()) {
-                $review->created_by = auth()->id();
+            if (empty($review->created_by)) {
+                $review->created_by = auth()->id() ?? 1;
             }
         });
     }

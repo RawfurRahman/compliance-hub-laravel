@@ -31,4 +31,19 @@ class RunMonitoringChecksJob implements ShouldQueue
             $service->runAllDue();
         }
     }
+
+    public function shouldQueue(): bool
+    {
+        return true;
+    }
+
+    public function retryUntil(): \DateTime
+    {
+        return now()->addMinutes(60);
+    }
+
+    public function backoff(): int|array
+    {
+        return 30;
+    }
 }

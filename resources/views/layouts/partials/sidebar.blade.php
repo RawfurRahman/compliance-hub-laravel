@@ -25,28 +25,66 @@
                     Dashboard
                 </a>
 
+                <a href="{{ route('my-security-tasks') }}" class="{{ request()->routeIs('my-security-tasks') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('my-security-tasks') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-list-check text-sm"></i>
+                    </div>
+                    My Security Tasks
+                </a>
+
+                {{-- Governance Module Section --}}
                 @can('view-dashboard')
-                <a href="{{ route('dashboard.executive') }}" class="{{ request()->routeIs('dashboard.executive') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('dashboard.executive') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Governance Module</p>
+                </div>
+                <a href="{{ route('dashboard.governance') }}" class="{{ request()->routeIs('dashboard.governance') || request()->routeIs('governance.dashboard') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('dashboard.governance') || request()->routeIs('governance.dashboard') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
                         <i class="fas fa-chart-line text-sm"></i>
                     </div>
-                    Executive Dashboard
+                    Governance Dashboard
                 </a>
+                @if(isset($project) && $project->id)
+                <a href="{{ route('governance.policies.index', $project) }}" class="{{ request()->routeIs('governance.policies.*') && !request()->routeIs('governance.dashboard') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('governance.policies.*') && !request()->routeIs('governance.dashboard') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-file-lines text-sm"></i>
+                    </div>
+                    Policies
+                </a>
+                @endif
                 @endcan
 
-                <a href="{{ route('projects.index') }}" class="{{ request()->routeIs('projects.index') && !request()->has('module') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('projects.index') && !request()->has('module') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-layer-group text-sm"></i>
+                {{-- Risk Management Section --}}
+                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Risk Management</p>
+                </div>
+                @if(isset($project) && $project->id)
+                <a href="{{ route('risk-register.index', $project) }}" class="{{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-triangle-exclamation text-sm"></i>
                     </div>
-                    All Projects
+                    Risk Register
+                </a>
+                <a href="{{ route('risk-register.heatmap', $project) }}" class="{{ request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-fire text-sm"></i>
+                    </div>
+                    Risk Heat Map
+                </a>
+                <a href="{{ route('risk-register.enterprise', $project) }}" class="{{ request()->routeIs('risk-register.enterprise') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.enterprise') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-building text-sm"></i>
+                    </div>
+                    Enterprise Risks
                 </a>
 
-                <a href="{{ route('evidence.hub') }}" class="{{ request()->routeIs('evidence.hub') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('evidence.hub') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-project-diagram text-sm"></i>
+                @else
+                <a href="{{ route('projects.index') }}" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-shield text-sm"></i>
                     </div>
-                    Evidence Hub
+                    Risk Overview
                 </a>
+                @endif
 
                 {{-- Dynamic Framework Links --}}
                 @php
@@ -54,15 +92,15 @@
                     $frameworkIcons = [
                         'pci_dss'          => 'fa-credit-card',
                         'iso_27001'        => 'fa-shield-halved',
-                        'swift_csp'        => 'fa-building-columns',
+                        'swift_csp'       => 'fa-building-columns',
                         'swift_cscf_2026'  => 'fa-building-columns',
-                        'vapt'             => 'fa-bug',
+                        'vapt'            => 'fa-bug',
                     ];
                 @endphp
 
                 @if($sidebarFrameworks->isNotEmpty())
                 <div class="px-3 mt-5 mb-3">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Frameworks</p>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Compliance Module</p>
                 </div>
                 @foreach($sidebarFrameworks as $fw)
                     @php
@@ -81,31 +119,21 @@
                 @endforeach
                 @endif
 
-                <div class="px-3 mt-5 mb-3">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Risk Management</p>
-                </div>
-                @if(isset($project) && $project->id)
-                <a href="{{ route('risk-register.index', $project) }}" class="{{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.*') && !request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-triangle-exclamation text-sm"></i>
+<a href="{{ route('evidence.hub') }}" class="{{ request()->routeIs('evidence.hub') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('evidence.hub') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-project-diagram text-sm"></i>
                     </div>
-                    Risk Register
-                </a>
-                <a href="{{ route('risk-register.heatmap', $project) }}" class="{{ request()->routeIs('risk-register.heatmap') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.heatmap') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-fire text-sm"></i>
-                    </div>
-                    Risk Heat Map
+                    Evidence Hub
                 </a>
 
-                @else
-                <a href="{{ route('projects.index') }}" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
-                        <i class="fas fa-shield text-sm"></i>
+                @can('is-admin')
+                <a href="{{ route('admin.trust-centers.index') }}" class="{{ request()->routeIs('admin.trust-centers.*') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('admin.trust-centers.*') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
+                        <i class="fas fa-globe text-sm"></i>
                     </div>
-                    Risk Overview
+                    Trust Center
                 </a>
-                @endif
+                @endcan
 
                 {{-- Admin Section --}}
                 @can('is-admin')
@@ -157,6 +185,7 @@
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                             {{ strtoupper(substr(auth()->user()->username, 0, 2)) }}
                         </div>
+
                         <div class="ml-3 min-w-0">
                             <p class="text-xs font-semibold text-slate-200 truncate">{{ auth()->user()->username }}</p>
                             <p class="text-[10px] text-slate-500 truncate">{{ auth()->user()->roles->first()->name ?? 'User' }}</p>

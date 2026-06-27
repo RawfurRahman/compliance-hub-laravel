@@ -158,6 +158,9 @@
                             <th class="w-[12%]">Evidence ID / File Name</th>
                             <th class="w-[9%]">Upload Date & Time</th>
                             <th class="w-[9%]">Security Status (ClamAV)</th>
+                            @canany(['is-admin', 'is-auditor'])
+                            <th class="w-[8%]">Trust Center</th>
+                            @endcanany
                             <th class="w-[10%]">AI Preliminary Assessment</th>
                             <th class="w-[27%]">AI Evidence Observation</th>
                             <th class="w-[12%]">Auditor Determination</th>
@@ -212,7 +215,26 @@
                                 </div>
                             </td>
                             
-                            {{-- Col 5: AI Assessment --}}
+                            @canany(['is-admin', 'is-auditor'])
+                            {{-- Col 5: Trust Center --}}
+                            <td class="px-4 py-4">
+                                <template x-if="hasTrustCenter">
+                                    <label class="flex items-center gap-2 cursor-pointer" @click.stop>
+                                        <input type="checkbox"
+                                               :checked="file.is_publicly_listed"
+                                               @change="toggleTrustCenterListing(file)"
+                                               class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider"
+                                              x-text="file.is_publicly_listed ? 'Listed' : 'Hidden'"></span>
+                                    </label>
+                                </template>
+                                <template x-if="!hasTrustCenter">
+                                    <span class="text-[10px] text-slate-400">No TC</span>
+                                </template>
+                            </td>
+                            @endcanany
+
+                            {{-- Col 6: AI Assessment --}}
                             <td class="px-4 py-4">
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
                                      :class="getAssessmentBadgeClass(file)">
@@ -249,6 +271,20 @@
                                                         <i class="fas fa-lightbulb text-[10px]"></i> Actionable Recommendation
                                                     </span>
                                                     <p class="text-xs text-slate-600 leading-relaxed font-medium" x-text="file.ai_recommendations"></p>
+                                                </div>
+                                            </template>
+
+                                            {{-- Gap Warning Badge --}}
+                                            <template x-if="file.gaps && file.gaps.length > 0">
+                                                <div class="p-3.5 rounded-xl bg-amber-100/40 border border-amber-200/60 transition shadow-sm">
+                                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-800 uppercase tracking-widest mb-1.5">
+                                                        <i class="fas fa-exclamation-triangle text-[10px]"></i> AI Gaps Detected
+                                                    </span>
+                                                    <div class="flex flex-wrap gap-1">
+                                                        <template x-for="g in file.gaps" :key="g.gap">
+                                                            <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity + ': ' + g.gap"></span>
+                                                        </template>
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -378,6 +414,20 @@
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">AI Actionable Recommendations</h4>
                     <p class="text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed italic" x-text="selectedFile.ai_recommendations || 'None'"></p>
                 </div>
+                <div x-show="selectedFile.gaps && selectedFile.gaps.length > 0">
+                    <h4 class="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> AI Gap Analysis
+                    </h4>
+                    <div class="space-y-1.5">
+                        <template x-for="g in selectedFile.gaps" :key="g.gap">
+                            <div class="flex items-start gap-2 p-2 rounded-lg bg-amber-50 border border-amber-100">
+                                <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity"></span>
+                                <span class="text-xs text-slate-700" x-text="g.gap"></span>
+                            </div>
+                        </template>
+                        <p class="text-[10px] text-slate-400 italic">AI-generated, please verify</p>
+                    </div>
+                </div>
             </div>
             
             <div class="px-6 py-4 border-t border-slate-100 flex justify-end bg-slate-50">
@@ -444,6 +494,7 @@
 function evidenceHub() {
     return {
         files: @json($evidenceFiles),
+        hasTrustCenter: @json($hasTrustCenter),
         editingFeedbackId: null,
         feedbackInput: '',
         detailsModalOpen: false,
@@ -472,6 +523,7 @@ function evidenceHub() {
                         f.hitl_status = data.hitl_status;
                         f.ai_observations = data.ai_observations;
                         f.ai_recommendations = data.ai_recommendations;
+                        f.gaps = data.gaps;
                     }
                 } catch (e) {}
             }
@@ -725,6 +777,23 @@ function evidenceHub() {
                     alert('Network error: Failed to reject to customer.');
                 }
             }
+        },
+
+        toggleTrustCenterListing(file) {
+            const newVal = !file.is_publicly_listed;
+            fetch('/evidence/' + file.id + '/trust-center-toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ is_publicly_listed: newVal })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Failed');
+                file.is_publicly_listed = newVal;
+            })
+            .catch(err => alert('Failed to toggle trust center listing.'));
         },
 
         openViewDetails(file) {

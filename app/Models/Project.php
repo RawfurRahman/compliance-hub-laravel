@@ -67,4 +67,9 @@ class Project extends Model
     {
         return $this->hasMany(GeneratedReport::class);
     }
+
+    public function integrations()
+    {
+        return $this->hasMany(\App\Models\Integration::class);
+    }
 }

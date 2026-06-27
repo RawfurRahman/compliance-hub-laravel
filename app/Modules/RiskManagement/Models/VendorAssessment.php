@@ -16,16 +16,19 @@ class VendorAssessment extends Model
         'vendor_id', 'assessor_id', 'assessment_type', 'assessment_date',
         'due_date', 'completed_date', 'status', 'overall_score',
         'risk_rating', 'findings_summary', 'remediation_required',
-        'remediation_deadline', 'notes',
+        'remediation_deadline', 'notes', 'ai_summary',
+        'ai_summary_generated_at',
     ];
 
     protected $casts = [
-        'assessment_date'      => 'date',
-        'due_date'             => 'date',
-        'completed_date'       => 'date',
-        'remediation_deadline' => 'date',
-        'overall_score'        => 'decimal:2',
-        'remediation_required' => 'boolean',
+        'assessment_date'         => 'date',
+        'due_date'                => 'date',
+        'completed_date'          => 'date',
+        'remediation_deadline'    => 'date',
+        'overall_score'           => 'decimal:2',
+        'remediation_required'    => 'boolean',
+        'ai_summary'              => 'array',
+        'ai_summary_generated_at' => 'datetime',
     ];
 
     public function vendor()
