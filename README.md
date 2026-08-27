@@ -27,16 +27,17 @@ Built as an MSc project artefact (University of Dhaka, Dept. of CSE).
 
 ### Prerequisites (install once)
 
-| Tool | Minimum Version | Install |
-|------|-----------------|---------|
-| PHP | 8.2+ | `php -v` |
-| Composer | 2.x | `composer --version` |
-| Node.js | 18+ | `node -v` |
-| npm | 9+ | `npm -v` |
-| Docker + Compose | 24+ | `docker --version && docker compose version` |
-| Ollama | Latest | Auto-installed by `setup.sh` if missing |
+| Tool | Minimum Version | Linux/Unix/Mac | Windows |
+|------|-----------------|----------------|---------|
+| PHP | 8.2+ | `php -v` | [php.net](https://www.php.net/downloads.php) or Chocolatey (`choco install php`) |
+| Composer | 2.x | `composer --version` | [getcomposer.org](https://getcomposer.org/) or Chocolatey (`choco install composer`) |
+| Node.js | 18+ | `node -v` | [nodejs.org](https://nodejs.org/) or Chocolatey (`choco install nodejs-lts`) |
+| npm | 9+ | `npm -v` | Bundled with Node.js |
+| Docker + Compose | 24+ | [docs.docker.com](https://docs.docker.com/engine/install/) | [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/) |
+| Ollama | Latest | Auto-installed by `setup.sh` | [ollama.com](https://ollama.com/download) (manual install) |
+| Git Bash | Latest | Not needed | Required for `setup.sh` — [git-scm.com](https://git-scm.com/downloads) |
 
-### Setup
+### Linux / Unix / macOS
 
 ```bash
 git clone https://github.com/RawfurRahman/compliance-hub-laravel.git
@@ -45,7 +46,32 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script handles everything: installs dependencies, starts Docker services (ClamAV + n8n), installs Ollama and pulls `llava:7b` model (~4.7 GB), runs migrations, imports n8n workflows, and starts all services.
+### Windows (Git Bash)
+
+The `setup.sh` script runs in Git Bash (ships with Git for Windows).
+
+```bash
+git clone https://github.com/RawfurRahman/compliance-hub-laravel.git
+cd compliance-hub-laravel
+bash setup.sh
+```
+
+> **Note:** If `bash` is not on your PATH, open **Git Bash** directly and navigate to the project directory, or run the full path:
+> ```bash
+> "C:\Program Files\Git\bin\bash.exe" setup.sh
+> ```
+
+### What `setup.sh` does
+
+1. Verifies PHP, Composer, Node, npm, and Docker are installed
+2. Installs Ollama if missing (Linux/Unix/Mac only; install manually on Windows)
+3. Copies `.env.example` to `.env` and generates `APP_KEY`
+4. Runs `composer install` and `npm ci && npm run build`
+5. Starts Docker services (ClamAV antivirus + n8n orchestration)
+6. Pulls the `llava:7b` AI model into Ollama (~4.7 GB one-time download)
+7. Runs database migrations
+8. Imports and activates n8n workflows
+9. Launches the web server, queue worker, and Vite dev server
 
 Visit **http://localhost:8000**
 
@@ -161,6 +187,11 @@ APP_INTERNAL_URL=http://host.docker.internal:8000
 | Vite assets 404 | Run `npm run build` (production) or `npm run dev` (development) |
 | CSP errors (Alpine.js) | Check `SecurityHeaders` middleware; `unsafe-inline` required for Alpine |
 | SQLite locked | Ensure only one `php artisan serve` + one `queue:work` |
+| **Windows:** `setup.sh` not recognized | Use Git Bash (`bash setup.sh`), not PowerShell or CMD |
+| **Windows:** `chmod` permission denied | Not needed in Git Bash; if using WSL, run `chmod +x setup.sh` first |
+| **Windows:** Ollama install fails | Install from [ollama.com/download](https://ollama.com/download) manually before running `setup.sh` |
+| **Windows:** Docker socket error | Ensure Docker Desktop is running and WSL 2 backend is enabled |
+| **Windows:** `composer` not found | Add PHP and Composer to your system PATH, or use `choco install composer` |
 
 ---
 
