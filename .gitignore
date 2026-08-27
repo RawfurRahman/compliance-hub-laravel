@@ -18,6 +18,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/sessions/*
 /vendor
 Homestead.json
 Homestead.yaml
@@ -26,3 +27,46 @@ Thumbs.db
 .aider*
 compliancehub_code.zip
 .claude/
+
+# Debug/scratch files
+check_*.php
+check_*.ps1
+debug_*.php
+debug_*.txt
+inspect_*.php
+print_*.php
+query_*.php
+extract_*.php
+create_*.php
+run_*.php
+test.php
+test2.php
+test_*.php
+test_*.js
+test_*.txt
+test.js
+test_server.js
+tmp_*.py
+verify_*.ps1
+render.php
+router.php
+get.php
+
+# Temp/config files
+store.json
+routes.txt
+output_*.html
+mock_n8n.cjs
+*.rar
+*.zip
+*.exe
+*.dll
+*.log
+n8n*.log
+queue*.log
+setup.sh
+
+# External tool binaries
+clamav/
+mailpit/
+clamav-rest-server.js
