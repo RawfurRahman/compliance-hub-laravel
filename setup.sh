@@ -58,9 +58,14 @@ main() {
     # Ollama is optional (needed for AI evidence analysis)
     OLLAMA_AVAILABLE=true
     if ! command -v ollama &> /dev/null; then
-        log_warn "ollama not found. AI evidence analysis features will be disabled."
-        log_warn "Install ollama from https://ollama.com to enable AI features."
-        OLLAMA_AVAILABLE=false
+        log_warn "ollama not found. Installing ollama..."
+        curl -fsSL https://ollama.com/install.sh | sh
+        if command -v ollama &> /dev/null; then
+            log_ok "ollama installed successfully"
+        else
+            log_error "ollama installation failed. AI features will be disabled."
+            OLLAMA_AVAILABLE=false
+        fi
     fi
 
     check_version php "8.2"
@@ -107,7 +112,7 @@ main() {
     log_info "Waiting for services to be ready..."
     sleep 5
 
-    # 7. Ollama model (optional)
+    # 7. Ollama llava:7b model
     if [[ "$OLLAMA_AVAILABLE" == "true" ]]; then
         log_info "Checking Ollama service..."
         if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
@@ -123,8 +128,6 @@ main() {
             ollama pull llava:7b
             log_ok "llava:7b pulled successfully"
         fi
-    else
-        log_warn "Skipping Ollama setup (not installed)."
     fi
 
     # 8. Database
