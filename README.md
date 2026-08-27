@@ -34,58 +34,29 @@ Built as an MSc project artefact (University of Dhaka, Dept. of CSE).
 | Node.js | 18+ | `node -v` |
 | npm | 9+ | `npm -v` |
 | Docker + Compose | 24+ | `docker --version && docker compose version` |
-| Ollama | Latest | `ollama --version` |
+| Ollama | Latest | Auto-installed by `setup.sh` if missing |
 
-### Automated Setup (Recommended)
+### Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/RawfurRahman/compliance-hub-laravel.git
 cd compliance-hub-laravel
 chmod +x setup.sh
 ./setup.sh
 ```
 
-The script installs dependencies, starts Docker services, pulls the AI model, runs migrations, seeds the database, **and automatically imports n8n workflows**. No manual n8n setup required — the owner account is pre-provisioned via Docker environment variables.
+The script handles everything: installs dependencies, starts Docker services (ClamAV + n8n), installs Ollama and pulls `llava:7b` model (~4.7 GB), runs migrations, and imports n8n workflows.
 
-### Manual Setup
+### After setup — Start the app (3 terminals)
 
 ```bash
-# 1. Clone & configure
-git clone <your-repo-url>
-cd compliance-hub-laravel
-cp .env.example .env
-php artisan key:generate
-
-# 2. PHP dependencies
-composer install
-
-# 3. Frontend assets
-npm install && npm run build
-
-# 4. External services (Docker)
-docker compose up -d
-# Starts: clamav_service (:9000), n8n_service (:5678)
-
-# 5. Local AI model (one-time, ~4.7 GB)
-ollama serve &
-ollama pull llava:7b
-
-# 6. Database & seeders
-php artisan migrate:fresh --seed
-
-# 7. Import n8n workflows (fully automated)
-# Owner account is pre-provisioned via docker-compose env vars
-# API key is: n8nComplianceHubSecretKey
-# Just run: php artisan n8n:setup
-
-# 8. Run the app (3 terminals)
-# Terminal 1: Web server
+# Terminal 1 — Web server
 php artisan serve --port=8000
 
-# Terminal 2: Queue worker (required for evidence analysis)
+# Terminal 2 — Queue worker (REQUIRED for evidence analysis)
 php artisan queue:work
 
-# Terminal 3 (optional): Vite dev server for hot reload
+# Terminal 3 (optional) — Vite dev server for hot reload
 npm run dev
 ```
 
