@@ -54,7 +54,14 @@ main() {
     check_command node
     check_command npm
     check_command docker
-    check_command ollama
+
+    # Ollama is optional (needed for AI evidence analysis)
+    OLLAMA_AVAILABLE=true
+    if ! command -v ollama &> /dev/null; then
+        log_warn "ollama not found. AI evidence analysis features will be disabled."
+        log_warn "Install ollama from https://ollama.com to enable AI features."
+        OLLAMA_AVAILABLE=false
+    fi
 
     check_version php "8.2"
     check_version node "18"
@@ -100,25 +107,29 @@ main() {
     log_info "Waiting for services to be ready..."
     sleep 5
 
-    # 7. Ollama model
-    log_info "Checking Ollama service..."
-    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-        log_warn "Ollama not running. Starting in background..."
-        ollama serve > /dev/null 2>&1 &
-        sleep 3
-    fi
+    # 7. Ollama model (optional)
+    if [[ "$OLLAMA_AVAILABLE" == "true" ]]; then
+        log_info "Checking Ollama service..."
+        if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+            log_warn "Ollama not running. Starting in background..."
+            ollama serve > /dev/null 2>&1 &
+            sleep 3
+        fi
 
-    log_info "Pulling llava:7b model (one-time, ~4.7 GB)..."
-    if ollama list | grep -q 'llava:7b'; then
-        log_ok "llava:7b already present"
+        log_info "Pulling llava:7b model (one-time, ~4.7 GB)..."
+        if ollama list | grep -q 'llava:7b'; then
+            log_ok "llava:7b already present"
+        else
+            ollama pull llava:7b
+            log_ok "llava:7b pulled successfully"
+        fi
     else
-        ollama pull llava:7b
-        log_ok "llava:7b pulled successfully"
+        log_warn "Skipping Ollama setup (not installed)."
     fi
 
     # 8. Database
     log_info "Running migrations & seeders..."
-    php artisan migrate:fresh --seed --force
+    php artisan migrate --force
     log_ok "Database migrated and seeded"
 
     # 9. n8n workflow automation
