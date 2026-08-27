@@ -45,33 +45,18 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script handles everything: installs dependencies, starts Docker services (ClamAV + n8n), installs Ollama and pulls `llava:7b` model (~4.7 GB), runs migrations, and imports n8n workflows.
-
-### After setup — Start the app (3 terminals)
-
-```bash
-# Terminal 1 — Web server
-php artisan serve --port=8000
-
-# Terminal 2 — Queue worker (REQUIRED for evidence analysis)
-php artisan queue:work
-
-# Terminal 3 (optional) — Vite dev server for hot reload
-npm run dev
-```
+The script handles everything: installs dependencies, starts Docker services (ClamAV + n8n), installs Ollama and pulls `llava:7b` model (~4.7 GB), runs migrations, imports n8n workflows, and starts all services.
 
 Visit **http://localhost:8000**
 
----
+### Default Users (password: `password`)
 
-## Default Users (after seeding)
-
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | superadmin@example.com | password |
-| Admin | admin@example.com | password |
-| Auditor | auditor@example.com | password |
-| Customer | customer@example.com | password |
+| Role | Email |
+|------|-------|
+| Super Admin | superadmin@example.com |
+| Admin | admin@example.com |
+| Auditor | auditor@example.com |
+| Customer | customer@example.com |
 
 ---
 

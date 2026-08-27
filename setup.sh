@@ -157,23 +157,35 @@ main() {
     fi
     echo
 
-    # 10. Final instructions
+    # 10. Start application services
+    log_info "Starting web server (php artisan serve)..."
+    nohup php artisan serve --port=8000 > /dev/null 2>&1 &
+    WEB_PID=$!
+    log_ok "Web server started on http://localhost:8000 (PID: $WEB_PID)"
+
+    log_info "Starting queue worker..."
+    nohup php artisan queue:work > /dev/null 2>&1 &
+    QUEUE_PID=$!
+    log_ok "Queue worker started (PID: $QUEUE_PID)"
+
+    log_info "Starting Vite dev server..."
+    nohup npm run dev > /dev/null 2>&1 &
+    VITE_PID=$!
+    log_ok "Vite dev server started (PID: $VITE_PID)"
+
+    echo
     echo "=========================================="
-    log_ok "Setup complete!"
+    log_ok "Setup complete! All services are running."
     echo "=========================================="
     echo
-    echo "Next steps (run in separate terminals):"
+    echo "Visit: http://localhost:8000"
     echo
-    echo "  Terminal 1 - Web server:"
-    echo "    php artisan serve --port=8000"
+    echo "Services running:"
+    echo "  Web server  — http://localhost:8000  (PID: $WEB_PID)"
+    echo "  Queue worker — evidence analysis     (PID: $QUEUE_PID)"
+    echo "  Vite dev    — hot reload             (PID: $VITE_PID)"
     echo
-    echo "  Terminal 2 - Queue worker (REQUIRED for evidence analysis):"
-    echo "    php artisan queue:work"
-    echo
-    echo "  Terminal 3 (optional) - Vite dev server:"
-    echo "    npm run dev"
-    echo
-    echo "Then visit: http://localhost:8000"
+    echo "To stop all services: kill $WEB_PID $QUEUE_PID $VITE_PID"
     echo
     echo "Default users (password: password):"
     echo "  superadmin@example.com  (Super Admin)"
