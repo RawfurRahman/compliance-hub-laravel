@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class ProjectAssessment extends Model
@@ -24,8 +25,8 @@ class ProjectAssessment extends Model
     ];
 
     protected $casts = [
-        'start_date'         => 'date',
-        'end_date'           => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'is_publicly_visible' => 'boolean',
     ];
 
@@ -39,7 +40,7 @@ class ProjectAssessment extends Model
         return $this->belongsTo(Framework::class);
     }
 
-    public function findings()
+    public function findings(): HasMany
     {
         return $this->hasMany(AssessmentFinding::class, 'project_assessment_id');
     }
@@ -57,19 +58,19 @@ class ProjectAssessment extends Model
     public function stats(): array
     {
         $findings = $this->findings;
-        $total    = $findings->count();
+        $total = $findings->count();
 
-        $compliant    = $findings->where('is_compliant', true)->count();
+        $compliant = $findings->where('is_compliant', true)->count();
         $nonCompliant = $findings->where('is_compliant', false)->count();
 
-        $high   = $findings->where('risk_rating', 'High')->count();
+        $high = $findings->where('risk_rating', 'High')->count();
         $medium = $findings->where('risk_rating', 'Medium')->count();
-        $low    = $findings->where('risk_rating', 'Low')->count();
-        $none   = $findings->where('risk_rating', 'None')->count();
+        $low = $findings->where('risk_rating', 'Low')->count();
+        $none = $findings->where('risk_rating', 'None')->count();
 
-        $open       = $findings->where('status', 'Open')->count();
+        $open = $findings->where('status', 'Open')->count();
         $inProgress = $findings->where('status', 'In Progress')->count();
-        $closed     = $findings->where('status', 'Closed')->count();
+        $closed = $findings->where('status', 'Closed')->count();
 
         $progressScore = $total > 0
             ? round((($inProgress * 0.5) + ($closed * 1.0)) / $total * 100, 1)
@@ -89,43 +90,43 @@ class ProjectAssessment extends Model
 
     public function ganttTasks(): array
     {
-        if (!$this->start_date || !$this->end_date) {
+        if (! $this->start_date || ! $this->end_date) {
             return [];
         }
 
         $findings = $this->findings()->with('frameworkControl')->get();
-        $tasks    = [];
+        $tasks = [];
 
         $tasks[] = [
-            'id'       => 'project',
-            'name'     => 'Assessment Period',
-            'start'    => $this->start_date->format('Y-m-d'),
-            'end'      => $this->end_date->format('Y-m-d'),
+            'id' => 'project',
+            'name' => 'Assessment Period',
+            'start' => $this->start_date->format('Y-m-d'),
+            'end' => $this->end_date->format('Y-m-d'),
             'progress' => $this->stats()['progressScore'],
             'custom_class' => 'bar-project',
         ];
 
         foreach ($findings as $f) {
             $progress = match ($f->status) {
-                'Closed'      => 100,
+                'Closed' => 100,
                 'In Progress' => 50,
-                default       => 0,
+                default => 0,
             };
             $controlId = $f->frameworkControl ? $f->frameworkControl->control_id : '';
             $desc = $f->observation ?: ($f->frameworkControl ? $f->frameworkControl->requirement_description : '');
-            $name = trim($controlId . ' ' . Str::limit($desc, 40));
+            $name = trim($controlId.' '.Str::limit($desc, 40));
 
             $tasks[] = [
-                'id'           => 'f-' . $f->id,
-                'name'         => $name,
-                'start'        => $this->start_date->format('Y-m-d'),
-                'end'          => $this->end_date->format('Y-m-d'),
-                'progress'     => $progress,
+                'id' => 'f-'.$f->id,
+                'name' => $name,
+                'start' => $this->start_date->format('Y-m-d'),
+                'end' => $this->end_date->format('Y-m-d'),
+                'progress' => $progress,
                 'dependencies' => 'project',
                 'custom_class' => match ($f->risk_rating) {
-                    'High'   => 'bar-high',
+                    'High' => 'bar-high',
                     'Medium' => 'bar-medium',
-                    default  => 'bar-low',
+                    default => 'bar-low',
                 },
             ];
         }

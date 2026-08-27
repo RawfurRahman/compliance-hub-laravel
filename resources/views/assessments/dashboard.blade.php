@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @push('styles')
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<style>
+<link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('vendor/frappe-gantt/frappe-gantt.min.css') }}">
+<style nonce="{{ $cspNonce }}">
     /* Premium style for Quill inside table cells */
     .ql-container.ql-snow {
         border: none !important;
@@ -393,7 +394,7 @@
                     </table>
 
                     <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-                        <button type="button" onclick="deleteFinding({{ $finding->id }})"
+                        <button type="button" data-delete-finding="{{ $finding->id }}"
                                 class="px-4 py-2 text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition">
                             <i class="fas fa-trash-alt mr-1"></i> Delete
                         </button>
@@ -592,8 +593,9 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-<script>
+<script src="{{ asset('vendor/quill/quill.js') }}"></script>
+<script src="{{ asset('vendor/frappe-gantt/frappe-gantt.min.js') }}"></script>
+<script nonce="{{ $cspNonce }}">
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.quill-editor').forEach(function(editorEl) {
             initQuill(editorEl);
@@ -646,12 +648,16 @@
             });
         }
     }
+
+    document.querySelectorAll('[data-delete-finding]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            deleteFinding(btn.getAttribute('data-delete-finding'));
+        });
+    });
 </script>
 
 @if($assessment && !$assessment->findings->isEmpty())
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
-<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
-<script>
+<script nonce="{{ $cspNonce }}">
     document.addEventListener('DOMContentLoaded', function () {
         const tasks = @json(json_decode($ganttJson));
         if (tasks && tasks.length > 0) {

@@ -18,8 +18,11 @@ class ComplianceFindingTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected FrameworkControl $frameworkControl;
+
     protected AssessmentFinding $finding;
+
     protected ProjectAssessment $assessment;
 
     protected function setUp(): void

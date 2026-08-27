@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
 @push('styles')
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
-<style>
+<link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+<link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('vendor/frappe-gantt/frappe-gantt.min.css') }}">
+<style nonce="{{ $cspNonce }}">
     .font-outfit { font-family: 'Outfit', sans-serif; }
     .ql-container.ql-snow {
         border: none !important;
@@ -88,10 +88,6 @@
 
             @if($assessment)
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('assessments.unified.report', $assessment) }}"
-                       class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-850 hover:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-sm">
-                        <i class="fas fa-file-pdf"></i> Export PDF
-                    </a>
                 </div>
             @endif
         </div>
@@ -472,9 +468,9 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
-<script>
+<script src="{{ asset('vendor/quill/quill.js') }}"></script>
+<script src="{{ asset('vendor/frappe-gantt/frappe-gantt.min.js') }}"></script>
+<script nonce="{{ $cspNonce }}">
 function unifiedDashboard() {
     return {
         stats: @json($stats),

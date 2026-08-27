@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Persisted remediation performance metric snapshot (MTTR / SLA).
+ * Persisted remediation performance metric snapshot.
  */
 class RemediationMetric extends Model
 {

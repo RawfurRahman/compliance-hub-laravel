@@ -8,6 +8,7 @@ use App\Models\FrameworkControl;
 use App\Models\User;
 use App\Modules\Compliance\Models\FrameworkControlMap;
 use App\Modules\Compliance\Models\FrameworkVersion;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,9 +17,13 @@ class ControlMappingTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Framework $framework;
+
     protected FrameworkControl $frameworkControl;
+
     protected FrameworkVersion $version;
+
     protected Control $control;
 
     protected function setUp(): void
@@ -67,7 +72,7 @@ class ControlMappingTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         FrameworkControlMap::create([
             'control_id' => $this->control->id,
             'framework_control_id' => $this->frameworkControl->id,

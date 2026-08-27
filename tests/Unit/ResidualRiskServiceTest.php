@@ -4,14 +4,15 @@ namespace Tests\Unit;
 
 use App\Modules\RiskManagement\Services\ResidualRiskService;
 use App\Modules\RiskManagement\Support\Scoring\ResidualRiskInput;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 /**
  * Pure unit tests for the residual risk engine.
  *
  * These do not touch the database; they assert the transparent reduction
  * logic, banding, reduction %, appetite status, trend transitions, waiver
- * behaviour and determinism.
+ * behaviour and determinism. Extends the Laravel TestCase so the application
+ * (and config) is booted — the engine reads versioned weights from config.
  */
 class ResidualRiskServiceTest extends TestCase
 {
@@ -20,7 +21,7 @@ class ResidualRiskServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new ResidualRiskService();
+        $this->service = new ResidualRiskService;
     }
 
     /**

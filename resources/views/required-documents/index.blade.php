@@ -13,7 +13,7 @@
             <p class="mt-2 max-w-2xl text-sm font-medium text-slate-500">Import a Word or Excel requirements list and prepare the required evidence for this project only.</p>
         </div>
         @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Auditor'))
-            <button type="button" onclick="document.getElementById('import-panel').classList.toggle('hidden')" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700">
+            <button type="button" class="js-toggle" data-csp-target="import-panel" "rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700">
                 <i class="fas fa-file-import mr-1.5"></i> Import Required List
             </button>
         @endif
@@ -64,7 +64,7 @@
                         <p class="mt-1 text-sm text-slate-500">Source: {{ $activeList->source_file_name }} · Imported by {{ optional($activeList->importedBy)->username ?? 'Unknown' }}</p>
                     </div>
                     @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Auditor'))
-                        <form action="{{ route('required-documents.destroy', [$project, $activeList]) }}" method="POST" onsubmit="return confirm('Delete this list and all of its document requirements?')">
+                        <form action="{{ route('required-documents.destroy', [$project, $activeList]) }}" method="POST" data-confirm="Delete this list and all of its document requirements?">
                             @csrf @method('DELETE')
                             <button class="text-sm font-semibold text-rose-600 hover:text-rose-800"><i class="fas fa-trash-can mr-1"></i> Delete list</button>
                         </form>

@@ -3,13 +3,10 @@
 namespace App\Jobs\Dashboard;
 
 use App\DTOs\Dashboard\DashboardFilter;
-use App\Services\Dashboard\BaseQueryService;
 use App\Services\Dashboard\ComplianceScorecardQueryService;
 use App\Services\Dashboard\DashboardCacheKey;
 use App\Services\Dashboard\HeatmapQueryService;
 use App\Services\Dashboard\KpiQueryService;
-use App\Services\Dashboard\OwnershipAndSlaQueryService;
-use App\Services\Dashboard\PolicyMetricQueryService;
 use App\Services\Dashboard\RemediationTrendQueryService;
 use App\Services\Dashboard\RiskRankingQueryService;
 use App\Services\Dashboard\ThirdPartyRiskQueryService;
@@ -41,8 +38,6 @@ class RefreshDashboardSnapshotJob implements ShouldQueue
         RiskRankingQueryService $riskRanking,
         ComplianceScorecardQueryService $complianceScorecard,
         ThirdPartyRiskQueryService $thirdPartyRisk,
-        PolicyMetricQueryService $policyMetrics,
-        OwnershipAndSlaQueryService $ownershipSla,
         RemediationTrendQueryService $remediationTrend,
     ): void {
         $service = match ($this->domain) {
@@ -51,8 +46,6 @@ class RefreshDashboardSnapshotJob implements ShouldQueue
             'risk_ranking' => $riskRanking,
             'compliance_scorecard' => $complianceScorecard,
             'third_party_risk' => $thirdPartyRisk,
-            'policy_metrics' => $policyMetrics,
-            'ownership_sla' => $ownershipSla,
             'remediation_trend' => $remediationTrend,
             default => throw new \InvalidArgumentException("Unknown domain: {$this->domain}"),
         };

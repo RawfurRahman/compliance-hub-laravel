@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Modules\Compliance\Models\ControlTest;
+use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Services\AssessmentService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\AssessmentService;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssessmentFinding extends Model
 {
@@ -29,20 +32,34 @@ class AssessmentFinding extends Model
         'source_type',
         'source_id',
         'compliance_state',
+        'ai_gaps',
+        'ai_gaps_consolidated_at',
+        'ai_gaps_consolidated_by',
+        'gap_category',
+        'non_compliant_details',
+        'compliant_description',
+        'remediation_plan',
+        'evidence_provided',
+        'test_results',
+        'meets_standard',
+        'auditor_notes',
     ];
 
     protected $casts = [
         'is_compliant' => 'boolean',
         'is_applicable' => 'boolean',
         'due_date' => 'date',
+        'ai_gaps' => 'array',
+        'ai_gaps_consolidated_at' => 'datetime',
+        'meets_standard' => 'boolean',
     ];
 
-    public function projectAssessment()
+    public function projectAssessment(): BelongsTo
     {
         return $this->belongsTo(ProjectAssessment::class, 'project_assessment_id');
     }
 
-    public function frameworkControl()
+    public function frameworkControl(): BelongsTo
     {
         return $this->belongsTo(FrameworkControl::class, 'framework_control_id');
     }
@@ -89,7 +106,7 @@ class AssessmentFinding extends Model
 
     public function riskRegister()
     {
-        return $this->belongsTo(\App\Modules\RiskManagement\Models\RiskRegister::class, 'risk_register_id');
+        return $this->belongsTo(RiskRegister::class, 'risk_register_id');
     }
 
     public function source()
@@ -97,14 +114,19 @@ class AssessmentFinding extends Model
         return $this->morphTo();
     }
 
-    public function slaTrackers()
+    public function consolidatedBy()
     {
-        return $this->morphMany(\App\Modules\Compliance\Models\SLATracker::class, 'trackable');
+        return $this->belongsTo(User::class, 'ai_gaps_consolidated_by');
     }
 
     public function controlTests()
     {
-        return $this->hasMany(\App\Modules\Compliance\Models\ControlTest::class, 'assessment_finding_id');
+        return $this->hasMany(ControlTest::class, 'assessment_finding_id');
+    }
+
+    public function observations()
+    {
+        return $this->hasMany(\App\Models\Observation::class, 'assessment_finding_id');
     }
 
     protected static function booted()

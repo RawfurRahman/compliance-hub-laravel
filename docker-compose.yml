@@ -23,6 +23,13 @@ services:
       # Point the webhook to standard localhost
       - WEBHOOK_URL=http://localhost:5678/
       - N8N_ENCRYPTION_KEY=n8nComplianceHubSecretKey
+      # Auto-create owner account (n8n 2.17+) - no manual setup needed!
+      - N8N_INSTANCE_OWNER_MANAGED_BY_ENV=true
+      - N8N_INSTANCE_OWNER_EMAIL=admin@compliance-hub.local
+      - N8N_INSTANCE_OWNER_FIRST_NAME=Admin
+      - N8N_INSTANCE_OWNER_LAST_NAME=User
+      # bcrypt hash of "password" (generated with: php -r "echo password_hash('password', PASSWORD_BCRYPT);")
+      - N8N_INSTANCE_OWNER_PASSWORD_HASH=$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
     volumes:
       - n8n_data:/home/node/.n8n
 

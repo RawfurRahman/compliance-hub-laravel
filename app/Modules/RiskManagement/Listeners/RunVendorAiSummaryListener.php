@@ -17,7 +17,7 @@ class RunVendorAiSummaryListener
         try {
             $this->analysisService->analyze($event->assessment);
         } catch (\Exception $e) {
-            Log::error('RunVendorAiSummaryListener failed: ' . $e->getMessage());
+            Log::error('RunVendorAiSummaryListener failed: '.$e->getMessage());
         }
     }
 }

@@ -14,6 +14,7 @@ class WorkbookParityTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -113,7 +114,7 @@ class WorkbookParityTest extends TestCase
             ]);
         });
 
-        $engine = new ScoringEngine();
+        $engine = new ScoringEngine;
         $computedTv = $engine->calculateTvScore(4, 4);
         $computedRating = $engine->calculateInherentScore(4, $computedTv, 3);
 
@@ -131,7 +132,7 @@ class WorkbookParityTest extends TestCase
 
     public function test_existing_columns_still_writable_for_import(): void
     {
-        $risk = new RiskRegister();
+        $risk = new RiskRegister;
 
         $risk->project_id = $this->project->id;
         $risk->serial_no = 'WP-003';

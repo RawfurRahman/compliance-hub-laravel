@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISO 27001:2022 Gap Assessment Report &ndash; {{ $project->name }}</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         /* ------------------------------------------------------------------ */
         /* Reset & Base                                                        */
         /* ------------------------------------------------------------------ */

@@ -38,7 +38,7 @@ class ReportSchedule extends Model
     public function calculateNextRun(): void
     {
         $now = now();
-        
+
         switch ($this->frequency) {
             case 'daily':
                 $this->next_run_at = $now->addDay()->startOfDay();

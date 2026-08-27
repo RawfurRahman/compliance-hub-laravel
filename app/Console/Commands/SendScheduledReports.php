@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ReportSchedule;
 use App\Mail\ComplianceReportMail;
+use App\Models\ReportSchedule;
 use App\Services\ReportExportService;
 use App\Services\ReportGenerationService;
 use Illuminate\Console\Command;
@@ -26,6 +26,7 @@ class SendScheduledReports extends Command
     protected $description = 'Dispatch pending compliance report schedules via email';
 
     protected $exportService;
+
     protected $reportService;
 
     /**
@@ -52,6 +53,7 @@ class SendScheduledReports extends Command
 
         if ($schedules->isEmpty()) {
             $this->info('No pending schedules found.');
+
             return 0;
         }
 
@@ -59,8 +61,9 @@ class SendScheduledReports extends Command
 
         foreach ($schedules as $schedule) {
             $project = $schedule->project;
-            if (!$project) {
+            if (! $project) {
                 $this->error("Project not found for schedule ID: {$schedule->id}. Skipping.");
+
                 continue;
             }
 
@@ -76,7 +79,7 @@ class SendScheduledReports extends Command
 
                 if (in_array('pdf', $formats)) {
                     $pdfContent = $this->exportService->generatePdfContent($project, $schedule->report_type);
-                    $fileName = "{$project->name}-" . str_replace('_', '-', $schedule->report_type) . "-" . $now->format('Y-m-d') . ".pdf";
+                    $fileName = "{$project->name}-".str_replace('_', '-', $schedule->report_type).'-'.$now->format('Y-m-d').'.pdf';
                     $attachmentsData[] = [
                         'data' => $pdfContent,
                         'name' => $fileName,
@@ -86,7 +89,7 @@ class SendScheduledReports extends Command
 
                 if (in_array('html', $formats)) {
                     $htmlContent = $this->exportService->generateHtmlContent($project, $schedule->report_type);
-                    $fileName = "{$project->name}-" . str_replace('_', '-', $schedule->report_type) . "-" . $now->format('Y-m-d') . ".html";
+                    $fileName = "{$project->name}-".str_replace('_', '-', $schedule->report_type).'-'.$now->format('Y-m-d').'.html';
                     $attachmentsData[] = [
                         'data' => $htmlContent,
                         'name' => $fileName,
@@ -102,7 +105,7 @@ class SendScheduledReports extends Command
                 Mail::to($emails)->send(new ComplianceReportMail(
                     $project->name,
                     $reportLabel,
-                    "This is an automated scheduled delivery of your compliance report.",
+                    'This is an automated scheduled delivery of your compliance report.',
                     $attachmentsData
                 ));
 
@@ -113,11 +116,12 @@ class SendScheduledReports extends Command
 
                 $this->info("Successfully sent scheduled report ID: {$schedule->id} for Project: {$project->name}");
             } catch (\Exception $e) {
-                $this->error("Failed to process schedule ID: {$schedule->id}. Error: " . $e->getMessage());
+                $this->error("Failed to process schedule ID: {$schedule->id}. Error: ".$e->getMessage());
             }
         }
 
         $this->info('Finished processing scheduled reports.');
+
         return 0;
     }
 }

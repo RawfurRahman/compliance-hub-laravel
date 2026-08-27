@@ -26,23 +26,23 @@ class IsoGapAssessmentImport implements ToModel, WithHeadingRow
      */
     public function model(array $row): IsoGapAssessment
     {
-        $validRatings  = ['High', 'Medium', 'Low'];
+        $validRatings = ['High', 'Medium', 'Low'];
         $validStatuses = ['Open', 'Closed', 'In Progress'];
 
         $riskRating = ucfirst(strtolower(trim($row['risk_rating'] ?? '')));
-        $status     = trim($row['status'] ?? 'Open');
+        $status = trim($row['status'] ?? 'Open');
 
         return new IsoGapAssessment([
-            'project_id'        => $this->projectId,
-            'serial_no'         => trim($row['serial_no'] ?? ''),
-            'clause_reference'  => trim($row['relevant_standard_reference'] ?? ''),
+            'project_id' => $this->projectId,
+            'serial_no' => trim($row['serial_no'] ?? ''),
+            'clause_reference' => trim($row['relevant_standard_reference'] ?? ''),
             'observation_title' => trim($row['observation_title'] ?? ''),
-            'risk_rating'       => in_array($riskRating, $validRatings)  ? $riskRating : 'Low',
-            'current_state'     => trim($row['current_state_observation'] ?? ''),
-            'gap_description'   => trim($row['gap_description'] ?? ''),
-            'impact_risk'       => trim($row['impact_risk'] ?? ''),
-            'recommendation'    => trim($row['recommendation'] ?? ''),
-            'status'            => in_array($status, $validStatuses) ? $status : 'Open',
+            'risk_rating' => in_array($riskRating, $validRatings) ? $riskRating : 'Low',
+            'current_state' => trim($row['current_state_observation'] ?? ''),
+            'gap_description' => trim($row['gap_description'] ?? ''),
+            'impact_risk' => trim($row['impact_risk'] ?? ''),
+            'recommendation' => trim($row['recommendation'] ?? ''),
+            'status' => in_array($status, $validStatuses) ? $status : 'Open',
         ]);
     }
 }

@@ -120,7 +120,7 @@
                                     <button @click="editing = true" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:border-sky-200 transition-all text-xs">
                                         <i class="fas fa-pen"></i>
                                     </button>
-                                    <form action="{{ route('admin.frameworks.destroy', $fw) }}" method="POST" onsubmit="return confirm('Delete this framework?');">
+                                    <form action="{{ route('admin.frameworks.destroy', $fw) }}" method="POST" data-confirm="Delete this framework?">
                                         @csrf @method('DELETE')
                                         <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all text-xs">
                                             <i class="fas fa-trash"></i>

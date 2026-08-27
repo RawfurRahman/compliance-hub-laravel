@@ -20,13 +20,14 @@ class ExportControlMappings extends Command
         $this->info("Exporting Control Mapping sheet to: {$file}");
 
         try {
-            Excel::store(new ControlMappingSheetExport(), $file, 'local');
+            Excel::store(new ControlMappingSheetExport, $file, 'local');
         } catch (\Exception $e) {
             $this->error("Export failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
 
-        $fullPath = storage_path('app/' . $file);
+        $fullPath = storage_path('app/'.$file);
         $this->info("Export complete. File saved to: {$fullPath}");
 
         return Command::SUCCESS;

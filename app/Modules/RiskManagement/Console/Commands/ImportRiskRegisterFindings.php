@@ -2,15 +2,15 @@
 
 namespace App\Modules\RiskManagement\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+use App\Models\AssessmentFinding;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
-use App\Models\AssessmentFinding;
 use App\Modules\RiskManagement\Imports\RiskRegisterFindingImport;
 use App\Modules\RiskManagement\Imports\RiskRegisterFindingMultiImport;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -44,6 +44,7 @@ class ImportRiskRegisterFindings extends Command
 
         if (! file_exists($filePath)) {
             $this->error("File not found: {$filePath}");
+
             return self::FAILURE;
         }
 
@@ -53,10 +54,10 @@ class ImportRiskRegisterFindings extends Command
         $framework = Framework::firstOrCreate(
             ['slug' => 'risk_register'],
             [
-                'name'        => 'Risk Register',
-                'version'     => 'current',
+                'name' => 'Risk Register',
+                'version' => 'current',
                 'description' => 'Internal Risk Register — imported from Excel',
-                'is_active'   => true,
+                'is_active' => true,
             ]
         );
         $this->info("Framework: {$framework->name} (id={$framework->id})");
@@ -72,6 +73,7 @@ class ImportRiskRegisterFindings extends Command
             $adminUserId = DB::table('users')->value('id');
             if (! $adminUserId) {
                 $this->error('No users found in the database. Create at least one user first.');
+
                 return self::FAILURE;
             }
             $project = Project::firstOrCreate(
@@ -87,12 +89,12 @@ class ImportRiskRegisterFindings extends Command
         $sentinelControl = FrameworkControl::firstOrCreate(
             [
                 'framework_id' => $framework->id,
-                'control_id'   => 'RR-GENERAL',
+                'control_id' => 'RR-GENERAL',
             ],
             [
-                'domain'                  => 'Risk Register',
+                'domain' => 'Risk Register',
                 'requirement_description' => 'General risk register entry (sentinel control)',
-                'required_evidence'       => null,
+                'required_evidence' => null,
             ]
         );
         $this->info("Sentinel control id={$sentinelControl->id}");
@@ -100,22 +102,24 @@ class ImportRiskRegisterFindings extends Command
         // ----------------------------------------------------------------
         // 5. Load and process the Risk Register sheet
         // ----------------------------------------------------------------
-        $importer = new RiskRegisterFindingImport();
+        $importer = new RiskRegisterFindingImport;
         $this->line("Loading sheet 'Risk Register'...");
 
         try {
             Excel::import(new RiskRegisterFindingMultiImport($importer), $filePath);
         } catch (\Exception $e) {
-            $this->error("Import failed: " . $e->getMessage());
+            $this->error('Import failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
 
         $rows = $importer->rows;
-        $this->info("Found " . $rows->count() . " total rows in sheet.");
+        $this->info('Found '.$rows->count().' total rows in sheet.');
 
         // Group by Risk Owner
         $grouped = $rows->groupBy(function ($row) {
             $owner = $this->pick($row->toArray(), ['risk_owner', 'riskowner', 'owner']);
+
             return $owner ? trim($owner) : 'Unknown';
         });
 
@@ -128,34 +132,46 @@ class ImportRiskRegisterFindings extends Command
             }
 
             // Normalize department name to clean short format
-            $department = trim($departmentRaw);
-            if (stripos($department, 'IT') === 0) $department = 'IT';
-            elseif (stripos($department, 'HR') === 0) $department = 'HR';
-            elseif (stripos($department, 'Compliance') === 0) $department = 'Compliance';
-            elseif (stripos($department, 'Procurement') === 0) $department = 'Procurement';
-            elseif (stripos($department, 'Facilities') === 0) $department = 'Facilities';
-            elseif (stripos($department, 'Marketing') === 0) $department = 'Marketing';
-            elseif (stripos($department, 'CISO') === 0) $department = 'CISO';
+            if (is_string($departmentRaw)) {
+                $department = trim($departmentRaw);
+                if (stripos($department, 'IT') === 0) {
+                    $department = 'IT';
+                } elseif (stripos($department, 'HR') === 0) {
+                    $department = 'HR';
+                } elseif (stripos($department, 'Compliance') === 0) {
+                    $department = 'Compliance';
+                } elseif (stripos($department, 'Procurement') === 0) {
+                    $department = 'Procurement';
+                } elseif (stripos($department, 'Facilities') === 0) {
+                    $department = 'Facilities';
+                } elseif (stripos($department, 'Marketing') === 0) {
+                    $department = 'Marketing';
+                } elseif (stripos($department, 'CISO') === 0) {
+                    $department = 'CISO';
+                }
+            } else {
+                $department = $departmentRaw;
+            }
 
             $this->line("\nProcessing department: {$department} (Raw: {$departmentRaw})");
 
             $assessment = ProjectAssessment::firstOrCreate(
                 [
-                    'project_id'   => $project->id,
+                    'project_id' => $project->id,
                     'framework_id' => $framework->id,
-                    'type'         => 'Gap',
-                    'overall_status' => 'Risk Register — ' . $department,
+                    'type' => 'Gap',
+                    'overall_status' => 'Risk Register — '.$department,
                 ],
                 [
                     'start_date' => now(),
-                    'end_date'   => now()->addYear(),
+                    'end_date' => now()->addYear(),
                 ]
             );
 
             if ($assessment->wasRecentlyCreated) {
                 $assessmentsCreated++;
             }
-            $this->line("  Assessment id={$assessment->id} (" . ($assessment->wasRecentlyCreated ? 'created' : 'found') . ")");
+            $this->line("  Assessment id={$assessment->id} (".($assessment->wasRecentlyCreated ? 'created' : 'found').')');
 
             if ($this->option('fresh')) {
                 $deleted = $assessment->findings()->delete();
@@ -167,7 +183,7 @@ class ImportRiskRegisterFindings extends Command
 
                 // Skip rows that have no meaningful content
                 $assetProcess = $this->pick($data, ['asset_process_service', 'assetprocessservice', 'asset_process', 'assetprocess', 'asset', 'process']);
-                $threat       = $this->pick($data, ['threat']);
+                $threat = $this->pick($data, ['threat']);
                 if (! $assetProcess && ! $threat) {
                     continue;
                 }
@@ -175,9 +191,9 @@ class ImportRiskRegisterFindings extends Command
                 // ---- observation (concatenated from three source columns) ----
                 $vulnerability = $this->pick($data, ['vulnerability', 'vuln']);
                 $observationParts = array_filter([
-                    $assetProcess ? 'Asset/Process: ' . $assetProcess : null,
-                    $threat       ? 'Threat: '        . $threat       : null,
-                    $vulnerability ? 'Vulnerability: ' . $vulnerability : null,
+                    $assetProcess ? 'Asset/Process: '.$assetProcess : null,
+                    $threat ? 'Threat: '.$threat : null,
+                    $vulnerability ? 'Vulnerability: '.$vulnerability : null,
                 ]);
                 $observation = implode("\n", $observationParts);
 
@@ -185,8 +201,8 @@ class ImportRiskRegisterFindings extends Command
                 $existingControl = $this->pick($data, ['existing_control', 'existingcontrol', 'existing']);
                 $proposedControl = $this->pick($data, ['proposed_control', 'proposedcontrol', 'proposed']);
                 $recommendationParts = array_filter([
-                    $existingControl ? 'Existing Control: ' . $existingControl : null,
-                    $proposedControl ? 'Proposed Control: ' . $proposedControl : null,
+                    $existingControl ? 'Existing Control: '.$existingControl : null,
+                    $proposedControl ? 'Proposed Control: '.$proposedControl : null,
                 ]);
                 $recommendation = implode("\n", $recommendationParts);
 
@@ -195,9 +211,15 @@ class ImportRiskRegisterFindings extends Command
                 $impactI = $this->pick($data, ['impact_i', 'impacti']);
                 $impactA = $this->pick($data, ['impact_a', 'impacta']);
                 $impactParts = [];
-                if ($impactC) $impactParts[] = 'C: ' . $impactC;
-                if ($impactI) $impactParts[] = 'I: ' . $impactI;
-                if ($impactA) $impactParts[] = 'A: ' . $impactA;
+                if ($impactC) {
+                    $impactParts[] = 'C: '.$impactC;
+                }
+                if ($impactI) {
+                    $impactParts[] = 'I: '.$impactI;
+                }
+                if ($impactA) {
+                    $impactParts[] = 'A: '.$impactA;
+                }
                 $impact = implode(', ', $impactParts);
 
                 // ---- gap_description (follow-up note) ----------------------
@@ -230,14 +252,14 @@ class ImportRiskRegisterFindings extends Command
                 // ---- Persist via Eloquent so booted() hooks fire -----------
                 AssessmentFinding::create([
                     'project_assessment_id' => $assessment->id,
-                    'framework_control_id'  => $sentinelControl->id,
-                    'status'                => $status,
-                    'risk_rating'           => $riskRating,
-                    'observation'           => $observation ?: null,
-                    'gap_description'       => $gapDescription ?: null,
-                    'impact'                => $impact ?: null,
-                    'recommendation'        => $recommendation ?: null,
-                    'is_compliant'          => $isCompliant,
+                    'framework_control_id' => $sentinelControl->id,
+                    'status' => $status,
+                    'risk_rating' => $riskRating,
+                    'observation' => $observation ?: null,
+                    'gap_description' => $gapDescription ?: null,
+                    'impact' => $impact ?: null,
+                    'recommendation' => $recommendation ?: null,
+                    'is_compliant' => $isCompliant,
                 ]);
 
                 $totalImported++;
@@ -245,6 +267,7 @@ class ImportRiskRegisterFindings extends Command
         }
 
         $this->info("\nDone. Total findings imported: {$totalImported}");
+
         return self::SUCCESS;
     }
 
@@ -256,12 +279,13 @@ class ImportRiskRegisterFindings extends Command
             }
             $stripped = preg_replace('/[^a-z0-9]/', '', strtolower($key));
             foreach ($row as $rowKey => $value) {
-                $rowStripped = preg_replace('/[^a-z0-9]/', '', strtolower((string)$rowKey));
+                $rowStripped = preg_replace('/[^a-z0-9]/', '', strtolower((string) $rowKey));
                 if ($rowStripped === $stripped && $value !== null && $value !== '') {
                     return trim((string) $value);
                 }
             }
         }
+
         return null;
     }
 
@@ -272,13 +296,14 @@ class ImportRiskRegisterFindings extends Command
         }
         $raw = trim($raw);
         if (is_numeric($raw)) {
-            $val = (int)$raw;
+            $val = (int) $raw;
             if ($val >= 84) {
                 return 'High';
             }
             if ($val >= 54) {
                 return 'Medium';
             }
+
             return 'Low';
         }
         $lower = strtolower($raw);
@@ -291,6 +316,7 @@ class ImportRiskRegisterFindings extends Command
         if (str_contains($lower, 'low') || str_contains($lower, 'minor')) {
             return 'Low';
         }
+
         return 'None';
     }
 
@@ -317,6 +343,7 @@ class ImportRiskRegisterFindings extends Command
         ) {
             return 'In Progress';
         }
+
         return 'Open';
     }
 
@@ -326,6 +353,7 @@ class ImportRiskRegisterFindings extends Command
             return false;
         }
         $lower = strtolower(trim($raw));
-        return str_contains($lower, 'accept') && !str_contains($lower, 'not');
+
+        return str_contains($lower, 'accept') && ! str_contains($lower, 'not');
     }
 }

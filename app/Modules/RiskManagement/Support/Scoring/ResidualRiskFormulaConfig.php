@@ -17,11 +17,11 @@ namespace App\Modules\RiskManagement\Support\Scoring;
 final class ResidualRiskFormulaConfig
 {
     /**
-     * @param string $version            Formula version identifier (e.g. "v1").
-     * @param array<string,int> $bands   Map of band name => inclusive lower bound, ordered high to low.
-     * @param array<string,float> $weights Modifier weights (0-1) controlling each factor's influence.
-     * @param int $maxScore              Maximum theoretically possible score (for normalisation).
-     * @param int $precision             Decimal precision for derived values.
+     * @param  string  $version  Formula version identifier (e.g. "v1").
+     * @param  array<string,int>  $bands  Map of band name => inclusive lower bound, ordered high to low.
+     * @param  array<string,float>  $weights  Modifier weights (0-1) controlling each factor's influence.
+     * @param  int  $maxScore  Maximum theoretically possible score (for normalisation).
+     * @param  int  $precision  Decimal precision for derived values.
      */
     public function __construct(
         public readonly string $version,
@@ -29,8 +29,7 @@ final class ResidualRiskFormulaConfig
         public readonly array $weights,
         public readonly int $maxScore,
         public readonly int $precision
-    ) {
-    }
+    ) {}
 
     public static function forVersion(?string $version = null): self
     {
@@ -58,20 +57,20 @@ final class ResidualRiskFormulaConfig
         return [
             'bands' => [
                 'Critical' => 128,
-                'High'     => 84,
-                'Medium'   => 54,
-                'Low'      => 0,
+                'High' => 84,
+                'Medium' => 54,
+                'Low' => 0,
             ],
             // All weights are 0-1. They scale how much each factor can move the
             // residual score relative to the inherent baseline.
             'weights' => [
                 // Reduction factors (lower the score)
                 'control_effectiveness' => 0.50, // mapped/existing control effectiveness
-                'treatment'             => 0.25, // proposed treatment progress * effectiveness
+                'treatment' => 0.25, // proposed treatment progress * effectiveness
                 // Inflation factors (raise/keep the score when risk is only documented)
-                'open_remediation'      => 0.15, // open/overdue remediation dampens reduction
-                'third_party'           => 0.10, // external dependence adds residual risk
-                'low_evidence'          => 0.15, // weak evidence confidence dampens reduction
+                'open_remediation' => 0.15, // open/overdue remediation dampens reduction
+                'third_party' => 0.10, // external dependence adds residual risk
+                'low_evidence' => 0.15, // weak evidence confidence dampens reduction
             ],
             'max_score' => 250,
             'precision' => 2,

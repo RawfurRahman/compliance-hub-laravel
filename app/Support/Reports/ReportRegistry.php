@@ -2,8 +2,8 @@
 
 namespace App\Support\Reports;
 
-use App\Models\Project;
 use App\Models\Framework;
+use App\Models\Project;
 
 class ReportRegistry
 {
@@ -65,27 +65,27 @@ class ReportRegistry
                 // Gap Report details
                 $reports[] = [
                     'type' => 'unified_gap',
-                    'label' => $framework->name . ' Gap Assessment Report',
+                    'label' => $framework->name.' Gap Assessment Report',
                     'description' => 'Comprehensive Gap Analysis and control findings',
                     'version' => $framework->version ?? '1.0',
                     'icon' => 'fa-chart-bar',
                     'color' => 'sky',
                     'exports' => ['pdf', 'html'],
                     'frameworks' => [$project->module_type],
-                    'disabled' => !$project->assessments()->where('framework_id', $framework->id)->where('type', 'Gap')->exists(),
+                    'disabled' => ! $project->projectAssessments()->where('framework_id', $framework->id)->where('type', 'Gap')->exists(),
                 ];
 
                 // Final Report details
                 $reports[] = [
                     'type' => 'unified_final',
-                    'label' => $framework->name . ' Final Assessment Report',
+                    'label' => $framework->name.' Final Assessment Report',
                     'description' => 'Official certification audit report and final compliance posture',
                     'version' => $framework->version ?? '1.0',
                     'icon' => 'fa-clipboard-check',
                     'color' => 'emerald',
                     'exports' => ['pdf', 'html'],
                     'frameworks' => [$project->module_type],
-                    'disabled' => !$project->assessments()->where('framework_id', $framework->id)->where('type', 'Final')->exists(),
+                    'disabled' => ! $project->projectAssessments()->where('framework_id', $framework->id)->where('type', 'Final')->exists(),
                 ];
             }
         }

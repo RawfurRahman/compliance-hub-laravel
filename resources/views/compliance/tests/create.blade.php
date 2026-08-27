@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Compliance Test - Compliance Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <script src="{{ asset('js/tailwind.min.js') }}"></script>
+    <link href="{{ asset('fonts/inter.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         * {
             font-family: 'Inter', sans-serif;
         }
@@ -79,12 +79,6 @@
                                 <option value="Not Yet Run">Not Yet Run</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">SLA Days (nullable)</label>
-                            <input type="number" name="sla_days" min="0"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   placeholder="e.g. 30">
-                        </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
@@ -142,7 +136,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" onclick="addFailingEntity()"
+                    <button type="button" data-add-failing=""
                             class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition-colors">
                         + Add Failing Entity
                     </button>
@@ -154,4 +148,4 @@
                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">\n                        Cancel\n                    </a>\n                    <button type="submit"
                             class=\"px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-sm\">
                         Create Test
-                    </button>\n                </div>\n            </form>\n        </div>\n    </div>\n\n    <script>\n        let failingEntityCount = 1;\n\n        function addFailingEntity() {\n            const container = document.getElementById('failing-entities-container');\n            const newItem = document.createElement('div');\n            newItem.className = 'failing-entity-item border border-gray-200 rounded-lg p-4 mb-3';\n            newItem.innerHTML = `\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-3\">\n                    <div>\n                        <label class=\"block text-xs font-medium text-gray-700 mb-1\">Entity Description *</label>\n                        <input type=\"text\" name=\"failing_entities[${failingEntityCount}][description]\" required\n                              class=\"w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500\"\n                              placeholder=\"e.g. AWS EC2 Instance i-0fea5e182f5ef814d\">\n                    </div>\n                    <div>\n                        <label class=\"block text-xs font-medium text-gray-700 mb-1\">Detected Date *</label>\n                        <input type=\"date\" name=\"failing_entities[${failingEntityCount}][detected_at]\" required\n                              class=\"w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500\">\n                    </div>\n                    <div class=\"flex items-end\">\n                        <button type=\"button\" onclick=\"removeFailingEntity(this)\"\n                                class=\"px-3 py-1 text-red-600 hover:text-red-800 text-sm font-medium\">\n                            Remove\n                        </button>\n                    </div>\n                </div>\n            `;\n            container.appendChild(newItem);\n            failingEntityCount++;\n        }\n\n        function removeFailingEntity(button) {\n            button.closest('.failing-entity-item').remove();\n        }\n    </script>\n</body>\n</html>
+                    </button>\n                </div>\n            </form>\n        </div>\n    </div>\n\n    <script nonce="{{ $cspNonce }}">\n        let failingEntityCount = 1;\n\n        function addFailingEntity() {\n            const container = document.getElementById('failing-entities-container');\n            const newItem = document.createElement('div');\n            newItem.className = 'failing-entity-item border border-gray-200 rounded-lg p-4 mb-3';\n            newItem.innerHTML = `\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-3\">\n                    <div>\n                        <label class=\"block text-xs font-medium text-gray-700 mb-1\">Entity Description *</label>\n                        <input type=\"text\" name=\"failing_entities[${failingEntityCount}][description]\" required\n                              class=\"w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500\"\n                              placeholder=\"e.g. AWS EC2 Instance i-0fea5e182f5ef814d\">\n                    </div>\n                    <div>\n                        <label class=\"block text-xs font-medium text-gray-700 mb-1\">Detected Date *</label>\n                        <input type=\"date\" name=\"failing_entities[${failingEntityCount}][detected_at]\" required\n                              class=\"w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500\">\n                    </div>\n                    <div class=\"flex items-end\">\n                        <button type=\"button\" data-remove-failing=\"\"\n                                class=\"px-3 py-1 text-red-600 hover:text-red-800 text-sm font-medium\">\n                            Remove\n                        </button>\n                    </div>\n                </div>\n            `;\n            container.appendChild(newItem);\n            failingEntityCount++;\n        }\n\n        function removeFailingEntity(button) {\n            button.closest('.failing-entity-item').remove();\n        }\n\n        document.querySelectorAll('[data-add-failing]').forEach(function (btn) {\n            btn.addEventListener('click', addFailingEntity);\n        });\n        document.addEventListener('click', function (e) {\n            if (e.target.closest('[data-remove-failing]')) {\n                e.target.closest('.failing-entity-item').remove();\n            }\n        });\n    </script>\n</body>\n</html>

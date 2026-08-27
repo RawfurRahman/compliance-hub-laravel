@@ -3,30 +3,27 @@
 namespace App\Modules\RiskManagement\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Project;
-use App\Models\FrameworkControl;
-use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Models\Control;
-use App\Models\Asset;
 use App\Models\Department;
 use App\Models\Evidence;
-use App\Modules\RiskManagement\Models\RiskComment;
-use App\Modules\RiskManagement\Models\RiskAcceptance;
-use App\Modules\RiskManagement\Services\RiskRegisterService;
-use App\Modules\RiskManagement\Services\RiskCalculationService;
+use App\Models\FrameworkControl;
+use App\Models\Project;
+use App\Modules\RiskManagement\Models\RiskControlMapping;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Services\ControlMappingService;
+use App\Modules\RiskManagement\Services\RiskCalculationService;
+use App\Modules\RiskManagement\Services\RiskRegisterService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RiskRegisterController extends Controller
 {
     public function __construct(
-        private RiskRegisterService    $service,
+        private RiskRegisterService $service,
         private RiskCalculationService $calc,
-        private ControlMappingService  $mappingService
+        private ControlMappingService $mappingService
     ) {}
 
     /* ================================================================= *
@@ -37,11 +34,10 @@ class RiskRegisterController extends Controller
     {
         $this->authorize('view', $project);
 
-        $entries     = $this->service->riskRegisterForProject($project->id);
-        $kpis        = $this->service->kpis($project->id);
+        $entries = $this->service->riskRegisterForProject($project->id);
+        $kpis = $this->service->kpis($project->id);
         $departments = Department::orderBy('name')->get();
-        $assets      = Asset::orderBy('name')->get();
-        $controls    = FrameworkControl::orderBy('control_id')->get();
+        $controls = FrameworkControl::orderBy('control_id')->get();
 
         $categories = collect([
             (object) ['id' => 'Cybersecurity', 'name' => 'Cybersecurity'],
@@ -53,22 +49,8 @@ class RiskRegisterController extends Controller
         ]);
 
         return view('risk-management.register', compact(
-            'project', 'entries', 'kpis', 'departments', 'assets', 'controls', 'categories'
+            'project', 'entries', 'kpis', 'departments', 'controls', 'categories'
         ));
-    }
-
-    /* ================================================================= *
-     *  Enterprise Risks View (Stage 15)
-     * ================================================================= */
-
-    public function enterprise(Project $project)
-    {
-        $this->authorize('view', $project);
-
-        $entries = $this->service->enterpriseRisksForProject($project->id);
-        $kpis    = $this->service->kpis($project->id);
-
-        return view('risk-management.enterprise-risks', compact('project', 'entries', 'kpis'));
     }
 
     /* ================================================================= *
@@ -79,11 +61,11 @@ class RiskRegisterController extends Controller
     {
         $this->authorize('view', $project);
 
-        $inherentCells  = $this->service->heatmapCells($project->id, 'inherent');
-        $residualCells  = $this->service->heatmapCells($project->id, 'residual');
-        $kpis           = $this->service->kpis($project->id);
+        $inherentCells = $this->service->heatmapCells($project->id, 'inherent');
+        $residualCells = $this->service->heatmapCells($project->id, 'residual');
+        $kpis = $this->service->kpis($project->id);
         $likelihoodAxis = RiskRegister::LIKELIHOOD_AXIS;
-        $impactAxis     = RiskRegister::IMPACT_AXIS;
+        $impactAxis = RiskRegister::IMPACT_AXIS;
 
         return view('risk-management.heatmap', compact(
             'project', 'inherentCells', 'residualCells', 'kpis',
@@ -100,9 +82,8 @@ class RiskRegisterController extends Controller
         $this->authorize('view', $project);
 
         $departments = Department::orderBy('name')->get();
-        $assets      = Asset::orderBy('name')->get();
-        $controls    = FrameworkControl::orderBy('control_id')->get();
-        $risk        = null;
+        $controls = FrameworkControl::orderBy('control_id')->get();
+        $risk = null;
 
         $categories = collect([
             (object) ['id' => 'Cybersecurity', 'name' => 'Cybersecurity'],
@@ -114,7 +95,7 @@ class RiskRegisterController extends Controller
         ]);
 
         return view('risk-management.form', compact(
-            'project', 'risk', 'departments', 'assets', 'controls', 'categories'
+            'project', 'risk', 'departments', 'controls', 'categories'
         ));
     }
 
@@ -124,10 +105,9 @@ class RiskRegisterController extends Controller
         abort_if($risk->project_id !== $project->id, 403);
 
         $risk->load(['controlMappings.frameworkControl', 'comments.user', 'acceptances.requester']);
-        
+
         $departments = Department::orderBy('name')->get();
-        $assets      = Asset::orderBy('name')->get();
-        $controls    = FrameworkControl::orderBy('control_id')->get();
+        $controls = FrameworkControl::orderBy('control_id')->get();
         $projectEvidence = Evidence::where('project_id', $project->id)->latest()->get();
 
         $categories = collect([
@@ -140,7 +120,7 @@ class RiskRegisterController extends Controller
         ]);
 
         return view('risk-management.form', compact(
-            'project', 'risk', 'departments', 'assets', 'controls', 'projectEvidence', 'categories'
+            'project', 'risk', 'departments', 'controls', 'projectEvidence', 'categories'
         ));
     }
 
@@ -152,7 +132,8 @@ class RiskRegisterController extends Controller
     {
         $this->authorize('view', $project);
 
-        $data = $request->validate($this->validationRules());
+        $data = $this->normalizeRiskFields($request->all());
+        $data = validator($data, $this->validationRules())->validate();
         $data['project_id'] = $project->id;
 
         $risk = $this->service->upsertEntry($data);
@@ -160,8 +141,8 @@ class RiskRegisterController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'risk'    => $risk->load(['frameworkControl']),
-                'kpis'    => $this->service->kpis($project->id),
+                'risk' => $risk->load(['frameworkControl']),
+                'kpis' => $this->service->kpis($project->id),
             ]);
         }
 
@@ -179,14 +160,15 @@ class RiskRegisterController extends Controller
         $this->authorize('view', $project);
         abort_if($risk->project_id !== $project->id, 403);
 
-        $data = $request->validate($this->validationRules(update: true));
+        $data = $this->normalizeRiskFields($request->all());
+        $data = validator($data, $this->validationRules(update: true))->validate();
         $updated = $this->service->upsertEntry($data, $risk->id);
 
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'risk'    => $updated->load(['frameworkControl']),
-                'kpis'    => $this->service->kpis($project->id),
+                'risk' => $updated->load(['frameworkControl']),
+                'kpis' => $this->service->kpis($project->id),
             ]);
         }
 
@@ -207,6 +189,7 @@ class RiskRegisterController extends Controller
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'kpis' => $this->service->kpis($project->id)]);
         }
+
         return redirect()->route('risk-register.index', $project)->with('success', "Risk {$serialNo} deleted.");
     }
 
@@ -227,6 +210,7 @@ class RiskRegisterController extends Controller
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'status' => $request->status]);
         }
+
         return back()->with('success', "Risk implementation status updated to {$request->status}.");
     }
 
@@ -239,8 +223,8 @@ class RiskRegisterController extends Controller
         $request->validate(['body' => 'required|string|max:2000']);
 
         $comment = $risk->comments()->create([
-            'user_id'     => Auth::id(),
-            'body'        => $request->body,
+            'user_id' => Auth::id(),
+            'body' => $request->body,
         ]);
 
         return response()->json(['success' => true, 'comment' => $comment->load('user')]);
@@ -305,13 +289,13 @@ class RiskRegisterController extends Controller
 
         return response()->json([
             'success' => true,
-            'suggestions' => $suggestions->map(fn($s) => [
-                'id'               => $s['framework_control']->id,
-                'framework'        => $s['framework_control']->framework?->name,
-                'control_id'       => $s['framework_control']->control_id,
-                'domain'           => $s['framework_control']->domain,
-                'description'      => $s['framework_control']->requirement_description,
-                'control_name'     => $s['framework_control']->control_name,
+            'suggestions' => $suggestions->map(fn ($s) => [
+                'id' => $s['framework_control']->id,
+                'framework' => $s['framework_control']->framework?->name,
+                'control_id' => $s['framework_control']->control_id,
+                'domain' => $s['framework_control']->domain,
+                'description' => $s['framework_control']->requirement_description,
+                'control_name' => $s['framework_control']->control_name,
                 'confidence_score' => $s['confidence_score'],
             ]),
         ]);
@@ -320,7 +304,7 @@ class RiskRegisterController extends Controller
     /**
      * POST /risk-register/{risk}/accept-suggestion/{mapping}
      */
-    public function acceptSuggestion(Request $request, Project $project, RiskRegister $risk, \App\Modules\RiskManagement\Models\RiskControlMapping $mapping)
+    public function acceptSuggestion(Request $request, Project $project, RiskRegister $risk, RiskControlMapping $mapping)
     {
         $this->authorize('view', $project);
         abort_if($mapping->risk_register_id !== $risk->id, 403);
@@ -333,7 +317,7 @@ class RiskRegisterController extends Controller
     /**
      * POST /risk-register/{risk}/reject-suggestion/{mapping}
      */
-    public function rejectSuggestion(Request $request, Project $project, RiskRegister $risk, \App\Modules\RiskManagement\Models\RiskControlMapping $mapping)
+    public function rejectSuggestion(Request $request, Project $project, RiskRegister $risk, RiskControlMapping $mapping)
     {
         $this->authorize('view', $project);
         abort_if($mapping->risk_register_id !== $risk->id, 403);
@@ -351,7 +335,7 @@ class RiskRegisterController extends Controller
     {
         $this->authorize('view', $project);
         $entries = $this->service->exportRegisterData($project->id);
-        $kpis    = $this->service->kpis($project->id);
+        $kpis = $this->service->kpis($project->id);
 
         $pdf = Pdf::loadView('risk-management.register-pdf', compact('project', 'entries', 'kpis'))
             ->setPaper('a3', 'landscape');
@@ -372,7 +356,7 @@ class RiskRegisterController extends Controller
         $this->authorize('view', $project);
         $entries = $this->service->exportRegisterData($project->id);
 
-        $filename = 'Risk-Register-' . Str::slug($project->name) . '-' . now()->format('Y-m-d') . '.csv';
+        $filename = 'Risk-Register-'.Str::slug($project->name).'-'.now()->format('Y-m-d').'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -386,7 +370,7 @@ class RiskRegisterController extends Controller
                 'Threat', 'Threat Level (T)', 'Vulnerability', 'Impact C', 'Impact I', 'Impact A',
                 'Existing Control', 'Vuln. Level (AV)', 'TV (T+AV)', 'Likelihood (LH)',
                 'Risk Rating (AV*TV*LH)', 'Measurement', 'Proposed Control', 'Communication',
-                'Impl. From', 'Impl. To', 'Impl. Status', 'Residual TV', 'Residual LH', 'Residual Rating', 'Follow-up Note'
+                'Impl. From', 'Impl. To', 'Impl. Status', 'Residual TV', 'Residual LH', 'Residual Rating', 'Follow-up Note',
             ]);
             foreach ($entries as $r) {
                 fputcsv($out, [
@@ -415,7 +399,7 @@ class RiskRegisterController extends Controller
                     $r->residual_tv,
                     $r->residual_lh,
                     $r->residual_rating,
-                    $r->follow_up_note
+                    $r->follow_up_note,
                 ]);
             }
             fclose($out);
@@ -431,11 +415,11 @@ class RiskRegisterController extends Controller
     public function calculateScore(Request $request)
     {
         $request->validate([
-            'threat_level_t'         => 'required|integer|between:1,5',
+            'threat_level_t' => 'required|integer|between:1,5',
             'vulnerability_level_av' => 'required|integer|between:1,5',
-            'likelihood_lh'          => 'required|integer|between:1,5',
-            'residual_tv'            => 'required|integer|between:1,5',
-            'residual_lh'            => 'required|integer|between:1,5',
+            'likelihood_lh' => 'required|integer|between:1,5',
+            'residual_tv' => 'required|integer|between:1,5',
+            'residual_lh' => 'required|integer|between:1,5',
         ]);
 
         $tv = $this->calc->tvScore($request->threat_level_t, $request->vulnerability_level_av);
@@ -443,10 +427,10 @@ class RiskRegisterController extends Controller
         $residual = $this->calc->residualScore($request->residual_tv, $request->residual_lh);
 
         return response()->json([
-            'tv_t_av'             => $tv,
-            'inherent_score'      => $inherent,
+            'tv_t_av' => $tv,
+            'inherent_score' => $inherent,
             'inherent_risk_level' => RiskRegister::scoreToLevel($inherent),
-            'residual_score'      => $residual,
+            'residual_score' => $residual,
             'residual_risk_level' => RiskRegister::scoreToLevel($residual),
         ]);
     }
@@ -458,28 +442,102 @@ class RiskRegisterController extends Controller
     /**
      * Shared helper to load mappings with their relationships.
      */
-    private function loadMappings(RiskRegister $risk): \Illuminate\Support\Collection
+    private function loadMappings(RiskRegister $risk): Collection
     {
         return $risk->controlMappings()
             ->with(['frameworkControl.framework', 'control', 'mappedBy'])
             ->get()
             ->map(fn ($cm) => [
-                'id'                 => $cm->id,
+                'id' => $cm->id,
                 'framework_control_id' => $cm->framework_control_id,
-                'control_id'          => $cm->control_id,
-                'control_ref'        => $cm->frameworkControl?->control_id ?? 'N/A',
-                'control_name'       => $cm->frameworkControl?->control_name ?? ($cm->frameworkControl?->domain ?? 'N/A'),
-                'framework_name'     => $cm->frameworkControl?->framework?->name ?? '',
-                'local_control_code' => $cm->control?->code ?? $cm->control?->control_code ?? '',
-                'local_control_name' => $cm->control?->title ?? $cm->control?->name ?? '',
-                'mapping_status'     => $cm->mapping_status,
-                'confidence_score'   => $cm->confidence_score,
-                'effectiveness'      => $cm->effectiveness,
-                'control_type'       => $cm->control_type,
-                'notes'              => $cm->notes,
-                'mapped_by'          => $cm->mappedBy?->name ?? $cm->mappedBy?->email ?? '',
-                'mapped_at'          => $cm->mapped_at?->toISOString(),
+                'control_id' => $cm->control_id,
+                'control_ref' => $cm->frameworkControl->control_id ?? 'N/A',
+                'control_name' => $cm->frameworkControl->control_name ?? ($cm->frameworkControl->domain ?? 'N/A'),
+                'framework_name' => $cm->frameworkControl?->framework->name ?? '',
+                'local_control_code' => $cm->control->code ?? $cm->control->control_code ?? '',
+                'local_control_name' => $cm->control->title ?? $cm->control->name ?? '',
+                'mapping_status' => $cm->mapping_status,
+                'confidence_score' => $cm->confidence_score,
+                'effectiveness' => $cm->effectiveness,
+                'control_type' => $cm->control_type,
+                'notes' => $cm->notes,
+                'mapped_by' => $cm->mappedBy->name ?? $cm->mappedBy->email ?? '',
+                'mapped_at' => $cm->mapped_at?->toISOString(),
             ]);
+    }
+
+    /**
+     * Map legacy UI/API field names to their real DB columns before validation.
+     * The views and quick-create modal submit these aliases; the RiskRegister
+     * model maps them via mutators, but Laravel validation runs first.
+     */
+    private function normalizeRiskFields(array $data): array
+    {
+        $aliases = [
+            'risk_id' => 'serial_no',
+            'risk_name' => 'asset_process_service',
+            'date_identified' => 'risk_calculation_date',
+            'risk_category_id' => 'category',
+            'threat_score' => 'threat_level_t',
+            'confidentiality' => 'impact_confidentiality',
+            'integrity' => 'impact_integrity',
+            'availability' => 'impact_availability',
+            'existing_controls' => 'existing_control',
+            'likelihood' => 'likelihood_lh',
+            'recommended_control' => 'proposed_control',
+            'treatment_decision' => 'measurement',
+            'status' => 'implementation_status',
+            'residual_likelihood' => 'residual_lh',
+            'residual_impact' => 'residual_tv',
+            'follow_up_notes' => 'follow_up_note',
+        ];
+
+        foreach ($aliases as $alias => $real) {
+            if (array_key_exists($alias, $data) && ! array_key_exists($real, $data)) {
+                $data[$real] = $data[$alias];
+                unset($data[$alias]);
+            }
+        }
+
+        $data['asset_value_bdt'] = $data['asset_value_bdt'] ?? 0.00;
+        $data['threats'] = $data['threats'] ?? '';
+        $data['vulnerabilities'] = $data['vulnerabilities'] ?? '';
+        $data['vulnerability_level_av'] = $data['vulnerability_level_av'] ?? 1;
+
+        // Historical records (workbook imports, legacy migrations) sometimes have an
+        // empty string rather than null in a 1-5 score column -- SQLite doesn't
+        // enforce integer typing, so this passes silently at write time. '' ?? 3
+        // evaluates to '' (not 3), since ?? only catches null, so the edit form then
+        // renders an empty field and the record can never be saved again once it
+        // reaches the validator this way. Clamp defensively before validation runs.
+        foreach ([
+            'threat_level_t', 'vulnerability_level_av', 'likelihood_lh',
+            'impact_confidentiality', 'impact_integrity', 'impact_availability',
+            'residual_tv', 'residual_lh',
+        ] as $scoreField) {
+            if (array_key_exists($scoreField, $data)) {
+                $value = $data[$scoreField];
+                if (! is_numeric($value) || (int) $value < 1 || (int) $value > 5) {
+                    $data[$scoreField] = 3;
+                } else {
+                    $data[$scoreField] = (int) $value;
+                }
+            }
+        }
+
+        // Same issue for text columns: a value that already exceeds the column's
+        // length (e.g. from a bad import) would otherwise fail max:255 validation
+        // on every subsequent save attempt, permanently locking the record.
+        foreach ([
+            'asset_process_service' => 255, 'risk_owner' => 120,
+            'department' => 120, 'category' => 100,
+        ] as $field => $maxLength) {
+            if (isset($data[$field]) && is_string($data[$field]) && mb_strlen($data[$field]) > $maxLength) {
+                $data[$field] = mb_substr($data[$field], 0, $maxLength);
+            }
+        }
+
+        return $data;
     }
 
     private function validationRules(bool $update = false): array
@@ -487,41 +545,40 @@ class RiskRegisterController extends Controller
         $sometimes = $update ? 'sometimes|' : '';
 
         return [
-            'serial_no'              => "{$sometimes}required|string|max:50",
-            'asset_process_service'  => "{$sometimes}required|string|max:255",
-            'risk_owner'             => "{$sometimes}required|string|max:120",
-            'risk_calculation_date'  => "{$sometimes}required|date",
-            'asset_value_bdt'        => "{$sometimes}required|numeric|min:0",
-            'threats'                => 'sometimes|string',
-            'threat_level_t'         => 'sometimes|integer|between:1,5',
-            'vulnerabilities'        => 'sometimes|string',
+            'serial_no' => 'nullable|string|max:50',
+            'asset_process_service' => "{$sometimes}required|string|max:255",
+            'risk_owner' => "{$sometimes}required|string|max:120",
+            'risk_calculation_date' => "{$sometimes}required|date",
+            'asset_value_bdt' => 'nullable|numeric|min:0',
+            'threats' => 'sometimes|string',
+            'threat_level_t' => 'sometimes|integer|between:1,5',
+            'vulnerabilities' => 'sometimes|string',
             'impact_confidentiality' => 'sometimes|integer|between:1,5',
-            'impact_integrity'       => 'sometimes|integer|between:1,5',
-            'impact_availability'    => 'sometimes|integer|between:1,5',
-            'existing_control'       => 'nullable|string',
+            'impact_integrity' => 'sometimes|integer|between:1,5',
+            'impact_availability' => 'sometimes|integer|between:1,5',
+            'existing_control' => 'nullable|string',
             'vulnerability_level_av' => 'sometimes|integer|between:1,5',
-            'likelihood_lh'          => "{$sometimes}required|integer|between:1,5",
-            'measurement'            => 'sometimes|in:Accepted,Not Accepted',
-            'proposed_control'       => 'nullable|string',
-            'communication'          => 'nullable|string',
-            'implementation_from'    => 'nullable|date',
-            'implementation_to'      => 'nullable|date',
-            'implementation_status'  => 'sometimes|in:Not Started,Pending,In Progress,Completed',
-            'residual_tv'            => "{$sometimes}required|integer|between:1,5",
-            'residual_lh'            => "{$sometimes}required|integer|between:1,5",
-            'follow_up_note'         => 'nullable|string',
-            'category'               => 'sometimes|string|max:100',
-            'department'             => 'sometimes|string|max:120',
-            'owner_user_id'          => 'nullable|exists:users,id',
-            'asset_id'               => 'nullable|exists:assets,id',
-            'custom_fields'          => 'nullable|string',
+            'likelihood_lh' => "{$sometimes}required|integer|between:1,5",
+            'measurement' => 'sometimes|in:Accepted,Not Accepted,In Review',
+            'proposed_control' => 'nullable|string',
+            'communication' => 'nullable|string',
+            'implementation_from' => 'nullable|date',
+            'implementation_to' => 'nullable|date',
+            'implementation_status' => 'sometimes|in:Not Started,Pending,In Progress,Completed',
+            'residual_tv' => "{$sometimes}required|integer|between:1,5",
+            'residual_lh' => "{$sometimes}required|integer|between:1,5",
+            'follow_up_note' => 'nullable|string',
+            'category' => 'sometimes|string|max:100',
+            'department' => 'sometimes|string|max:120',
+            'owner_user_id' => 'nullable|exists:users,id',
+            'custom_fields' => 'nullable',
         ];
     }
 
     public function transitionLifecycle(Request $request, Project $project, RiskRegister $risk)
     {
         $data = $request->validate([
-            'status' => 'required|in:' . implode(',', RiskRegister::LIFECYCLE_STATUSES),
+            'status' => 'required|in:'.implode(',', RiskRegister::LIFECYCLE_STATUSES),
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -537,7 +594,7 @@ class RiskRegisterController extends Controller
     public function transitionLifecycleApi(Request $request, RiskRegister $risk)
     {
         $data = $request->validate([
-            'status' => 'required|in:' . implode(',', RiskRegister::LIFECYCLE_STATUSES),
+            'status' => 'required|in:'.implode(',', RiskRegister::LIFECYCLE_STATUSES),
             'reason' => 'nullable|string|max:500',
         ]);
 

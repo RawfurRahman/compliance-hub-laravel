@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Modules\Compliance\Models\ComplianceTest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class Stage6ControlTestMappingTest extends TestCase
@@ -15,25 +14,12 @@ class Stage6ControlTestMappingTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Control $control;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        Schema::dropIfExists('user_roles');
-        Schema::dropIfExists('roles');
-        Schema::create('roles', function ($table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->timestamps();
-        });
-        Schema::create('user_roles', function ($table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
-            $table->timestamps();
-        });
 
         $adminRoleId = DB::table('roles')->insertGetId(['name' => 'Admin']);
 
@@ -67,7 +53,6 @@ class Stage6ControlTestMappingTest extends TestCase
             'owner_user_id' => $this->user->id,
             'team' => 'Security',
             'test_type' => $testType,
-            'sla_days' => 30,
             'status' => $status,
             'last_run_at' => now(),
             'next_due_at' => now()->addDays(30),

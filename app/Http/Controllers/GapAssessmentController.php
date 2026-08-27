@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\Framework;
 use App\Models\AssessmentFinding;
-use App\Models\ProjectAssessment;
+use App\Models\Framework;
+use App\Models\Project;
 use App\Services\GapAssessmentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class GapAssessmentController extends Controller
 {
@@ -23,8 +22,12 @@ class GapAssessmentController extends Controller
     {
         $this->authorize('view', $project);
 
+        if ($project->module_type === 'pci_dss') {
+            return redirect()->route('pci-gap.index', $project);
+        }
+
         $framework = $this->resolveFramework($project);
-        if (!$framework) {
+        if (! $framework) {
             return redirect()->route('projects.show', $project)
                 ->with('error', 'No framework linked to this project.');
         }
@@ -32,12 +35,8 @@ class GapAssessmentController extends Controller
         $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
 
         $groupedFindings = $this->gapService->getGroupedFindings($assessment);
-        $groupedStats    = $this->gapService->getGroupedStats($groupedFindings);
-        $overallStats    = $assessment->stats();
-
-        $frameworks = Framework::where('is_active', true)
-            ->where('slug', '!=', 'pci_dss')
-            ->get();
+        $groupedStats = $this->gapService->getGroupedStats($groupedFindings);
+        $overallStats = $assessment->stats();
 
         return view('gap-assessment.index', compact(
             'project',
@@ -45,8 +44,7 @@ class GapAssessmentController extends Controller
             'framework',
             'groupedFindings',
             'groupedStats',
-            'overallStats',
-            'frameworks'
+            'overallStats'
         ));
     }
 
@@ -55,7 +53,7 @@ class GapAssessmentController extends Controller
         $this->authorize('update', $project);
 
         $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
-        $created    = $this->gapService->initialize($assessment);
+        $created = $this->gapService->initialize($assessment);
 
         return redirect()->route('projects.gap-assessment', $project)
             ->with('success', "Assessment initialized with {$created} controls.");
@@ -66,14 +64,14 @@ class GapAssessmentController extends Controller
         $this->authorize('update', $project);
 
         $validated = $request->validate([
-            'status'       => 'sometimes|in:Open,In Progress,Closed',
-            'risk_rating'  => 'sometimes|in:None,Low,Medium,High',
+            'status' => 'sometimes|in:Open,In Progress,Closed',
+            'risk_rating' => 'sometimes|in:None,Low,Medium,High',
             'is_compliant' => 'sometimes|boolean',
-            'observation'  => 'sometimes|nullable|string|max:5000',
+            'observation' => 'sometimes|nullable|string|max:5000',
             'gap_description' => 'sometimes|nullable|string|max:5000',
-            'impact'       => 'sometimes|nullable|string|max:5000',
+            'impact' => 'sometimes|nullable|string|max:5000',
             'recommendation' => 'sometimes|nullable|string|max:5000',
-            'due_date'     => 'sometimes|nullable|date',
+            'due_date' => 'sometimes|nullable|date',
             'is_applicable' => 'sometimes|boolean',
         ]);
 
@@ -125,12 +123,12 @@ class GapAssessmentController extends Controller
     {
         $this->authorize('view', $project);
 
-        $framework  = $this->resolveFramework($project);
+        $framework = $this->resolveFramework($project);
         $assessment = $this->gapService->findOrCreateAssessment($project, $framework);
         $groupedFindings = $this->gapService->getGroupedFindings($assessment);
-        $overallStats    = $assessment->stats();
+        $overallStats = $assessment->stats();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('gap-assessment.report', compact(
+        $pdf = Pdf::loadView('gap-assessment.report', compact(
             'project', 'assessment', 'framework', 'groupedFindings', 'overallStats'
         ))->setPaper('a4', 'portrait');
 
@@ -139,14 +137,8 @@ class GapAssessmentController extends Controller
 
     private function resolveFramework(Project $project): ?Framework
     {
-        $moduleType = $project->module_type;
-
-        if ($moduleType && $moduleType !== 'pci_dss') {
-            return Framework::where('slug', $moduleType)->where('is_active', true)->first();
-        }
-
-        if ($moduleType === 'pci_dss') {
-            return null;
+        if ($project->module_type) {
+            return Framework::where('slug', $project->module_type)->where('is_active', true)->first();
         }
 
         return Framework::where('is_active', true)->first();

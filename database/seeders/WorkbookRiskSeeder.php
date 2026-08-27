@@ -2,16 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Models\Asset;
 use App\Models\Department;
+use App\Models\HeatmapConfig;
 use App\Models\Project;
 use App\Models\User;
-use App\Models\HeatmapConfig;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class WorkbookRiskSeeder extends Seeder
 {
@@ -19,7 +17,7 @@ class WorkbookRiskSeeder extends Seeder
     {
         $filePath = base_path('storage/app/imports/risk_register.xlsx');
 
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             throw new \Exception("Risk register workbook not found at: {$filePath}");
         }
 
@@ -34,7 +32,7 @@ class WorkbookRiskSeeder extends Seeder
         $project = Project::first() ?? Project::create([
             'name' => 'Cybersecurity Compliance Hub',
             'user_id' => $adminUser->id,
-            'status' => 'Active'
+            'status' => 'Active',
         ]);
 
         // 3. Seed Heatmap config defaults
@@ -52,7 +50,7 @@ class WorkbookRiskSeeder extends Seeder
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getSheetByName('Risk Register');
 
-        if (!$sheet) {
+        if (! $sheet) {
             throw new \Exception("Sheet 'Risk Register' not found in the workbook.");
         }
 
@@ -66,19 +64,19 @@ class WorkbookRiskSeeder extends Seeder
             }
 
             // A row is valid if it has a serial number and an asset/process
-            $serialNo = isset($row['A']) ? trim((string)$row['A']) : '';
-            $assetProcess = isset($row['B']) ? trim((string)$row['B']) : '';
+            $serialNo = isset($row['A']) ? trim((string) $row['A']) : '';
+            $assetProcess = isset($row['B']) ? trim((string) $row['B']) : '';
 
             if (empty($serialNo) || empty($assetProcess)) {
                 continue;
             }
 
             // Raw values parsing
-            $riskOwner = isset($row['C']) ? trim((string)$row['C']) : 'Unknown';
-            
+            $riskOwner = isset($row['C']) ? trim((string) $row['C']) : 'Unknown';
+
             // Format calculations date
             $calculationDate = now();
-            if (!empty($row['D'])) {
+            if (! empty($row['D'])) {
                 try {
                     $calculationDate = Carbon::parse($row['D']);
                 } catch (\Exception $e) {
@@ -86,35 +84,35 @@ class WorkbookRiskSeeder extends Seeder
                 }
             }
 
-            $assetValueBdt = isset($row['E']) ? floatval(str_replace(',', '', (string)$row['E'])) : 0.00;
-            $threatStr = isset($row['F']) ? trim((string)$row['F']) : 'General Threat';
+            $assetValueBdt = isset($row['E']) ? floatval(str_replace(',', '', (string) $row['E'])) : 0.00;
+            $threatStr = isset($row['F']) ? trim((string) $row['F']) : 'General Threat';
             $threatLevel = isset($row['G']) ? intval($row['G']) : 1;
-            $vulnStr = isset($row['H']) ? trim((string)$row['H']) : 'General Vulnerability';
-            
+            $vulnStr = isset($row['H']) ? trim((string) $row['H']) : 'General Vulnerability';
+
             $impactC = isset($row['I']) ? intval($row['I']) : 1;
             $impactI = isset($row['J']) ? intval($row['J']) : 1;
             $impactA = isset($row['K']) ? intval($row['K']) : 1;
-            
-            $existingControl = isset($row['L']) ? trim((string)$row['L']) : 'None';
+
+            $existingControl = isset($row['L']) ? trim((string) $row['L']) : 'None';
             $vulnLevelAv = isset($row['M']) ? intval($row['M']) : 1;
-            
+
             // tv_t_av: store raw imported value
             $tvTAv = isset($row['N']) ? intval($row['N']) : ($threatLevel + $vulnLevelAv);
-            
+
             $likelihoodLh = isset($row['O']) ? intval($row['O']) : 1;
-            
+
             // Risk rating from workbook
             $riskRating = isset($row['P']) ? intval($row['P']) : ($vulnLevelAv * $tvTAv * $likelihoodLh);
 
-            $measurementRaw = isset($row['Q']) ? trim((string)$row['Q']) : 'Not Accepted';
+            $measurementRaw = isset($row['Q']) ? trim((string) $row['Q']) : 'Not Accepted';
             $measurement = (strcasecmp($measurementRaw, 'Accepted') === 0) ? 'Accepted' : 'Not Accepted';
 
-            $proposedControl = isset($row['R']) ? trim((string)$row['R']) : null;
-            $communication = isset($row['S']) ? trim((string)$row['S']) : null;
+            $proposedControl = isset($row['R']) ? trim((string) $row['R']) : null;
+            $communication = isset($row['S']) ? trim((string) $row['S']) : null;
 
             // Implementation dates
             $implFrom = null;
-            if (!empty($row['T'])) {
+            if (! empty($row['T'])) {
                 try {
                     $implFrom = Carbon::parse($row['T'])->format('Y-m-d');
                 } catch (\Exception $e) {
@@ -122,7 +120,7 @@ class WorkbookRiskSeeder extends Seeder
                 }
             }
             $implTo = null;
-            if (!empty($row['U'])) {
+            if (! empty($row['U'])) {
                 try {
                     $implTo = Carbon::parse($row['U'])->format('Y-m-d');
                 } catch (\Exception $e) {
@@ -131,7 +129,7 @@ class WorkbookRiskSeeder extends Seeder
             }
 
             // Implementation status
-            $statusRaw = isset($row['V']) ? trim((string)$row['V']) : 'Not Started';
+            $statusRaw = isset($row['V']) ? trim((string) $row['V']) : 'Not Started';
             $status = 'Not Started';
             if (strcasecmp($statusRaw, 'Pending') === 0) {
                 $status = 'Pending';
@@ -145,20 +143,10 @@ class WorkbookRiskSeeder extends Seeder
             $residualLh = isset($row['X']) ? intval($row['X']) : 1;
             $residualRating = isset($row['Y']) ? intval($row['Y']) : ($residualTv * $residualLh);
 
-            $followUpNote = isset($row['Z']) ? trim((string)$row['Z']) : null;
+            $followUpNote = isset($row['Z']) ? trim((string) $row['Z']) : null;
 
             // Seeding supporting entities: Department
             Department::firstOrCreate(['name' => $riskOwner]);
-
-            // Seeding supporting entities: Asset
-            $asset = Asset::firstOrCreate(
-                ['name' => $assetProcess],
-                [
-                    'type' => 'Process',
-                    'value_bdt' => $assetValueBdt,
-                    'owner_id' => $adminUser->id,
-                ]
-            );
 
             // Populate threats and vulnerabilities as JSON arrays
             $threatsArray = [$threatStr];
@@ -198,16 +186,15 @@ class WorkbookRiskSeeder extends Seeder
                     'category' => 'Cybersecurity',
                     'department' => $riskOwner,
                     'owner_user_id' => $adminUser->id,
-                    'asset_id' => $asset->id,
                     'evidence_ids' => [],
                     'source' => 'import',
-                    'legacy_source_id' => 'workbook_row_' . $index,
+                    'legacy_source_id' => 'workbook_row_'.$index,
                     'created_by' => $adminUser->id,
                     'updated_by' => $adminUser->id,
                     'custom_fields' => [
                         'raw_imported_tv' => $tvTAv,
-                        'original_row_number' => $index
-                    ]
+                        'original_row_number' => $index,
+                    ],
                 ]
             );
 

@@ -11,7 +11,9 @@ class AiAnalysisReport extends Mailable
     use Queueable, SerializesModels;
 
     public string $observations;
+
     public string $recommendations;
+
     public string $fileName;
 
     public function __construct(string $observations, string $recommendations, string $fileName)

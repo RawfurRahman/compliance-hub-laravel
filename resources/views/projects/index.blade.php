@@ -103,6 +103,13 @@
                                 >
                                     <i class="fas fa-pencil-alt text-xs"></i>
                                 </button>
+                                <button
+                                    @click="openDelete({{ $project->id }}, '{{ addslashes($project->name) }}')"
+                                    class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Delete Project"
+                                >
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
                             @endcan
                         </div>
                     </div>
@@ -220,14 +227,46 @@
             </form>
         </div>
     </div>
+
+    {{-- Delete Project Modal --}}
+    <div x-show="showDelete" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" @keydown.escape.window="showDelete = false" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.away="showDelete = false">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-red-600">Delete Project</h2>
+                <button type="button" @click="showDelete = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <p class="text-slate-600" x-text="'Are you sure you want to delete the project \'' + deleteProject.name + '\'? This action cannot be undone.'"></p>
+                <p class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    All associated data (assessments, evidence, risks, meetings) will be permanently deleted.
+                </p>
+                <form :action="'{{ url('projects') }}/' + deleteProject.id" method="POST" class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" @click="showDelete = false"
+                        class="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 shadow-sm transition">
+                        Delete Project
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
     @endcan
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function projectsManager() {
     return {
         showEdit: false,
+        showDelete: false,
         editProject: {
             id: null,
             name: '',
@@ -235,6 +274,10 @@ function projectsManager() {
             module_type_label: '',
             auditor_ids: [],
             customer_ids: [],
+        },
+        deleteProject: {
+            id: null,
+            name: '',
         },
 
         frameworkLabels: @json(\App\Models\Framework::all()->keyBy('slug')->map(fn($f) => $f->name . ($f->version ? ' '.$f->version : ''))),
@@ -255,6 +298,11 @@ function projectsManager() {
                 this.applySelections(this.$refs.auditorsSelect,  auditorIds);
                 this.applySelections(this.$refs.customersSelect, customerIds);
             });
+        },
+
+        openDelete(id, name) {
+            this.deleteProject = { id, name };
+            this.showDelete = true;
         },
 
         applySelections(selectEl, ids) {

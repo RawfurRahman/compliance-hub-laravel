@@ -61,16 +61,16 @@ class ResidualAppetiteCrossedListener
     private function notify($risk, string $type, string $title, string $body): void
     {
         $userId = $risk->owner_user_id ?? $risk->updated_by ?? $risk->created_by;
-        if (!$userId) {
+        if (! $userId) {
             return;
         }
 
         RiskNotification::create([
             'risk_register_id' => $risk->id,
-            'user_id'          => $userId,
-            'type'             => $type,
-            'title'            => $title,
-            'body'             => $body,
+            'user_id' => $userId,
+            'type' => $type,
+            'title' => $title,
+            'body' => $body,
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\Compliance\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Modules\Compliance\Models\AuditFinding;
 use App\Modules\Compliance\Services\AuditFindingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class AuditFindingController extends Controller
     public function index(Project $project)
     {
         $findings = $this->service->getByProject($project->id);
+
         return view('compliance.audit-findings', compact('project', 'findings'));
     }
 
@@ -44,7 +46,8 @@ class AuditFindingController extends Controller
 
     public function show(Project $project, int $findingId)
     {
-        $finding = \App\Modules\Compliance\Models\AuditFinding::with('auditor', 'control')->findOrFail($findingId);
+        $finding = AuditFinding::with('auditor', 'control')->findOrFail($findingId);
+
         return view('compliance.audit-finding-show', compact('project', 'finding'));
     }
 
@@ -59,7 +62,7 @@ class AuditFindingController extends Controller
             'due_date' => 'nullable|date',
         ]);
 
-        $finding = \App\Modules\Compliance\Models\AuditFinding::findOrFail($findingId);
+        $finding = AuditFinding::findOrFail($findingId);
         $finding->update($data);
 
         return response()->json($finding);
@@ -69,6 +72,7 @@ class AuditFindingController extends Controller
     {
         $data = $request->validate(['resolution' => 'nullable|string']);
         $finding = $this->service->close($findingId, $data['resolution'] ?? null);
+
         return response()->json(['message' => 'Audit finding closed', 'finding' => $finding]);
     }
 }

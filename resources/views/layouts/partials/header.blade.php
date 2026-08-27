@@ -20,11 +20,13 @@
     {{-- Right Actions --}}
     <div class="flex items-center gap-2 sm:gap-3 ml-4">
 
-        {{-- New Project Button --}}
+        {{-- New Project Button (Admin/Auditor only) --}}
+        @can('create', \App\Models\Project::class)
         <button @click="showModal = true" class="hidden sm:inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider text-white btn-premium rounded-xl focus:outline-none gap-1.5">
             <i class="fas fa-plus text-[10px]"></i>
             <span>New Project</span>
         </button>
+        @endcan
 
         {{-- Notification Bell --}}
         <button class="relative w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:border-sky-200 hover:bg-sky-50/50 transition-all duration-200 focus:outline-none">
@@ -65,8 +67,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <a href="{{ route('logout') }}"
-                           onclick="event.preventDefault(); this.closest('form').submit();"
-                           class="dropdown-item text-rose-500 hover:text-rose-600" role="menuitem">
+                           class="js-logout-submit dropdown-item text-rose-500 hover:text-rose-600" role="menuitem">
                             <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
                         </a>
                     </form>

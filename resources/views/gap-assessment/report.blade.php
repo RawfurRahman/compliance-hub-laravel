@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Gap Assessment Report - {{ $project->name }}</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 10px;

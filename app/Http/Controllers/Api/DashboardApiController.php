@@ -4,39 +4,30 @@ namespace App\Http\Controllers\Api;
 
 use App\DTOs\Dashboard\DashboardFilter;
 use App\Http\Controllers\Controller;
+use App\Models\DashboardSnapshot;
+use App\Modules\Compliance\Models\ComplianceTest;
 use App\Modules\Compliance\Services\AuditFindingQueryService;
-use App\Modules\Governance\Services\GovernanceDashboardService;
 use App\Modules\Compliance\Services\RemediationMetricsService as ComplianceRemediationMetricsService;
+use App\Modules\RiskManagement\Models\FinancialExposureMetric;
 use App\Modules\RiskManagement\Resources\Dashboard\AuditFindingSummaryResource;
 use App\Modules\RiskManagement\Resources\Dashboard\ComplianceScorecardResource;
 use App\Modules\RiskManagement\Resources\Dashboard\ControlEffectivenessResource;
+use App\Modules\RiskManagement\Resources\Dashboard\FinancialExposureTrendResource;
 use App\Modules\RiskManagement\Resources\Dashboard\HeatmapCellResource;
 use App\Modules\RiskManagement\Resources\Dashboard\InherentVsResidualResource;
 use App\Modules\RiskManagement\Resources\Dashboard\IssueAgingResource;
 use App\Modules\RiskManagement\Resources\Dashboard\IssuesRemediationTrendResource;
 use App\Modules\RiskManagement\Resources\Dashboard\KpiResource;
-use App\Modules\RiskManagement\Resources\Dashboard\OwnershipMatrixResource;
-use App\Modules\RiskManagement\Resources\Dashboard\PolicyGovernanceResource;
+use App\Modules\RiskManagement\Resources\Dashboard\RemediationTrendResource;
 use App\Modules\RiskManagement\Resources\Dashboard\ThirdPartyRiskResource;
 use App\Modules\RiskManagement\Resources\Dashboard\TopRiskResource;
-use App\Modules\RiskManagement\Resources\Dashboard\FinancialExposureTrendResource;
-use App\Modules\RiskManagement\Resources\Dashboard\RemediationTrendResource;
 use App\Modules\RiskManagement\Services\DashboardMetricsService;
-use App\Modules\Compliance\Models\ComplianceTest;
 use App\Modules\RiskManagement\Services\FinancialExposureService;
 use App\Modules\RiskManagement\Services\IssueAgingService;
 use App\Modules\RiskManagement\Services\RemediationMetricsService;
 use App\Modules\RiskManagement\Services\ThirdPartyRiskService;
-use App\Modules\TrustCenter\Models\TrustCenter;
-use App\Modules\TrustCenter\Models\TrustCenterAccessRequest;
-use App\Modules\TrustCenter\Models\TrustCenterQuestionnaire;
-use App\Models\DashboardSnapshot;
-use App\Modules\Governance\Models\GovernanceMetricSnapshot;
-use App\Modules\RiskManagement\Models\FinancialExposureMetric;
-use App\Modules\TrustCenter\Models\TrustCenterVisit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class DashboardApiController extends Controller
 {
@@ -47,7 +38,6 @@ class DashboardApiController extends Controller
         private AuditFindingQueryService $auditFindings,
         private IssueAgingService $issueAging,
         private ThirdPartyRiskService $thirdPartyRisk,
-        private GovernanceDashboardService $governance,
         private FinancialExposureService $financialExposure,
         private RemediationMetricsService $remediationMetrics,
         private ComplianceRemediationMetricsService $complianceRemediationMetrics,
@@ -57,10 +47,11 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = Cache::remember(
-            'dashboard:v1:kpis:' . $filters->cacheKey(),
+            'dashboard:v1:kpis:'.$filters->cacheKey(),
             self::HEAVY_CACHE_TTL,
             fn () => $this->metrics->setFilters($filters->toLegacy())->kpis()
         );
+
         return new KpiResource($data);
     }
 
@@ -68,10 +59,11 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = Cache::remember(
-            'dashboard:v1:heatmap:' . $filters->cacheKey(),
+            'dashboard:v1:heatmap:'.$filters->cacheKey(),
             self::HEAVY_CACHE_TTL,
             fn () => $this->metrics->setFilters($filters->toLegacy())->heatmap()
         );
+
         return HeatmapCellResource::collection($data);
     }
 
@@ -80,6 +72,7 @@ class DashboardApiController extends Controller
         $filters = DashboardFilter::fromRequest($request);
         $limit = (int) $request->input('per_page', 20);
         $data = $this->metrics->setFilters($filters->toLegacy())->topRisks($limit);
+
         return TopRiskResource::collection($data);
     }
 
@@ -87,6 +80,7 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = $this->metrics->setFilters($filters->toLegacy())->inherentVsResidualByDept();
+
         return InherentVsResidualResource::collection($data);
     }
 
@@ -94,6 +88,7 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = $this->metrics->setFilters($filters->toLegacy())->controlEffectiveness();
+
         return new ControlEffectivenessResource($data);
     }
 
@@ -101,10 +96,11 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = Cache::remember(
-            'dashboard:v1:compliance-scorecard:' . $filters->cacheKey(),
+            'dashboard:v1:compliance-scorecard:'.$filters->cacheKey(),
             self::HEAVY_CACHE_TTL,
             fn () => $this->metrics->setFilters($filters->toLegacy())->complianceScorecard()
         );
+
         return ComplianceScorecardResource::collection($data);
     }
 
@@ -112,10 +108,11 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = Cache::remember(
-            'dashboard:v1:audit-findings:' . $filters->cacheKey(),
+            'dashboard:v1:audit-findings:'.$filters->cacheKey(),
             self::HEAVY_CACHE_TTL,
             fn () => $this->auditFindings->summary($filters)
         );
+
         return new AuditFindingSummaryResource($data);
     }
 
@@ -123,6 +120,7 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = $this->auditFindings->trends($filters);
+
         return IssuesRemediationTrendResource::collection($data);
     }
 
@@ -130,6 +128,7 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = $this->issueAging->agingBuckets($filters);
+
         return new IssueAgingResource($data);
     }
 
@@ -137,36 +136,12 @@ class DashboardApiController extends Controller
     {
         $filters = DashboardFilter::fromRequest($request);
         $data = Cache::remember(
-            'dashboard:v1:third-party-risk:' . $filters->cacheKey(),
+            'dashboard:v1:third-party-risk:'.$filters->cacheKey(),
             self::HEAVY_CACHE_TTL,
             fn () => $this->thirdPartyRisk->summary($filters)
         );
+
         return new ThirdPartyRiskResource($data);
-    }
-
-    public function policyGovernanceSummary(Request $request)
-    {
-        $filters = DashboardFilter::fromRequest($request);
-        $data = Cache::remember(
-            'dashboard:v1:policy-governance:' . $filters->cacheKey(),
-            self::HEAVY_CACHE_TTL,
-            fn () => $this->governance->policyGovernanceSummary(
-                projectId: $filters->projectId,
-                framework: $filters->framework,
-                businessUnit: $filters->businessUnit,
-            )
-        );
-        return new PolicyGovernanceResource($data);
-    }
-
-    public function ownershipAccountability(Request $request)
-    {
-        $filters = DashboardFilter::fromRequest($request);
-        $data = $this->governance->ownershipAccountability(
-            businessUnit: $filters->businessUnit,
-            framework: $filters->framework,
-        );
-        return new OwnershipMatrixResource($data);
     }
 
     public function getRemediationTrends(Request $request)
@@ -177,6 +152,7 @@ class DashboardApiController extends Controller
             dateFrom: $filters->dateFrom,
             dateTo: $filters->dateTo,
         );
+
         return RemediationTrendResource::collection($data);
     }
 
@@ -188,6 +164,7 @@ class DashboardApiController extends Controller
             dateFrom: $filters->dateFrom,
             dateTo: $filters->dateTo,
         );
+
         return FinancialExposureTrendResource::collection($data);
     }
 
@@ -197,6 +174,7 @@ class DashboardApiController extends Controller
         $data = $this->financialExposure->getSnapshot(
             projectId: $filters->projectId,
         );
+
         return response()->json($data);
     }
 
@@ -207,6 +185,7 @@ class DashboardApiController extends Controller
             projectId: $filters->projectId,
             scope: $request->input('scope', 'all'),
         );
+
         return response()->json($data);
     }
 
@@ -220,19 +199,6 @@ class DashboardApiController extends Controller
             'total_risks' => $data['total_risks'] ?? 0,
             'avg_ale' => $data['avg_ale'] ?? 0,
             'remediation_cost' => $data['remediation_cost'] ?? 0,
-        ]);
-    }
-
-    public function slaBreachRate(Request $request)
-    {
-        $filters = DashboardFilter::fromRequest($request);
-        $data = $this->remediationMetrics->forProject($filters->projectId, $request->input('scope', 'all'));
-
-        return response()->json([
-            'sla_breach_rate' => $data['sla_breach_rate'] ?? 0,
-            'overdue_count' => $data['overdue_count'] ?? 0,
-            'total_items' => $data['total_items'] ?? 0,
-            'closure_rate' => $data['closure_rate'] ?? 0,
         ]);
     }
 
@@ -253,7 +219,7 @@ class DashboardApiController extends Controller
 
         $total = (clone $query)->count();
         $statusBreakdown = (clone $query)
-            ->selectRaw("status, COUNT(*) as count")
+            ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
 
@@ -270,39 +236,6 @@ class DashboardApiController extends Controller
             'needs_remediation' => $statusBreakdown->get('Needs Remediation', 0),
             'due_soon' => $dueSoonCount,
             'not_yet_run' => $statusBreakdown->get('Not Yet Run', 0),
-        ]);
-    }
-
-    public function trustCenterActivity(Request $request)
-    {
-        $filters = DashboardFilter::fromRequest($request);
-        $trustCenters = TrustCenter::query();
-
-        if ($filters->projectId) {
-            $trustCenters->where('project_id', $filters->projectId);
-        }
-
-        $ids = $trustCenters->pluck('id');
-        $publishedCount = $trustCenters->where('is_published', true)->count();
-
-        $visitsLast30d = TrustCenterVisit::whereIn('trust_center_id', $ids)
-            ->where('visited_at', '>=', now()->subDays(30))
-            ->count();
-
-        $pendingRequests = TrustCenterAccessRequest::whereIn('trust_center_id', $ids)
-            ->where('status', 'Pending')
-            ->count();
-
-        $pendingQuestionnaires = TrustCenterQuestionnaire::whereIn('trust_center_id', $ids)
-            ->where('status', '!=', 'Responded')
-            ->count();
-
-        return response()->json([
-            'total_trust_centers' => $trustCenters->count(),
-            'published' => $publishedCount,
-            'visits_last_30d' => $visitsLast30d,
-            'pending_requests' => $pendingRequests,
-            'pending_questionnaires' => $pendingQuestionnaires,
         ]);
     }
 
@@ -323,7 +256,6 @@ class DashboardApiController extends Controller
                 'financial_exposure' => $this->buildFinancialExposureHistory($filters, $minPoints),
                 'control_effectiveness' => $this->buildKpiMetricHistory($filters, $dateScope, 'control_effectiveness', $minPoints),
                 'compliance_readiness' => $this->buildComplianceScorecardHistory($filters, $dateScope, $minPoints),
-                'sla_breach_rate' => $this->buildSlaBreachRateHistory($filters, $minPoints),
                 default => ['points' => [], 'enough_history' => false, 'required_points' => $minPoints],
             };
         }
@@ -452,31 +384,6 @@ class DashboardApiController extends Controller
                 $dateValues[] = count($percentages) > 0 ? array_sum($percentages) / count($percentages) : 0;
             }
             $points[] = ['date' => $date, 'value' => round(array_sum($dateValues) / count($dateValues), 1)];
-        }
-
-        return [
-            'points' => $points,
-            'enough_history' => count($points) >= $minPoints,
-            'required_points' => $minPoints,
-        ];
-    }
-
-    private function buildSlaBreachRateHistory(DashboardFilter $filters, int $minPoints): array
-    {
-        $query = GovernanceMetricSnapshot::orderBy('snapped_at');
-
-        if ($filters->projectId) {
-            $query->where('project_id', $filters->projectId);
-        }
-
-        $rows = $query->get(['snapped_at', 'sla_breaches']);
-
-        $grouped = $rows->groupBy(fn ($r) => $r->snapped_at->format('Y-m-d'));
-        $points = [];
-
-        foreach ($grouped as $date => $group) {
-            $totalBreaches = $group->sum('sla_breaches');
-            $points[] = ['date' => $date, 'value' => (float) $totalBreaches];
         }
 
         return [

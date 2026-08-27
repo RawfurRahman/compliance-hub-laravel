@@ -14,4 +14,9 @@ class Framework extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function controls()
+    {
+        return $this->hasMany(FrameworkControl::class);
+    }
 }

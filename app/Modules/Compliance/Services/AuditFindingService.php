@@ -21,6 +21,7 @@ class AuditFindingService
             'audit_date' => $date ?? now(),
             'status' => 'in_review',
         ]);
+
         return $finding;
     }
 
@@ -29,8 +30,9 @@ class AuditFindingService
         $finding = AuditFinding::findOrFail($auditFindingId);
         $finding->update([
             'status' => 'closed',
-            'remediation_plan' => $resolution ? ($finding->remediation_plan . "\n\nResolution: " . $resolution) : $finding->remediation_plan,
+            'remediation_plan' => $resolution ? ($finding->remediation_plan."\n\nResolution: ".$resolution) : $finding->remediation_plan,
         ]);
+
         return $finding;
     }
 
@@ -53,6 +55,7 @@ class AuditFindingService
         if ($projectId) {
             $query->where('project_id', $projectId);
         }
+
         return $query->with('auditor', 'project')->latest()->get();
     }
 

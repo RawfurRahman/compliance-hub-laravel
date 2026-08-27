@@ -43,15 +43,15 @@ class RiskResidualScore extends Model
     ];
 
     protected $casts = [
-        'inherent_score'     => 'integer',
-        'residual_score'     => 'integer',
-        'reduction_pct'      => 'decimal:2',
+        'inherent_score' => 'integer',
+        'residual_score' => 'integer',
+        'reduction_pct' => 'decimal:2',
         'heatmap_likelihood' => 'integer',
-        'heatmap_impact'     => 'integer',
-        'manual_override'    => 'boolean',
-        'input_snapshot'     => 'array',
-        'explanation'        => 'array',
-        'created_at'         => 'datetime',
+        'heatmap_impact' => 'integer',
+        'manual_override' => 'boolean',
+        'input_snapshot' => 'array',
+        'explanation' => 'array',
+        'created_at' => 'datetime',
     ];
 
     public function risk()

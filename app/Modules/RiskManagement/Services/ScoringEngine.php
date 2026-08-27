@@ -27,7 +27,7 @@ class ScoringEngine
      * Formula: 1 - product(1 - effectiveness_i / 100)
      * Returns cumulative effectiveness as a percentage (0.0 to 100.0).
      *
-     * @param array $effectivenessScores Array of integers/floats between 0 and 100
+     * @param  array  $effectivenessScores  Array of integers/floats between 0 and 100
      */
     public function calculateCumulativeEffectiveness(array $effectivenessScores): float
     {
@@ -50,31 +50,6 @@ class ScoringEngine
     }
 
     /**
-     * Calculate residual inputs based on cumulative control effectiveness.
-     * Reduces inherent TV and Inherent Likelihood by cumulative effectiveness factor.
-     *
-     * @param int $tv Inherent TV score
-     * @param int $likelihood Inherent Likelihood
-     * @param float $effectivenessPercent Cumulative effectiveness (0 to 100)
-     * @return array Array containing residual_tv and residual_lh (minimum value of 1)
-     */
-    public function calculateResidualInputs(int $tv, int $likelihood, float $effectivenessPercent): array
-    {
-        $effectivenessFraction = floatval($effectivenessPercent) / 100.0;
-        $effectivenessFraction = max(0.0, min(1.0, $effectivenessFraction));
-
-        $reductionFactor = 1.0 - $effectivenessFraction;
-
-        $residualTv = (int) ceil(floatval($tv) * $reductionFactor);
-        $residualLh = (int) ceil(floatval($likelihood) * $reductionFactor);
-
-        return [
-            'residual_tv' => max(1, $residualTv),
-            'residual_lh' => max(1, $residualLh),
-        ];
-    }
-
-    /**
      * Calculate exposure value based on asset value, inherent score, and a conversion factor.
      * Exposure = Asset Value × (Inherent Score / Max Possible Score) × Financial Conversion Factor
      */
@@ -82,6 +57,7 @@ class ScoringEngine
     {
         $maxPossibleScore = 5 * (5 + 5) * 5;
         $normalizedScore = min(1.0, $inherentScore / max(1, $maxPossibleScore));
+
         return round($assetValue * $normalizedScore * $financialFactor, 2);
     }
 
@@ -100,8 +76,8 @@ class ScoringEngine
     public function scoreToLevel(int $score): string
     {
         $critical = config('rmm.thresholds.critical', 128);
-        $high     = config('rmm.thresholds.high', 84);
-        $medium   = config('rmm.thresholds.medium', 54);
+        $high = config('rmm.thresholds.high', 84);
+        $medium = config('rmm.thresholds.medium', 54);
 
         if ($score >= $critical) {
             return 'Critical';

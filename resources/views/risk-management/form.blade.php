@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @push('styles')
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
+<link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+<style nonce="{{ $cspNonce }}">
     .font-outfit { font-family: 'Outfit', sans-serif; }
     .glass-card {
         background: rgba(255, 255, 255, 0.9);
@@ -139,11 +139,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Risk Name *</label>
-                                <input type="text" name="risk_name" value="{{ old('risk_name', $risk?->risk_name) }}" required class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="text" name="risk_name" value="{{ old('risk_name', $risk?->risk_name) }}" required maxlength="255" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Risk Owner *</label>
-                                <input type="text" name="risk_owner" value="{{ old('risk_owner', $risk?->risk_owner) }}" required class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="text" name="risk_owner" value="{{ old('risk_owner', $risk?->risk_owner) }}" required maxlength="120" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department *</label>
@@ -167,15 +167,6 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Asset Linkage</label>
-                                <select name="risk_asset_id" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
-                                    <option value="">-- Select Asset --</option>
-                                    @foreach($assets as $a)
-                                        <option value="{{ $a->id }}" {{ old('risk_asset_id', $risk?->risk_asset_id) == $a->id ? 'selected' : '' }}>{{ $a->asset_id }} &mdash; {{ $a->name }} (Value: {{ $a->asset_value }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Risk Description *</label>
                                 <textarea name="risk_description" required rows="3" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">{{ old('risk_description', $risk?->risk_description) }}</textarea>
@@ -195,19 +186,23 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Confidentiality (1-5)</label>
-                                <input type="number" name="confidentiality" min="1" max="5" value="{{ old('confidentiality', $risk?->confidentiality ?? 3) }}" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="number" name="confidentiality" min="1" max="5" x-model.number="form.confidentiality" @input="recalc()" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Integrity (1-5)</label>
-                                <input type="number" name="integrity" min="1" max="5" value="{{ old('integrity', $risk?->integrity ?? 3) }}" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="number" name="integrity" min="1" max="5" x-model.number="form.integrity" @input="recalc()" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Availability (1-5)</label>
-                                <input type="number" name="availability" min="1" max="5" value="{{ old('availability', $risk?->availability ?? 3) }}" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="number" name="availability" min="1" max="5" x-model.number="form.availability" @input="recalc()" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div class="md:col-span-4">
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Threat Description / Notes</label>
                                 <textarea name="threat_description" rows="2" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20" placeholder="Describe the specific threat agents, vulnerability details or CIA impact vector...">{{ old('threat_description', $risk?->threat_description) }}</textarea>
+                            </div>
+                            <div class="md:col-span-4">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Existing Controls</label>
+                                <textarea name="existing_controls" rows="2" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20" placeholder="Controls already in place that reduce likelihood or impact...">{{ old('existing_controls', $risk?->existing_controls) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -227,8 +222,9 @@
                                     <input type="number" name="likelihood" min="1" max="5" x-model.number="form.likelihood" @input="recalc()" required class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Impact (1-5) *</label>
-                                    <input type="number" name="impact" min="1" max="5" x-model.number="form.impact" @input="recalc()" required class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Impact (auto)</label>
+                                    <input type="number" readonly tabindex="-1" x-model.number="form.impact" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
+                                    <p class="text-[10px] text-slate-400 mt-1">Highest of Confidentiality / Integrity / Availability</p>
                                 </div>
                                 <div class="pt-2">
                                     <div class="score-badge font-outfit" :class="'bg-' + inherentLevel.toLowerCase()" x-text="inherentScore + ' — ' + inherentLevel"></div>
@@ -263,7 +259,7 @@
                                     </div>
                                     <div class="pt-2 border-t border-slate-200">
                                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Financial Exposure ($)</label>
-                                        <input type="number" step="0.01" name="financial_exposure" value="{{ old('financial_exposure', $risk?->financial_exposure) }}" class="w-full border-slate-200 rounded-xl px-3 py-2 text-sm text-center focus:border-sky-500 focus:ring-sky-500/20" placeholder="e.g. 50000">
+                                        <input type="number" step="0.01" name="asset_value_bdt" value="{{ old('asset_value_bdt', $risk?->asset_value_bdt) }}" class="w-full border-slate-200 rounded-xl px-3 py-2 text-sm text-center focus:border-sky-500 focus:ring-sky-500/20" placeholder="e.g. 50000">
                                     </div>
                                 </div>
                             </div>
@@ -286,15 +282,15 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Communication Status</label>
-                                <select name="communication_status" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <select name="communication" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                                     <option value="" disabled>-- Select --</option>
-                                    <option value="Communicated" {{ old('communication_status', $risk?->communication_status) === 'Communicated' ? 'selected' : '' }}>Communicated</option>
-                                    <option value="Pending" {{ old('communication_status', $risk?->communication_status ?? 'Pending') === 'Pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="Communicated" {{ old('communication', $risk?->communication) === 'Communicated' ? 'selected' : '' }}>Communicated</option>
+                                    <option value="Pending" {{ old('communication', $risk?->communication ?? 'Pending') === 'Pending' ? 'selected' : '' }}>Pending</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Completion Date</label>
-                                <input type="date" name="target_date" value="{{ old('target_date', $risk?->target_date?->format('Y-m-d')) }}" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
+                                <input type="date" name="implementation_to" value="{{ old('implementation_to', $risk?->implementation_to?->format('Y-m-d')) }}" class="w-full border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-sky-500 focus:ring-sky-500/20">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Next Review Date</label>
@@ -749,7 +745,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function riskForm() {
     return {
         activeTab: 'details',
@@ -767,6 +763,9 @@ function riskForm() {
 
         // Live fields bind
         form: {
+            confidentiality: {{ $risk?->confidentiality ?? 3 }},
+            integrity: {{ $risk?->integrity ?? 3 }},
+            availability: {{ $risk?->availability ?? 3 }},
             likelihood: {{ $risk?->likelihood ?? 3 }},
             impact: {{ $risk?->impact ?? 3 }},
             residual_likelihood: {{ $risk?->residual_likelihood ?? 2 }},
@@ -844,8 +843,13 @@ function riskForm() {
         },
 
         recalc() {
+            const c = parseInt(this.form.confidentiality) || 1;
+            const integ = parseInt(this.form.integrity) || 1;
+            const a = parseInt(this.form.availability) || 1;
+            this.form.impact = Math.max(c, integ, a);
+
             const l = parseInt(this.form.likelihood) || 1;
-            const i = parseInt(this.form.impact) || 1;
+            const i = this.form.impact;
             const rl = parseInt(this.form.residual_likelihood) || 1;
             const ri = parseInt(this.form.residual_impact) || 1;
 
@@ -1030,7 +1034,7 @@ function riskForm() {
                     this.comments.unshift({
                         id: c.id,
                         body: c.body,
-                        is_internal: (bool)c.is_internal,
+                        is_internal: !!c.is_internal,
                         user_name: c.user?.username ?? 'User',
                         created_at: new Date().toISOString().slice(0, 16).replace('T', ' '),
                     });

@@ -62,7 +62,7 @@ class RequiredDocumentListImportService
 
     private function extractWordRows(string $path): array
     {
-        $archive = new ZipArchive();
+        $archive = new ZipArchive;
         if ($archive->open($path) !== true) {
             throw new RuntimeException('The Word document could not be opened.');
         }
@@ -73,7 +73,7 @@ class RequiredDocumentListImportService
             throw new RuntimeException('The Word document does not contain readable document content.');
         }
 
-        $document = new \DOMDocument();
+        $document = new \DOMDocument;
         $document->loadXML($xml);
         $xpath = new \DOMXPath($document);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
@@ -90,7 +90,7 @@ class RequiredDocumentListImportService
         }
 
         $parsedRows = $this->normaliseTabularRows($rows);
-        if (!empty($parsedRows)) {
+        if (! empty($parsedRows)) {
             return $this->uniqueRows($parsedRows);
         }
 
@@ -98,7 +98,7 @@ class RequiredDocumentListImportService
         foreach ($xpath->query('//w:body/w:p') as $paragraph) {
             $text = $this->nodeText($xpath, './/w:t', $paragraph);
             $isListItem = $xpath->query('./w:pPr/w:numPr', $paragraph)->length > 0;
-            if ($text !== '' && ($isListItem || !$xpath->query('//w:tbl', $document)->length)) {
+            if ($text !== '' && ($isListItem || ! $xpath->query('//w:tbl', $document)->length)) {
                 $paragraphRows[] = ['document_name' => $text];
             }
         }
@@ -125,6 +125,7 @@ class RequiredDocumentListImportService
         if ($headerIndex === null) {
             return collect($rows)->map(function (array $row) {
                 $values = array_values(array_filter($row));
+
                 return [
                     'document_name' => $values[0] ?? '',
                     'description' => count($values) > 1 ? implode(' | ', array_slice($values, 1)) : null,
@@ -133,9 +134,11 @@ class RequiredDocumentListImportService
         }
 
         $headers = array_map(fn ($header) => Str::snake($header), $rows[$headerIndex]);
+
         return collect(array_slice($rows, $headerIndex + 1))->map(function (array $row) use ($headers) {
             $data = array_combine($headers, array_pad($row, count($headers), '')) ?: [];
             $name = $data['document_name'] ?? $data['required_document'] ?? $data['document'] ?? $data['name'] ?? '';
+
             return [
                 'document_name' => trim($name),
                 'category' => trim($data['category'] ?? $data['document_category'] ?? '') ?: null,
@@ -154,7 +157,7 @@ class RequiredDocumentListImportService
     {
         return collect($rows)
             ->map(fn ($row) => array_map(fn ($value) => is_string($value) ? trim($value) : $value, $row))
-            ->filter(fn ($row) => !empty($row['document_name']))
+            ->filter(fn ($row) => ! empty($row['document_name']))
             ->unique(fn ($row) => Str::lower($row['document_name']))
             ->values()
             ->all();

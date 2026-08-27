@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCI DSS Attestation of Compliance - {{ $project->name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
+    <script src="{{ asset('js/tailwind.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/font-awesome/css/all.min.css') }}">
+    <style nonce="{{ $cspNonce }}">
         @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none; }
@@ -31,7 +31,7 @@
 <body class="bg-gray-200">
 
     <div class="fixed top-4 right-4 no-print">
-        <button onclick="window.print()" class="px-6 py-3 bg-sky-500 text-white font-semibold rounded-lg shadow-lg hover:bg-sky-600 transition-transform transform hover:scale-105">
+        <button class="js-print px-6 py-3 bg-sky-500 text-white font-semibold rounded-lg shadow-lg hover:bg-sky-600 transition-transform transform hover:scale-105">
             <i class="fas fa-print mr-2"></i>Print or Save as PDF
         </button>
     </div>
@@ -176,5 +176,6 @@
         </table>
     </div>
 
+<script src="{{ asset('js/csp-bindings.js') }}" defer></script>
 </body>
 </html>

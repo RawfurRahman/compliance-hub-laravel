@@ -2,13 +2,14 @@
 
 namespace App\Modules\Compliance\Console\Commands;
 
-use App\Modules\Compliance\Jobs\GenerateComplianceSnapshotJob;
 use App\Models\Project;
+use App\Modules\Compliance\Jobs\GenerateComplianceSnapshotJob;
 use Illuminate\Console\Command;
 
 class GenerateComplianceSnapshot extends Command
 {
     protected $signature = 'compliance:snapshot {--project-id=} {--type=ondemand}';
+
     protected $description = 'Generate a compliance snapshot for a project';
 
     public function handle(): int

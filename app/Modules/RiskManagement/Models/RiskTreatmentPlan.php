@@ -2,6 +2,7 @@
 
 namespace App\Modules\RiskManagement\Models;
 
+use App\Models\AssessmentFinding;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -20,12 +21,12 @@ class RiskTreatmentPlan extends Model
     ];
 
     protected $casts = [
-        'start_date'      => 'date',
-        'target_date'     => 'date',
+        'start_date' => 'date',
+        'target_date' => 'date',
         'completion_date' => 'date',
         'budget_estimated' => 'decimal:2',
-        'budget_actual'    => 'decimal:2',
-        'progress_pct'     => 'integer',
+        'budget_actual' => 'decimal:2',
+        'progress_pct' => 'integer',
         'effectiveness_rating' => 'integer',
     ];
 
@@ -41,14 +42,14 @@ class RiskTreatmentPlan extends Model
 
     public function assessmentFinding()
     {
-        return $this->belongsTo(\App\Models\AssessmentFinding::class, 'assessment_finding_id');
+        return $this->belongsTo(AssessmentFinding::class, 'assessment_finding_id');
     }
 
     public function getIsOverdueAttribute(): bool
     {
         return $this->target_date
             && $this->target_date->isPast()
-            && !in_array($this->status, ['completed', 'cancelled']);
+            && ! in_array($this->status, ['completed', 'cancelled']);
     }
 
     public function scopeActive($query)

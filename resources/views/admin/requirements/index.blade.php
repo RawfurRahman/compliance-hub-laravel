@@ -63,7 +63,7 @@
                                 <a href="{{ route('admin.requirements.edit', $req) }}" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:border-sky-200 transition-all text-xs">
                                     <i class="fas fa-pen"></i>
                                 </a>
-                                <form action="{{ route('admin.requirements.destroy', $req) }}" method="POST" onsubmit="return confirm('Delete this requirement?');">
+                                <form action="{{ route('admin.requirements.destroy', $req) }}" method="POST" data-confirm="Delete this requirement?">
                                     @csrf @method('DELETE')
                                     <button class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all text-xs">
                                         <i class="fas fa-trash"></i>

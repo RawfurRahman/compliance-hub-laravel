@@ -15,11 +15,11 @@ class MaturityScoreResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'composite'            => (float) $this['composite'],
-            'risk_management'      => (float) $this['risk_management'],
-            'control_design'       => (float) $this['control_design'],
+            'composite' => (float) $this['composite'],
+            'risk_management' => (float) $this['risk_management'],
+            'control_design' => (float) $this['control_design'],
             'remediation_velocity' => (float) $this['remediation_velocity'],
-            'evidence_audit'       => (float) $this['evidence_audit'],
+            'evidence_audit' => (float) $this['evidence_audit'],
         ];
     }
 }

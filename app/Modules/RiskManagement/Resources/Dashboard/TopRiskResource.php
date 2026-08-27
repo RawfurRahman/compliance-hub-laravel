@@ -13,12 +13,12 @@ class TopRiskResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => (int) $this['id'],
-            'control'    => $this['control'],
-            'title'      => $this['title'],
-            'framework'  => $this['framework'],
-            'project'    => $this['project'],
-            'risk'       => $this['risk'],
+            'id' => (int) $this['id'],
+            'control' => $this['control'],
+            'title' => $this['title'],
+            'framework' => $this['framework'],
+            'project' => $this['project'],
+            'risk' => $this['risk'],
             'risk_score' => (int) $this['risk_score'],
         ];
     }

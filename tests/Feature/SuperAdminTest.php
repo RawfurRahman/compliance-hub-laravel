@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,7 +13,9 @@ class SuperAdminTest extends TestCase
     use RefreshDatabase;
 
     protected User $superAdminUser;
+
     protected User $adminUser;
+
     protected User $regularUser;
 
     protected function setUp(): void
@@ -44,30 +46,6 @@ class SuperAdminTest extends TestCase
         $this->assertTrue($policyAction, 'Super Admin should bypass authorization gates');
     }
 
-    public function test_super_admin_has_full_crud_access_to_governance_module()
-    {
-        $this->actingAs($this->superAdminUser);
-
-        $governanceActions = [
-            'view',
-            'create',
-            'update',
-            'delete',
-            'approve',
-            'publish',
-            'expire'
-        ];
-
-        foreach ($governanceActions as $action) {
-            $method = $action === 'create' || $action === 'approve' || $action === 'publish' || $action === 'expire'
-                ? 'can'
-                : 'can';
-
-            $result = $this->superAdminUser->hasRole('Super Admin');
-            $this->assertTrue($result, "Super Admin should have {$action} access in Governance module");
-        }
-    }
-
     public function test_super_admin_unrestricted_access_to_confidential_modules()
     {
         $this->actingAs($this->superAdminUser);
@@ -94,7 +72,7 @@ class SuperAdminTest extends TestCase
             'description' => 'Super Admin created test policy',
             'details' => ['policy_id' => 123],
             'ip_address' => '127.0.0.1',
-            'role' => 'Super Admin'
+            'role' => 'Super Admin',
         ]);
 
         $this->assertDatabaseHas('activity_log', [
@@ -114,7 +92,7 @@ class SuperAdminTest extends TestCase
             'PolicyManagement.vue',
             'DomainManagement.vue',
             'EvidenceHub.vue',
-            'AdminDashboard.vue'
+            'AdminDashboard.vue',
         ];
 
         foreach ($uiComponents as $component) {
@@ -143,7 +121,6 @@ class SuperAdminTest extends TestCase
         $this->actingAs($this->superAdminUser);
 
         $boundedContexts = [
-            'governance',
             'riskManagement',
             'complianceHub',
         ];

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Risk Register - {{ $project->name }}</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 10px;
@@ -175,7 +175,6 @@
                 <th style="width: 8%;">Department</th>
                 <th style="width: 8%;">Owner</th>
                 <th style="width: 6%;">Identify Date</th>
-                <th style="width: 6%;">Asset ID</th>
                 <th style="width: 10%;">Description</th>
                 <th style="width: 3%;">L</th>
                 <th style="width: 3%;">I</th>
@@ -198,7 +197,6 @@
                     <td>{{ $r->department }}</td>
                     <td>{{ $r->risk_owner }}</td>
                     <td style="text-align: center;">{{ $r->date_identified?->format('Y-m-d') }}</td>
-                    <td style="text-align: center;">{{ $r->asset_id_ref ?? '—' }}</td>
                     <td>{{ Str::limit($r->risk_description, 100) }}</td>
                     <td style="text-align: center;">{{ $r->likelihood }}</td>
                     <td style="text-align: center;">{{ $r->impact }}</td>
@@ -226,7 +224,7 @@
             @endforeach
             @if($entries->isEmpty())
                 <tr>
-                    <td colspan="18" style="text-align: center; padding: 20px; color: #64748b;">No risks recorded.</td>
+                    <td colspan="17" style="text-align: center; padding: 20px; color: #64748b;">No risks recorded.</td>
                 </tr>
             @endif
         </tbody>

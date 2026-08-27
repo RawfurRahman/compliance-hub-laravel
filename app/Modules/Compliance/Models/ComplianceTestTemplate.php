@@ -16,13 +16,11 @@ class ComplianceTestTemplate extends Model
         'description',
         'integration_type',
         'test_type',
-        'sla_days',
         'check_expression',
         'config',
     ];
 
     protected $casts = [
         'config' => 'json',
-        'sla_days' => 'integer',
     ];
 }

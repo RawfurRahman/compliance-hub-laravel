@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Project;
 use App\Models\User;
 use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Modules\RiskManagement\Models\RiskSnapshot;
 use App\Modules\RiskManagement\Services\RiskSnapshotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,6 +14,7 @@ class RiskSnapshotTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -83,7 +83,7 @@ class RiskSnapshotTest extends TestCase
 
     public function test_can_take_snapshot(): void
     {
-        $service = new RiskSnapshotService();
+        $service = new RiskSnapshotService;
 
         $snapshot = $service->takeSnapshot($this->project->id);
 
@@ -99,7 +99,7 @@ class RiskSnapshotTest extends TestCase
 
     public function test_snapshot_counts_correctly(): void
     {
-        $service = new RiskSnapshotService();
+        $service = new RiskSnapshotService;
 
         $snapshot = $service->takeSnapshot($this->project->id);
 
@@ -113,7 +113,7 @@ class RiskSnapshotTest extends TestCase
 
     public function test_snapshot_contains_snapshot_data(): void
     {
-        $service = new RiskSnapshotService();
+        $service = new RiskSnapshotService;
 
         $snapshot = $service->takeSnapshot($this->project->id);
 
@@ -124,7 +124,7 @@ class RiskSnapshotTest extends TestCase
 
     public function test_can_get_latest_by_project(): void
     {
-        $service = new RiskSnapshotService();
+        $service = new RiskSnapshotService;
 
         $first = $service->takeSnapshot($this->project->id);
         $this->assertNotNull($first);

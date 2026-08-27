@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PciTpsp extends Model
 {
     use HasFactory;
+
     protected $table = 'pci_tpsps';
+
     protected $guarded = [];
 }

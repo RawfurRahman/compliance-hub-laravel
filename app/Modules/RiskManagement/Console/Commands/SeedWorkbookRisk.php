@@ -2,9 +2,8 @@
 
 namespace App\Modules\RiskManagement\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Database\Seeders\WorkbookRiskSeeder;
+use Illuminate\Console\Command;
 
 class SeedWorkbookRisk extends Command
 {
@@ -31,21 +30,24 @@ class SeedWorkbookRisk extends Command
 
         if ($source === 'workbook') {
             $this->info('Running WorkbookRiskSeeder...');
-            
+
             try {
                 // Call seeder directly
-                $seeder = new WorkbookRiskSeeder();
+                $seeder = new WorkbookRiskSeeder;
                 $seeder->run();
-                
+
                 $this->info('Successfully seeded risk register from workbook.');
+
                 return self::SUCCESS;
             } catch (\Exception $e) {
-                $this->error('Error running seeder: ' . $e->getMessage());
+                $this->error('Error running seeder: '.$e->getMessage());
+
                 return self::FAILURE;
             }
         }
 
         $this->error('Invalid or missing source. Please use --source=workbook');
+
         return self::FAILURE;
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\Meeting;
 use App\Mail\MeetingInvitationMail;
+use App\Models\Meeting;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class MeetingController extends Controller
 {
@@ -173,12 +173,12 @@ class MeetingController extends Controller
         // Get unique, non-empty emails
         $recipientEmails = $emails->unique()->filter()->values()->toArray();
 
-        if (!empty($recipientEmails)) {
+        if (! empty($recipientEmails)) {
             try {
                 Mail::to($recipientEmails)->send(new MeetingInvitationMail($meeting, $isRescheduled));
-                Log::info("Meeting emails sent to: " . implode(', ', $recipientEmails));
+                Log::info('Meeting emails sent to: '.implode(', ', $recipientEmails));
             } catch (\Exception $e) {
-                Log::error("Failed to send meeting notification email: " . $e->getMessage());
+                Log::error('Failed to send meeting notification email: '.$e->getMessage());
             }
         }
     }

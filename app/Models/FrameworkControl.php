@@ -62,9 +62,11 @@ class FrameworkControl extends Model
         if (str_contains($desc, ':')) {
             $parts = explode(':', $desc, 2);
             $candidate = trim($parts[0]);
-            if (strlen($candidate) < 100 && !str_contains($candidate, "\n") && !str_contains($candidate, "\r")) {
+            if (strlen($candidate) < 100 && ! str_contains($candidate, "\n") && ! str_contains($candidate, "\r")) {
                 $controlIdPattern = preg_quote($this->control_id, '/');
-                $candidate = preg_replace('/^' . $controlIdPattern . '\s*[-\s]*\s*/i', '', $candidate);
+                $candidate = preg_replace('/^'.$controlIdPattern.'\s*[-\s]*\s*/i', '', $candidate);
+                $candidate = preg_replace('/^Section\s+/i', '', $candidate);
+
                 return trim($candidate);
             }
         }
@@ -78,6 +80,12 @@ class FrameworkControl extends Model
     public static function getHardcodedControlName($controlId)
     {
         $normalized = preg_replace('/^A\./i', '', trim($controlId));
+        $normalized = preg_replace('/^Section\s+/i', '', $normalized);
+        $normalized = preg_replace('/\.\d+\.$/', '', $normalized);
+        // Only strip trailing .digit for three-part numbers (e.g., 5.4.1 -> 5.4), not two-part (5.1 -> 5)
+        if (substr_count($normalized, '.') >= 2) {
+            $normalized = preg_replace('/\.\d+$/', '', $normalized);
+        }
         $names = [
             '5.1' => 'Policies for information security',
             '5.2' => 'Information security roles and responsibilities',
@@ -116,7 +124,7 @@ class FrameworkControl extends Model
             '5.35' => 'Independent review of information security',
             '5.36' => 'Compliance with policies and standards for information security',
             '5.37' => 'Documented operating procedures',
-            
+
             '6.1' => 'Screening',
             '6.2' => 'Employment terms and conditions',
             '6.3' => 'Information security awareness, education and training',
@@ -125,7 +133,7 @@ class FrameworkControl extends Model
             '6.6' => 'Confidentiality or non-disclosure agreements',
             '6.7' => 'Remote working',
             '6.8' => 'Information security event reporting',
-            
+
             '7.1' => 'Physical security perimeters',
             '7.2' => 'Physical entry',
             '7.3' => 'Securing offices, rooms and facilities',
@@ -140,7 +148,7 @@ class FrameworkControl extends Model
             '7.12' => 'Cabling security',
             '7.13' => 'Equipment maintenance',
             '7.14' => 'Secure disposal or re-use of equipment',
-            
+
             '8.1' => 'User endpoint devices',
             '8.2' => 'Privileged access rights',
             '8.3' => 'Information access restriction',
@@ -176,6 +184,7 @@ class FrameworkControl extends Model
             '8.33' => 'Test information',
             '8.34' => 'Protection of information systems during audit testing',
         ];
+
         return $names[$normalized] ?? null;
     }
 }

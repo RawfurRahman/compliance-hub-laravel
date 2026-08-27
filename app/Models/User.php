@@ -20,7 +20,6 @@ class User extends Authenticatable
      */
     protected $table = 'users';
 
-
     /**
      * The attributes that are mass assignable.
      *
@@ -70,9 +69,10 @@ class User extends Authenticatable
      */
     public function hasRole(string $roleName): bool
     {
-        if (!$this->relationLoaded('roles')) {
+        if (! $this->relationLoaded('roles')) {
             $this->load('roles');
         }
+
         return $this->roles->contains('name', $roleName);
     }
 
@@ -122,6 +122,7 @@ class User extends Authenticatable
         } elseif ($this->parent_id) {
             return User::where('parent_id', $this->parent_id)->orWhere('id', $this->parent_id)->get();
         }
+
         return collect([$this]);
     }
 

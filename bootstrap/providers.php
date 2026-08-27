@@ -1,6 +1,9 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\Dashboard\DashboardServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Dashboard\DashboardServiceProvider::class,
+    AppServiceProvider::class,
+    DashboardServiceProvider::class,
 ];

@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 
@@ -54,6 +54,7 @@ class CreateSuperAdmin extends Command
             foreach ($validator->errors()->all() as $error) {
                 $this->line($error);
             }
+
             return 1; // Return an error code
         }
 
@@ -74,6 +75,7 @@ class CreateSuperAdmin extends Command
         $this->info("User '{$user->username}' created successfully and assigned the 'Super Admin' role.");
 
         $this->info('Super Admin user created successfully with full system privileges!');
+
         return 0; // Return a success code
     }
 }

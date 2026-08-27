@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 
@@ -54,6 +54,7 @@ class CreateUser extends Command
             foreach ($validator->errors()->all() as $error) {
                 $this->line($error);
             }
+
             return 1; // Return an error code
         }
 
@@ -61,6 +62,7 @@ class CreateUser extends Command
         $roles = Role::pluck('name', 'id')->all();
         if (empty($roles)) {
             $this->error('No roles found in the database. Please run the RoleSeeder first.');
+
             return 1;
         }
 

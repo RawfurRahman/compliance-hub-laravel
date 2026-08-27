@@ -15,8 +15,11 @@ class MappingImportServiceTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Control $control;
+
     protected FrameworkControl $fc1;
+
     protected FrameworkControl $fc2;
 
     protected function setUp(): void

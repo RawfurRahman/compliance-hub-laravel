@@ -11,7 +11,7 @@ class AuditFindingQueryService
 {
     public function summary(DashboardFilter $filter): array
     {
-        $query = AuditFinding::query()->with('slaTrackers');
+        $query = AuditFinding::query();
 
         $this->applyFilters($query, $filter);
 
@@ -55,12 +55,13 @@ class AuditFindingQueryService
 
         return $grouped->map(function ($rows, string $month) {
             $bySeverity = $rows->keyBy('severity');
+
             return [
                 'month' => $month,
-                'critical' => (int) ($bySeverity->get('critical')?->count ?? 0),
-                'high' => (int) ($bySeverity->get('high')?->count ?? 0),
-                'medium' => (int) ($bySeverity->get('medium')?->count ?? 0),
-                'low' => (int) ($bySeverity->get('low')?->count ?? 0),
+                'critical' => (int) ($bySeverity->get('critical')->count ?? 0),
+                'high' => (int) ($bySeverity->get('high')->count ?? 0),
+                'medium' => (int) ($bySeverity->get('medium')->count ?? 0),
+                'low' => (int) ($bySeverity->get('low')->count ?? 0),
                 'total' => (int) $rows->sum('count'),
             ];
         })->values();

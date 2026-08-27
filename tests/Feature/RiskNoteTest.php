@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Modules\RiskManagement\Models\RiskNote;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskScenario;
-use App\Modules\RiskManagement\Models\RiskNote;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +15,9 @@ class RiskNoteTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void

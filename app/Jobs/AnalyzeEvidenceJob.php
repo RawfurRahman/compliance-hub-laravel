@@ -26,8 +26,9 @@ class AnalyzeEvidenceJob implements ShouldQueue
     {
         $evidence = EvidenceFile::find($this->evidenceFileId);
 
-        if (!$evidence) {
+        if (! $evidence) {
             Log::warning("AnalyzeEvidenceJob: EvidenceFile {$this->evidenceFileId} not found, skipping.");
+
             return;
         }
 
@@ -36,14 +37,15 @@ class AnalyzeEvidenceJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::error("AnalyzeEvidenceJob permanently failed for evidence_file_id {$this->evidenceFileId}: " . $e->getMessage());
+        Log::error("AnalyzeEvidenceJob permanently failed for evidence_file_id {$this->evidenceFileId}: ".$e->getMessage());
 
         $evidence = EvidenceFile::find($this->evidenceFileId);
         if ($evidence) {
             $evidence->update([
                 'ai_analysis_status' => 'failed',
                 'scan_status' => 'failed',
-                'ai_observations' => 'Analysis failed after multiple retries: ' . $e->getMessage(),
+                'ai_gaps' => [],
+                'ai_observations' => 'Analysis failed after multiple retries: '.$e->getMessage(),
                 'ai_recommendations' => 'Please try uploading the evidence again or contact support.',
             ]);
         }

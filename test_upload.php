@@ -2,26 +2,30 @@
 
 require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
-use App\Models\Project;
+use App\Http\Controllers\EvidenceController;
 use App\Models\EvidenceFile;
+use App\Models\Project;
+use App\Models\User;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // Get admin user
-$user = App\Models\User::where('email', 'admin.compliance@gmail.com')->first();
-if (!$user) {
+$user = User::where('email', 'admin.compliance@gmail.com')->first();
+if (! $user) {
     echo "Admin user not found.\n";
     exit(1);
 }
 Auth::login($user);
 
 $project = Project::first();
-if (!$project) {
+if (! $project) {
     echo "Project not found.\n";
     exit(1);
 }
@@ -35,13 +39,13 @@ Schema::enableForeignKeyConstraints();
 echo "Truncated evidence tables safely.\n";
 
 $filePath = __DIR__.'/test_evidence.txt';
-if (!file_exists($filePath)) {
-    file_put_contents($filePath, "This is a test evidence file for checking the unified n8n workflow.");
+if (! file_exists($filePath)) {
+    file_put_contents($filePath, 'This is a test evidence file for checking the unified n8n workflow.');
 }
 
 $file = new UploadedFile($filePath, 'test_evidence.txt', 'text/plain', null, true);
 
-$request = Illuminate\Http\Request::create(
+$request = Request::create(
     "/evidence/{$project->id}/upload",
     'POST',
     ['requirement_id' => 1],
@@ -49,7 +53,7 @@ $request = Illuminate\Http\Request::create(
     ['file' => $file]
 );
 
-$controller = $app->make(\App\Http\Controllers\EvidenceController::class);
+$controller = $app->make(EvidenceController::class);
 $response = $controller->upload($request, $project);
 echo "Upload request processed.\n";
 
@@ -59,11 +63,11 @@ sleep(10);
 
 $evidence = EvidenceFile::latest()->first();
 if ($evidence) {
-    echo "Evidence File ID: " . $evidence->id . "\n";
-    echo "Scan Status: " . $evidence->scan_status . "\n";
-    echo "AI Analysis Status: " . $evidence->ai_analysis_status . "\n";
-    echo "AI Observations: " . $evidence->ai_observations . "\n";
-    echo "AI Recommendations: " . $evidence->ai_recommendations . "\n";
+    echo 'Evidence File ID: '.$evidence->id."\n";
+    echo 'Scan Status: '.$evidence->scan_status."\n";
+    echo 'AI Analysis Status: '.$evidence->ai_analysis_status."\n";
+    echo 'AI Observations: '.$evidence->ai_observations."\n";
+    echo 'AI Recommendations: '.$evidence->ai_recommendations."\n";
 } else {
     echo "No evidence file created.\n";
 }

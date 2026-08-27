@@ -1,13 +1,14 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Modules\Compliance\Controllers\ComplianceDashboardController;
-use App\Modules\Compliance\Controllers\ComplianceTestController;
-use App\Modules\Compliance\Controllers\ComplianceFindingController;
-use App\Modules\Compliance\Controllers\RemediationController;
-use App\Modules\Compliance\Controllers\ComplianceSnapshotController;
 use App\Modules\Compliance\Controllers\AuditFindingController;
+use App\Modules\Compliance\Controllers\ComplianceDashboardController;
+use App\Modules\Compliance\Controllers\ComplianceFindingController;
+use App\Modules\Compliance\Controllers\ComplianceSnapshotController;
+use App\Modules\Compliance\Controllers\ComplianceTestController;
+use App\Modules\Compliance\Controllers\MappingImportController;
 use App\Modules\Compliance\Controllers\ProjectIntegrationController;
+use App\Modules\Compliance\Controllers\RemediationController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth'])->group(function () {
 
@@ -44,7 +45,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     });
 
     // Mapping import (not project-scoped, admin-like)
-    Route::post('/compliance/mappings/import', [\App\Modules\Compliance\Controllers\MappingImportController::class, 'import'])->name('compliance.mappings.import');
-    Route::post('/compliance/mappings/preview', [\App\Modules\Compliance\Controllers\MappingImportController::class, 'preview'])->name('compliance.mappings.preview');
+    Route::post('/compliance/mappings/import', [MappingImportController::class, 'import'])->name('compliance.mappings.import');
+    Route::post('/compliance/mappings/preview', [MappingImportController::class, 'preview'])->name('compliance.mappings.preview');
 
 });

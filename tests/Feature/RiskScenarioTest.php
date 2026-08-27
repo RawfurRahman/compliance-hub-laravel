@@ -15,7 +15,9 @@ class RiskScenarioTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -59,7 +61,7 @@ class RiskScenarioTest extends TestCase
     public function test_can_create_scenario_linked_to_risk(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskScenarioService();
+        $service = new RiskScenarioService;
 
         $scenario = $service->create([
             'risk_register_id' => $this->risk->id,
@@ -80,7 +82,7 @@ class RiskScenarioTest extends TestCase
     public function test_can_create_scenario_without_risk(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskScenarioService();
+        $service = new RiskScenarioService;
 
         $scenario = $service->create([
             'title' => 'Standalone Scenario',
@@ -93,7 +95,7 @@ class RiskScenarioTest extends TestCase
 
     public function test_scenario_has_correct_fillable_fields(): void
     {
-        $scenario = new RiskScenario();
+        $scenario = new RiskScenario;
 
         $this->assertTrue($scenario->isFillable('title'));
         $this->assertTrue($scenario->isFillable('description'));

@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Log;
 
 class VendorAssessmentAnalysisService
 {
-    private DirectEvidenceAnalysisService $gemini;
+    private DirectEvidenceAnalysisService $analysisService;
 
-    public function __construct(?DirectEvidenceAnalysisService $gemini = null)
+    public function __construct(?DirectEvidenceAnalysisService $analysisService = null)
     {
-        $this->gemini = $gemini ?? app(DirectEvidenceAnalysisService::class);
+        $this->analysisService = $analysisService ?? app(DirectEvidenceAnalysisService::class);
     }
 
     public function analyze(VendorAssessment $assessment): array
@@ -25,7 +25,7 @@ class VendorAssessmentAnalysisService
         $prompt = $this->buildPrompt($assessment);
 
         try {
-            $raw = $this->gemini->callGeminiApi([['text' => $prompt]]);
+            $raw = $this->analysisService->callLlmApi([['text' => $prompt]]);
 
             $cleaned = trim($raw);
             $cleaned = preg_replace('/^```(?:json)?\s*/i', '', $cleaned);
@@ -34,7 +34,8 @@ class VendorAssessmentAnalysisService
             $decoded = json_decode($cleaned, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::warning('VendorAssessment AI JSON decode failed: ' . json_last_error_msg());
+                Log::warning('VendorAssessment AI JSON decode failed: '.json_last_error_msg());
+
                 return [];
             }
 
@@ -53,27 +54,28 @@ class VendorAssessmentAnalysisService
 
             return $result;
         } catch (\Exception $e) {
-            Log::error('VendorAssessment AI analysis failed: ' . $e->getMessage());
+            Log::error('VendorAssessment AI analysis failed: '.$e->getMessage());
+
             return [];
         }
     }
 
     private function buildPrompt(VendorAssessment $assessment): string
     {
-        $vendorName = $assessment->vendor?->vendor_name ?? 'Unknown Vendor';
+        $vendorName = $assessment->vendor->vendor_name ?? 'Unknown Vendor';
         $type = $assessment->assessment_type ?? 'General';
 
         $lines = [];
-        $lines[] = "You are a GRC vendor risk assessment analyst. Analyze the following vendor questionnaire responses.";
-        $lines[] = "";
+        $lines[] = 'You are a GRC vendor risk assessment analyst. Analyze the following vendor questionnaire responses.';
+        $lines[] = '';
         $lines[] = "Vendor: {$vendorName}";
         $lines[] = "Assessment Type: {$type}";
-        $lines[] = "";
+        $lines[] = '';
 
         $unansweredKeys = [];
 
         foreach ($assessment->responses as $i => $r) {
-            $qNum = 'Q' . ($i + 1);
+            $qNum = 'Q'.($i + 1);
             $section = $r->section ? " [{$r->section}]" : '';
             $answer = $r->response_text ?: 'NOT ANSWERED';
             $score = $r->score !== null ? $r->score : 'N/A';
@@ -87,11 +89,11 @@ class VendorAssessmentAnalysisService
 
             $compliance = $r->is_compliant !== null ? ($r->is_compliant ? 'Yes' : 'No') : 'N/A';
             $lines[] = "Score: {$score}/{$maxScore}  Compliant: {$compliance}";
-            $lines[] = "";
+            $lines[] = '';
         }
 
-        $lines[] = "Respond ONLY with a raw JSON object. NO markdown, NO code blocks, NO backticks.";
-        $lines[] = "";
+        $lines[] = 'Respond ONLY with a raw JSON object. NO markdown, NO code blocks, NO backticks.';
+        $lines[] = '';
         $lines[] = '{';
         $lines[] = '  "strengths": [';
         $lines[] = '    {"strength": "Description of a strength shown by the vendor", "questions": ["Q1", "Q3"]}';
@@ -117,7 +119,7 @@ class VendorAssessmentAnalysisService
             $key = $suggestion['question_key'] ?? null;
             $answer = $suggestion['suggested_answer'] ?? null;
 
-            if (!$key || !$answer) {
+            if (! $key || ! $answer) {
                 continue;
             }
 

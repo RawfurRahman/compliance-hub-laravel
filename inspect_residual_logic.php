@@ -1,4 +1,5 @@
 <?php
+
 require 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -8,12 +9,24 @@ $sheet = $spreadsheet->getSheetByName('Risk Register');
 $rows = $sheet->toArray(null, true, true, true);
 
 $formulas = [
-    'res_tv * res_lh * 8' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $resLh * 8; },
-    'av * tv * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $av * $tv * $resLh; },
-    't * tv * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $t * $tv * $resLh; },
-    'res_tv * res_lh * av' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $resLh * $av; },
-    'res_tv * res_lh * t' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $resLh * $t; },
-    'res_tv * res_lh * (tv/2)' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $resLh * ($tv / 2); },
+    'res_tv * res_lh * 8' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $resLh * 8;
+    },
+    'av * tv * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $av * $tv * $resLh;
+    },
+    't * tv * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $t * $tv * $resLh;
+    },
+    'res_tv * res_lh * av' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $resLh * $av;
+    },
+    'res_tv * res_lh * t' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $resLh * $t;
+    },
+    'res_tv * res_lh * (tv/2)' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $resLh * ($tv / 2);
+    },
     // What about: rating * (res_lh / lh) * (res_tv / tv) ?
 ];
 
@@ -23,7 +36,9 @@ foreach ($formulas as $name => $f) {
     for ($r = 4; $r <= count($rows); $r++) {
         $row = $rows[$r];
         $serialNo = isset($row['A']) ? trim($row['A']) : '';
-        if (empty($serialNo)) continue;
+        if (empty($serialNo)) {
+            continue;
+        }
 
         $t = intval($row['G']);
         $av = intval($row['M']);

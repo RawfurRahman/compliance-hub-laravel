@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Meeting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -14,6 +15,7 @@ class MeetingInvitationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $meeting;
+
     public $isRescheduled;
 
     /**
@@ -31,8 +33,9 @@ class MeetingInvitationMail extends Mailable
     public function envelope(): Envelope
     {
         $prefix = $this->isRescheduled ? 'RESCHEDULED: ' : 'Invitation: ';
+
         return new Envelope(
-            subject: $prefix . 'ComplianceHub Meeting - ' . $this->meeting->title,
+            subject: $prefix.'ComplianceHub Meeting - '.$this->meeting->title,
         );
     }
 
@@ -49,7 +52,7 @@ class MeetingInvitationMail extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

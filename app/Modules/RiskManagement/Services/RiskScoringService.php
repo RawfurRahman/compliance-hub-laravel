@@ -35,9 +35,8 @@ class RiskScoringService
      * Pure: given the same input, formula version and appetite threshold, the
      * result is always identical. No persistence happens here.
      *
-     * @param InherentRiskInput $input
-     * @param string|null $formulaVersion Pin a specific formula version (defaults to active).
-     * @param int|null $appetiteThreshold Score at/above which the risk exceeds appetite.
+     * @param  string|null  $formulaVersion  Pin a specific formula version (defaults to active).
+     * @param  int|null  $appetiteThreshold  Score at/above which the risk exceeds appetite.
      */
     public function score(
         InherentRiskInput $input,
@@ -55,16 +54,16 @@ class RiskScoringService
         $ranking = $this->riskRanking($inherentScore, $config);
 
         $explanation = [
-            'formula_version'     => $config->version,
-            'tv_expression'       => $config->tvExpression,
+            'formula_version' => $config->version,
+            'tv_expression' => $config->tvExpression,
             'inherent_expression' => $config->inherentExpression,
-            'steps'               => [
-                'tv'       => sprintf('%d + %d = %d', $input->threatLevel, $input->vulnerabilityLevel, $tvScore),
+            'steps' => [
+                'tv' => sprintf('%d + %d = %d', $input->threatLevel, $input->vulnerabilityLevel, $tvScore),
                 'inherent' => sprintf('%d * %d * %d = %d', $input->vulnerabilityLevel, $tvScore, $input->likelihood, $inherentScore),
             ],
-            'bands'               => $config->bands,
-            'appetite_threshold'  => $appetiteThreshold,
-            'max_score'           => $config->maxScore,
+            'bands' => $config->bands,
+            'appetite_threshold' => $appetiteThreshold,
+            'max_score' => $config->maxScore,
         ];
 
         return new InherentRiskResult(
@@ -97,19 +96,19 @@ class RiskScoringService
         $result = $this->score($input, $formulaVersion, $appetiteThreshold);
 
         RiskInherentScore::create([
-            'risk_register_id'    => $input->riskRegisterId,
-            'tv_score'            => $result->tvScore,
-            'inherent_score'      => $result->inherentScore,
-            'severity_band'       => $result->severityBand,
-            'appetite_status'     => $result->appetiteStatus,
-            'heatmap_likelihood'  => $result->heatmapCoordinates['likelihood'],
-            'heatmap_impact'      => $result->heatmapCoordinates['impact'],
-            'risk_ranking'        => $result->riskRanking,
-            'formula_version'     => $result->formulaVersion,
-            'input_snapshot'      => $result->inputSnapshot,
-            'explanation'         => $result->explanation,
-            'source'              => $source,
-            'recorded_by'         => $recordedBy,
+            'risk_register_id' => $input->riskRegisterId,
+            'tv_score' => $result->tvScore,
+            'inherent_score' => $result->inherentScore,
+            'severity_band' => $result->severityBand,
+            'appetite_status' => $result->appetiteStatus,
+            'heatmap_likelihood' => $result->heatmapCoordinates['likelihood'],
+            'heatmap_impact' => $result->heatmapCoordinates['impact'],
+            'risk_ranking' => $result->riskRanking,
+            'formula_version' => $result->formulaVersion,
+            'input_snapshot' => $result->inputSnapshot,
+            'explanation' => $result->explanation,
+            'source' => $source,
+            'recorded_by' => $recordedBy,
         ]);
 
         return $result;
@@ -144,7 +143,7 @@ class RiskScoringService
     }
 
     /* ------------------------------------------------------------------ */
-    /* Dashboard feeds (read-only)                                         */
+    /* Dashboard feeds (read-only) */
     /* ------------------------------------------------------------------ */
 
     /**
@@ -192,38 +191,38 @@ class RiskScoringService
 
             return [
                 'risk_register_id' => $risk->id,
-                'serial_no'        => $risk->serial_no,
-                'asset'            => $risk->asset_process_service,
-                'category'         => $risk->category,
-                'department'       => $risk->department,
-                'before_controls'  => [
+                'serial_no' => $risk->serial_no,
+                'asset' => $risk->asset_process_service,
+                'category' => $risk->category,
+                'department' => $risk->department,
+                'before_controls' => [
                     'score' => $inherent,
-                    'band'  => $config->bandFor($inherent),
+                    'band' => $config->bandFor($inherent),
                 ],
-                'after_controls'   => [
+                'after_controls' => [
                     'score' => $residual,
-                    'band'  => $config->bandFor($residual),
+                    'band' => $config->bandFor($residual),
                 ],
-                'delta'            => max(0, $inherent - $residual),
-                'appetite_status'  => $record->appetite_status ?? null,
-                'formula_version'  => $record->formula_version ?? $config->version,
+                'delta' => max(0, $inherent - $residual),
+                'appetite_status' => $record->appetite_status ?? null,
+                'formula_version' => $record->formula_version ?? $config->version,
             ];
         })->values();
 
         return [
             'project_id' => $projectId,
-            'totals'     => [
+            'totals' => [
                 'avg_before' => $rows->isNotEmpty() ? round($rows->avg('before_controls.score'), $config->precision) : 0,
-                'avg_after'  => $rows->isNotEmpty() ? round($rows->avg('after_controls.score'), $config->precision) : 0,
-                'avg_delta'  => $rows->isNotEmpty() ? round($rows->avg('delta'), $config->precision) : 0,
+                'avg_after' => $rows->isNotEmpty() ? round($rows->avg('after_controls.score'), $config->precision) : 0,
+                'avg_delta' => $rows->isNotEmpty() ? round($rows->avg('delta'), $config->precision) : 0,
                 'risk_count' => $rows->count(),
             ],
-            'rows'       => $rows,
+            'rows' => $rows,
         ];
     }
 
     /* ------------------------------------------------------------------ */
-    /* Primitive, deterministic formula operations                         */
+    /* Primitive, deterministic formula operations */
     /* ------------------------------------------------------------------ */
 
     /** TV (Threat + Vulnerability) sub-score. */
@@ -265,7 +264,7 @@ class RiskScoringService
     {
         return [
             'likelihood' => $input->likelihood,
-            'impact'     => $input->maxImpact(),
+            'impact' => $input->maxImpact(),
         ];
     }
 

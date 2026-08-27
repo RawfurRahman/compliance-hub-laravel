@@ -10,6 +10,11 @@
       </div>
     </div>
 
+    <!-- Online/Offline status indicator -->
+    <div v-if="!onlineStatus" class="fixed bottom-4 left-4 right-4 bg-red-500 text-white text-sm py-2 rounded px-4 shadow-lg z-50">
+      📡 Offline mode - Dashboard running from cached data. Some features may be limited.
+    </div>
+
     <TopFilterBar :model-value="filters" :fields="filterFields" @update:model-value="$emit('update:filters', $event)" @reset="$emit('reset-filters')" />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -25,7 +30,6 @@
       <slot name="control-effectiveness" />
       <slot name="audit-findings" />
       <slot name="third-party-risk" />
-      <slot name="policy-governance" />
     </div>
 
     <div>
@@ -40,10 +44,6 @@
     <div>
       <slot name="compliance-scorecard" />
     </div>
-
-    <div>
-      <slot name="ownership" />
-    </div>
   </div>
 </template>
 
@@ -52,7 +52,7 @@ import { ref, computed, watch } from 'vue'
 import TopFilterBar from './TopFilterBar.vue'
 
 const props = defineProps({
-  title: { type: String, default: 'Governance Module' },
+  title: { type: String, default: 'Enterprise Dashboard' },
   filters: { type: Object, default: () => ({}) },
   refreshing: { type: Boolean, default: false },
 })
@@ -63,6 +63,9 @@ const now = ref(new Date())
 const lastUpdated = computed(() => now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
 
 watch(() => props.refreshing, (val) => { if (!val) now.value = new Date() })
+
+const isOnline = navigator.onLine
+const onlineStatus = computed(() => isOnline)
 
 const filterFields = [
   { key: 'businessUnit', label: 'Business Unit', options: ['IT Department', 'HR', 'Finance', 'Operations', 'Legal'] },

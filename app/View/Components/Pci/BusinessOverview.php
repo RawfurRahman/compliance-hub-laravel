@@ -8,6 +8,7 @@ use Illuminate\View\Component;
 class BusinessOverview extends Component
 {
     public $details;
+
     public $paymentChannels;
 
     public function __construct(?ProjectPciDssDetail $details)

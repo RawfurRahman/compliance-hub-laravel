@@ -2,20 +2,20 @@
 
 namespace Tests\Feature;
 
-use App\Models\Project;
+use App\Models\Department;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
-use App\Models\Department;
-use App\Models\Asset;
-use App\Models\User;
 use App\Models\IsoGapAssessment;
 use App\Models\PciGapAssessment;
+use App\Models\Project;
+use App\Models\User;
 use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Modules\RiskManagement\Services\WorkbookImportService;
 use App\Modules\RiskManagement\Services\MigrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 
 class RiskRegisterTest extends TestCase
@@ -23,8 +23,11 @@ class RiskRegisterTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $project;
+
     protected $department;
+
     protected $control;
 
     protected function setUp(): void
@@ -112,9 +115,54 @@ class RiskRegisterTest extends TestCase
             'asset_process_service' => 'Unauthorized Access to Server Rooms',
             'risk_rating_avtvlh' => 128, // vulnerability (4) * TV (4 + 4 = 8) * Likelihood (4) = 128
             'computed_risk_rating' => 128,
-            'residual_rating' => 4, // 2 * 2 = 4
-            'computed_residual_rating' => 4,
+            'residual_rating' => 4, // manual workbook input 2 * 2 = 4
+            // computed_residual_rating now comes from ResidualRiskService
+            // (authoritative): no controls mapped yet, so residual = inherent.
+            'computed_residual_rating' => 128,
         ]);
+    }
+
+    public function test_user_can_store_risk_entry_without_serial_number()
+    {
+        $this->actingAs($this->user);
+
+        $response = $this->post(route('risk-register.store', $this->project), [
+            'risk_name' => 'Manual risk from modal',
+            'risk_owner' => 'Jane Doe',
+            'department' => $this->department->name,
+            'date_identified' => '2026-06-22',
+            'likelihood' => 4,
+            'impact' => 4,
+            'residual_likelihood' => 2,
+            'residual_impact' => 2,
+            'threat_score' => 4,
+            'confidentiality' => 4,
+            'integrity' => 4,
+            'availability' => 4,
+            'existing_controls' => 'Locks and badges',
+            'treatment_decision' => 'Accepted',
+            'status' => 'Not Started',
+            'follow_up_notes' => 'No serial number supplied',
+        ]);
+
+        if ($response->status() !== 302) {
+            $response->dump();
+        }
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('risk_registers', [
+            'project_id' => $this->project->id,
+            'asset_process_service' => 'Manual risk from modal',
+            'likelihood_lh' => 4,
+            'residual_tv' => 2,
+            'residual_lh' => 2,
+        ]);
+
+        $saved = RiskRegister::where('project_id', $this->project->id)->first();
+        $this->assertNotNull($saved);
+        $this->assertNotNull($saved->serial_no);
+        $this->assertNotEmpty($saved->serial_no);
     }
 
     public function test_user_can_update_risk_entry()
@@ -177,8 +225,10 @@ class RiskRegisterTest extends TestCase
             'asset_process_service' => 'Updated SQL Injection Vulnerability',
             'risk_rating_avtvlh' => 128, // Vuln (4) * TV (4 + 4 = 8) * Likelihood (4) = 128
             'computed_risk_rating' => 128,
-            'residual_rating' => 2,
-            'computed_residual_rating' => 2,
+            'residual_rating' => 2, // manual workbook input 1 * 2 = 2
+            // computed_residual_rating comes from ResidualRiskService
+            // (authoritative): no controls mapped yet, so residual = inherent.
+            'computed_residual_rating' => 128,
         ]);
     }
 
@@ -347,8 +397,8 @@ class RiskRegisterTest extends TestCase
         $this->actingAs($this->user);
 
         // Create Excel dynamically in memory
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        
+        $spreadsheet = new Spreadsheet;
+
         // Setup Control Mapping sheet
         $sheetMapping = $spreadsheet->createSheet();
         $sheetMapping->setTitle('Control Mapping');
@@ -360,7 +410,7 @@ class RiskRegisterTest extends TestCase
         $sheetMapping->setCellValue('H2', 'BB ICT Description');
         $sheetMapping->setCellValue('J2', 'SWIFT CSCF Ref');
         $sheetMapping->setCellValue('K2', 'SWIFT CSCF Description');
-        
+
         $sheetMapping->setCellValue('A3', '1.2.1');
         $sheetMapping->setCellValue('B3', 'Firewall description');
         $sheetMapping->setCellValue('D3', 'A.5.1'); // This will match our setup control
@@ -373,40 +423,40 @@ class RiskRegisterTest extends TestCase
         // Setup Risk Register sheet
         $sheetRegister = $spreadsheet->getActiveSheet();
         $sheetRegister->setTitle('Risk Register');
-        
+
         $headers = [
             '#', 'Asset / Process / Service', 'Risk Owner', 'Date', 'Asset Value (BDT)',
             'Threat', 'Threat Level (T)', 'Vulnerability', 'Impact C', 'Impact I', 'Impact A',
             'Existing Control', 'Vuln. Level (AV)', 'TV (T+AV)', 'Likelihood (LH)',
             'Risk Rating (AV*TV*LH)', 'Measurement', 'Proposed Control', 'Communication',
-            'Impl. From', 'Impl. To', 'Impl. Status', 'Residual TV', 'Residual LH', 'Residual Rating', 'Follow-up Note'
+            'Impl. From', 'Impl. To', 'Impl. Status', 'Residual TV', 'Residual LH', 'Residual Rating', 'Follow-up Note',
         ];
-        
+
         foreach ($headers as $colIdx => $header) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
-            $sheetRegister->setCellValue($colLetter . '3', $header);
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheetRegister->setCellValue($colLetter.'3', $header);
         }
-        
+
         $rowData = [
             '1', 'Customer Data Management', 'IT Security Department', '2026-06-22', '100000',
             'Data Breach', '4', 'Unencrypted storage', '4', '4', '4',
             'Firewall', '4', '8', '4',
             '128', 'Not Accepted', 'Encrypt database', 'Email communication',
-            '2026-06-22', '2026-07-22', 'In Progress', '2', '2', '4', 'Ensure keys are rotated'
+            '2026-06-22', '2026-07-22', 'In Progress', '2', '2', '4', 'Ensure keys are rotated',
         ];
-        
+
         foreach ($rowData as $colIdx => $val) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
-            $sheetRegister->setCellValue($colLetter . '4', $val);
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheetRegister->setCellValue($colLetter.'4', $val);
         }
-        
-        $tempPath = tempnam(sys_get_temp_dir(), 'risk_import_test') . '.xlsx';
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'risk_import_test').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
         $writer->save($tempPath);
 
         // Upload dry-run test
         $uploadedFile = new UploadedFile($tempPath, 'risk_register.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
-        
+
         $response = $this->postJson(route('risk-register.import.dry-run', $this->project), [
             'file' => $uploadedFile,
         ]);
@@ -447,8 +497,11 @@ class RiskRegisterTest extends TestCase
             'risk_owner' => 'IT Security Department',
             'risk_rating_avtvlh' => 128,
             'computed_risk_rating' => 128,
-            'residual_rating' => 4,
-            'computed_residual_rating' => 4,
+            'residual_rating' => 4, // raw workbook value preserved
+            // computed_residual_rating comes from ResidualRiskService
+            // (authoritative). The imported row has no effective control
+            // mappings, so residual = inherent.
+            'computed_residual_rating' => 128,
         ]);
 
         // Verify that SWIFT control CSCF-1.2 got created automatically
@@ -488,7 +541,7 @@ class RiskRegisterTest extends TestCase
             'comments' => 'Password policy active',
         ]);
 
-        $service = new MigrationService();
+        $service = new MigrationService;
         $result = $service->migrateLegacyAssessments($this->project->id);
 
         $this->assertTrue($result['success']);
@@ -498,7 +551,7 @@ class RiskRegisterTest extends TestCase
         // Verify database contains the ISO risk
         $this->assertDatabaseHas('risk_registers', [
             'project_id' => $this->project->id,
-            'legacy_source_id' => 'iso_gap_assessment_' . $iso->id,
+            'legacy_source_id' => 'iso_gap_assessment_'.$iso->id,
             'asset_process_service' => 'ISO Weakness Observation',
             'risk_owner' => 'IT Security Department',
             'risk_rating_avtvlh' => 96, // 4 * (4+4) * 3 = 96
@@ -508,7 +561,7 @@ class RiskRegisterTest extends TestCase
         // Verify database contains the PCI risk
         $this->assertDatabaseHas('risk_registers', [
             'project_id' => $this->project->id,
-            'legacy_source_id' => 'pci_gap_assessment_' . $pci->id,
+            'legacy_source_id' => 'pci_gap_assessment_'.$pci->id,
             'asset_process_service' => 'Enforce strong passwords',
             'risk_owner' => 'PCI Compliance Team',
             'implementation_status' => 'Completed',
@@ -523,28 +576,28 @@ class RiskRegisterTest extends TestCase
     public function test_artisan_commands()
     {
         // 1. Create a dummy spreadsheet
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheetRegister = $spreadsheet->getActiveSheet();
         $sheetRegister->setTitle('Risk Register');
         $headers = ['#', 'Asset / Process / Service', 'Risk Owner', 'Date', 'Asset Value (BDT)', 'Threat', 'Threat Level (T)', 'Vulnerability', 'Vuln. Level (AV)', 'Likelihood (LH)', 'Residual TV', 'Residual LH'];
         foreach ($headers as $colIdx => $header) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
-            $sheetRegister->setCellValue($colLetter . '3', $header);
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheetRegister->setCellValue($colLetter.'3', $header);
         }
         $rowData = ['2', 'Server Backup Process', 'IT Ops', '2026-06-22', '50000', 'Loss of Server Data', '3', 'No offsite copy', '3', '2', '2', '1'];
         foreach ($rowData as $colIdx => $val) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
-            $sheetRegister->setCellValue($colLetter . '4', $val);
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheetRegister->setCellValue($colLetter.'4', $val);
         }
-        $tempPath = tempnam(sys_get_temp_dir(), 'command_import_test') . '.xlsx';
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempPath = tempnam(sys_get_temp_dir(), 'command_import_test').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
         $writer->save($tempPath);
 
         // Run artisan import command
         $this->artisan('rmm:import', [
             'file' => $tempPath,
             '--project-id' => $this->project->id,
-            '--preset' => 'workbook_predefined'
+            '--preset' => 'workbook_predefined',
         ])->assertExitCode(0);
 
         $this->assertDatabaseHas('risk_registers', [
@@ -571,7 +624,7 @@ class RiskRegisterTest extends TestCase
 
         // Run artisan migrate legacy command
         $this->artisan('rmm:migrate-legacy', [
-            '--project-id' => $this->project->id
+            '--project-id' => $this->project->id,
         ])->assertExitCode(0);
 
         $this->assertDatabaseHas('risk_registers', [

@@ -12,15 +12,15 @@ class RiskSnapshotService
         $risks = RiskRegister::where('project_id', $projectId)->get();
 
         $total = $risks->count();
-        $critical = $risks->filter(fn($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 128)->count();
-        $high = $risks->filter(fn($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 84
+        $critical = $risks->filter(fn ($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 128)->count();
+        $high = $risks->filter(fn ($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 84
             && ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) < 128)->count();
-        $medium = $risks->filter(fn($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 54
+        $medium = $risks->filter(fn ($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) >= 54
             && ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) < 84)->count();
-        $low = $risks->filter(fn($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) < 54)->count();
+        $low = $risks->filter(fn ($r) => ($r->computed_risk_rating ?? $r->risk_rating_avtvlh) < 54)->count();
 
-        $avgInherent = $total > 0 ? $risks->avg(fn($r) => $r->computed_risk_rating ?? $r->risk_rating_avtvlh) : 0;
-        $avgResidual = $total > 0 ? $risks->avg(fn($r) => $r->computed_residual_rating ?? $r->residual_rating) : 0;
+        $avgInherent = $total > 0 ? $risks->avg(fn ($r) => $r->computed_risk_rating ?? $r->risk_rating_avtvlh) : 0;
+        $avgResidual = $total > 0 ? $risks->avg(fn ($r) => $r->computed_residual_rating ?? $r->residual_rating) : 0;
         $totalExposure = $risks->sum('exposure_value');
 
         $snapshotData = [
@@ -32,18 +32,18 @@ class RiskSnapshotService
         ];
 
         return RiskSnapshot::create([
-            'project_id'        => $projectId,
-            'snapshot_type'     => $type,
-            'snapshot_data'     => $snapshotData,
-            'total_risks'       => $total,
-            'critical_count'    => $critical,
-            'high_count'        => $high,
-            'medium_count'      => $medium,
-            'low_count'         => $low,
-            'total_exposure'    => round($totalExposure, 2),
+            'project_id' => $projectId,
+            'snapshot_type' => $type,
+            'snapshot_data' => $snapshotData,
+            'total_risks' => $total,
+            'critical_count' => $critical,
+            'high_count' => $high,
+            'medium_count' => $medium,
+            'low_count' => $low,
+            'total_exposure' => round($totalExposure, 2),
             'avg_inherent_score' => round($avgInherent, 2),
             'avg_residual_score' => round($avgResidual, 2),
-            'snapped_at'        => now(),
+            'snapped_at' => now(),
         ]);
     }
 

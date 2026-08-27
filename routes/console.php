@@ -9,6 +9,9 @@ Artisan::command('inspire', function () {
 
 use Illuminate\Support\Facades\Schedule;
 
+// Resume AI analysis for evidence stuck in pending/processing (lost n8n callbacks)
+Schedule::command('evidence:resume-stuck-analysis')->everyTenMinutes();
+
 Schedule::command('compliance:send-scheduled-reports')->daily();
 
 Schedule::command('maturity:snapshot')->weekly();
@@ -16,7 +19,7 @@ Schedule::command('maturity:snapshot')->weekly();
 // Dashboard aggregation snapshots
 Schedule::command('dashboard:refresh-snapshots --date-scope=daily')->dailyAt('01:00');
 
-// Executive metrics (financial exposure + remediation MTTR/SLA)
+// Executive metrics (financial exposure + remediation)
 Schedule::command('risks:snapshot-executive-metrics')->dailyAt('02:00');
 
 // Scheduled tasks for new metrics tables

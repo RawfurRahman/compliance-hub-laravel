@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
-use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskExposure;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Services\RiskExposureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,7 +15,9 @@ class RiskExposureTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -59,7 +61,7 @@ class RiskExposureTest extends TestCase
     public function test_can_calculate_exposure(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskExposureService();
+        $service = new RiskExposureService;
 
         $exposure = $service->calculateAndStore($this->risk);
 

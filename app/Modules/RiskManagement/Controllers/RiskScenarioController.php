@@ -2,10 +2,10 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskScenario;
 use App\Modules\RiskManagement\Services\RiskScenarioService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class RiskScenarioController extends Controller
@@ -57,6 +57,7 @@ class RiskScenarioController extends Controller
     public function destroy(RiskRegister $risk, RiskScenario $scenario)
     {
         $this->service->delete($scenario);
+
         return response()->json(['success' => true]);
     }
 }

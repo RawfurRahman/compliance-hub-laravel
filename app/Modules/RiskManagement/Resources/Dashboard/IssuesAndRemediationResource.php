@@ -15,10 +15,10 @@ class IssuesAndRemediationResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'open'        => (int) $this['open'],
+            'open' => (int) $this['open'],
             'in_progress' => (int) $this['in_progress'],
-            'closed'      => (int) $this['closed'],
-            'overdue'     => (int) $this['overdue'],
+            'closed' => (int) $this['closed'],
+            'overdue' => (int) $this['overdue'],
         ];
     }
 }

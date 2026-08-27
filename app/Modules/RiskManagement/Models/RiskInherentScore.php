@@ -39,14 +39,14 @@ class RiskInherentScore extends Model
     ];
 
     protected $casts = [
-        'tv_score'           => 'integer',
-        'inherent_score'     => 'integer',
+        'tv_score' => 'integer',
+        'inherent_score' => 'integer',
         'heatmap_likelihood' => 'integer',
-        'heatmap_impact'     => 'integer',
-        'risk_ranking'       => 'decimal:2',
-        'input_snapshot'     => 'array',
-        'explanation'        => 'array',
-        'created_at'         => 'datetime',
+        'heatmap_impact' => 'integer',
+        'risk_ranking' => 'decimal:2',
+        'input_snapshot' => 'array',
+        'explanation' => 'array',
+        'created_at' => 'datetime',
     ];
 
     public function risk()

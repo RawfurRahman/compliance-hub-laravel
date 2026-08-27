@@ -10,6 +10,7 @@ use App\Models\ProjectAssessment;
 use App\Models\User;
 use App\Modules\Compliance\Models\ComplianceSnapshot;
 use App\Modules\Compliance\Services\ComplianceSnapshotService;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,6 +19,7 @@ class ComplianceSnapshotTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -29,7 +31,7 @@ class ComplianceSnapshotTest extends TestCase
         $framework = Framework::create(['name' => 'PCI DSS', 'slug' => 'pci_dss', 'is_active' => true]);
         $fc = FrameworkControl::create(['framework_id' => $framework->id, 'control_id' => 'PCI-1.1', 'domain' => 'General', 'requirement_description' => 'Test requirement']);
 
-        $risk = \App\Modules\RiskManagement\Models\RiskRegister::create([
+        $risk = RiskRegister::create([
             'project_id' => $this->project->id,
             'serial_no' => 'SN-001',
             'asset_process_service' => 'Snapshot Risk',

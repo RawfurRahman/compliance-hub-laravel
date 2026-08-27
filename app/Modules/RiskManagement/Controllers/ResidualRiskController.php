@@ -46,7 +46,7 @@ class ResidualRiskController extends Controller
     {
         $data = $request->validate([
             'residual_score' => 'required|integer|min:0',
-            'reason'         => 'required|string|max:500',
+            'reason' => 'required|string|max:500',
         ]);
 
         $result = $this->service->overrideScore(

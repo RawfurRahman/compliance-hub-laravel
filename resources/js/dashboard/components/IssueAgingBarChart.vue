@@ -20,11 +20,11 @@ const props = defineProps({
   error: String,
 })
 
-const labels = Object.keys(props.buckets)
-const values = Object.values(props.buckets)
-const total = computed(() => values.reduce((s, v) => s + (v || 0), 0))
+const labels = computed(() => Object.keys(props.buckets))
+const values = computed(() => Object.values(props.buckets))
+const total = computed(() => values.value.reduce((s, v) => s + (v || 0), 0))
 
-const chartSeries = computed(() => [{ name: 'Issues', data: values }])
+const chartSeries = computed(() => [{ name: 'Issues', data: values.value }])
 
 const chartOptions = computed(() => ({
   chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit' },
@@ -34,7 +34,7 @@ const chartOptions = computed(() => ({
   },
   dataLabels: { enabled: true, formatter: v => v || '', style: { fontSize: '11px', colors: ['#374151'] } },
   xaxis: {
-    categories: labels,
+    categories: labels.value,
     labels: { style: { fontSize: '11px', colors: '#6b7280' } },
   },
   yaxis: {

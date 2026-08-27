@@ -6,7 +6,6 @@ use App\Models\Project;
 use App\Models\User;
 use App\Modules\RiskManagement\Models\ThirdPartyVendor;
 use App\Modules\RiskManagement\Models\VendorAssessment;
-use App\Modules\RiskManagement\Models\VendorQuestionnaireResponse;
 use App\Modules\RiskManagement\Services\ThirdPartyVendorService;
 use App\Modules\RiskManagement\Services\VendorAssessmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,6 +16,7 @@ class VendorRiskTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -34,7 +34,7 @@ class VendorRiskTest extends TestCase
     public function test_can_create_vendor(): void
     {
         $this->actingAs($this->user);
-        $service = new ThirdPartyVendorService();
+        $service = new ThirdPartyVendorService;
 
         $vendor = $service->create([
             'project_id' => $this->project->id,
@@ -73,7 +73,7 @@ class VendorRiskTest extends TestCase
             'contact_email' => 'l@v.example',
         ]);
 
-        $service = new ThirdPartyVendorService();
+        $service = new ThirdPartyVendorService;
 
         $this->assertEquals('tier_1', $service->assessRiskTier($criticalVendor));
         $this->assertEquals('tier_2', $service->assessRiskTier($highVendor));
@@ -90,7 +90,7 @@ class VendorRiskTest extends TestCase
         ]);
 
         $this->actingAs($this->user);
-        $service = new VendorAssessmentService();
+        $service = new VendorAssessmentService;
 
         $assessment = $service->create([
             'vendor_id' => $vendor->id,
@@ -121,7 +121,7 @@ class VendorRiskTest extends TestCase
         ]);
 
         $this->actingAs($this->user);
-        $service = new VendorAssessmentService();
+        $service = new VendorAssessmentService;
 
         $response = $service->submitResponse($assessment, [
             'question_key' => 'encryption_at_rest',
@@ -155,7 +155,7 @@ class VendorRiskTest extends TestCase
         ]);
 
         $this->actingAs($this->user);
-        $service = new VendorAssessmentService();
+        $service = new VendorAssessmentService;
 
         $service->submitResponse($assessment, [
             'question_key' => 'sla',
@@ -174,7 +174,7 @@ class VendorRiskTest extends TestCase
 
     public function test_score_to_rating(): void
     {
-        $assessment = new VendorAssessment();
+        $assessment = new VendorAssessment;
         $assessment->overall_score = 95;
 
         $this->assertEquals('Low', $assessment->scoreToRating(95));

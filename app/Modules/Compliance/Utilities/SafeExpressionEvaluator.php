@@ -3,6 +3,7 @@
 namespace App\Modules\Compliance\Utilities;
 
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class SafeExpressionEvaluator
 {
@@ -10,9 +11,9 @@ class SafeExpressionEvaluator
      * Evaluate a safe expression using the Symfony ExpressionLanguage component
      * if available, otherwise fallback to a safe parser.
      *
-     * @param string $expression
-     * @param array $context Variables available in the expression context
+     * @param  array  $context  Variables available in the expression context
      * @return bool The result of the expression evaluation
+     *
      * @throws \InvalidArgumentException If the expression contains unsafe operations
      */
     public function evaluate(string $expression, array $context = []): bool
@@ -29,11 +30,11 @@ class SafeExpressionEvaluator
         try {
             return $evaluator->evaluate($expression, $context);
         } catch (\Exception $e) {
-            Log::warning('Error evaluating expression: ' . $e->getMessage(), [
+            Log::warning('Error evaluating expression: '.$e->getMessage(), [
                 'expression' => $expression,
                 'context' => $context,
             ]);
-            throw new \InvalidArgumentException('Invalid expression: ' . $e->getMessage());
+            throw new \InvalidArgumentException('Invalid expression: '.$e->getMessage());
         }
     }
 
@@ -44,11 +45,11 @@ class SafeExpressionEvaluator
     {
         // Try to use Symfony ExpressionLanguage if available
         if (class_exists('\Symfony\Component\ExpressionLanguage\ExpressionLanguage')) {
-            return new SymfonyExpressionEvaluator();
+            return new SymfonyExpressionEvaluator;
         }
 
         // Use our pure parser without eval()
-        return new PureSafeExpressionParser();
+        return new PureSafeExpressionParser;
     }
 }
 
@@ -64,7 +65,7 @@ class SymfonyExpressionEvaluator implements SafeExpressionInterface
      */
     public function evaluate(string $expression, array $context): bool
     {
-        $language = new \Symfony\Component\ExpressionLanguage\ExpressionLanguage();
+        $language = new ExpressionLanguage;
 
         // Define safe functions for the expression language
         $safeFunctions = [
@@ -84,7 +85,7 @@ class SymfonyExpressionEvaluator implements SafeExpressionInterface
         $variableScopes = ['rule'];
 
         foreach (array_keys($context) as $var) {
-            if (!in_array($var, $variableScopes) && !preg_match('/^[a-z_][a-z0-9_]*$/i', $var)) {
+            if (! in_array($var, $variableScopes) && ! preg_match('/^[a-z_][a-z0-9_]*$/i', $var)) {
                 throw new \InvalidArgumentException("Unsafe variable name: {$var}");
             }
         }
@@ -92,7 +93,7 @@ class SymfonyExpressionEvaluator implements SafeExpressionInterface
         $context = array_merge($context, $safeFunctions);
 
         // Ensure the expression only uses a limited set of operators
-        if (!$this->isSafeExpression($expression)) {
+        if (! $this->isSafeExpression($expression)) {
             throw new \InvalidArgumentException('Expression uses unsafe operators');
         }
 
@@ -131,7 +132,7 @@ class SymfonyExpressionEvaluator implements SafeExpressionInterface
         $expression = $this->normalizeOperators($expression);
 
         // Allow only safe characters in the expression
-        if (!preg_match('/^[\w\s()\[\].:!=<>*&|+\-~\\s;\'\"]+$/i', $expression)) {
+        if (! preg_match('/^[\w\s()\[\].:!=<>*&|+\-~\\s;\'\"]+$/i', $expression)) {
             return false;
         }
 
@@ -154,10 +155,11 @@ class SymfonyExpressionEvaluator implements SafeExpressionInterface
                     'not' => '!',
                     default => $op
                 };
-                return $matches[1] . $replacement . $matches[3];
+
+                return $matches[1].$replacement.$matches[3];
             },
             str_replace(['==', '!=', '<>', '<=', '>=', '<', '>'], [
-                '==', '==', '==', '==', '<', '>'
+                '==', '==', '==', '==', '<', '>',
             ], $expression)
         );
     }
@@ -175,6 +177,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
     public function evaluate(string $expression, array $context): bool
     {
         $tokens = $this->tokenize($expression);
+
         return $this->evaluateExpression($tokens, $context);
     }
 
@@ -194,6 +197,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
 
             if (ctype_space($char)) {
                 $pos++;
+
                 continue;
             }
 
@@ -233,7 +237,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
                     $pos++;
                 }
                 if ($pos < $length) {
-                    $tokens[] = '"' . substr($expression, $start, $pos - $start) . '"';
+                    $tokens[] = '"'.substr($expression, $start, $pos - $start).'"';
                     $pos++;
                 } else {
                     throw new \InvalidArgumentException('Unterminated string literal');
@@ -280,7 +284,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
     {
         $result = $this->parseLogicalOr($tokens, $context);
 
-        if (!empty($tokens)) {
+        if (! empty($tokens)) {
             throw new \InvalidArgumentException('Unexpected tokens at end of expression');
         }
 
@@ -291,7 +295,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
     {
         $result = $this->parseLogicalAnd($tokens, $context);
 
-        while (!empty($tokens) && $tokens[0] === '||') {
+        while (! empty($tokens) && $tokens[0] === '||') {
             array_shift($tokens);
             $right = $this->parseLogicalAnd($tokens, $context);
             $result = $result || $right;
@@ -304,7 +308,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
     {
         $result = $this->parseComparison($tokens, $context);
 
-        while (!empty($tokens) && $tokens[0] === '&&') {
+        while (! empty($tokens) && $tokens[0] === '&&') {
             array_shift($tokens);
             $right = $this->parseComparison($tokens, $context);
             $result = $result && $right;
@@ -317,7 +321,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
     {
         $left = $this->parseTerm($tokens, $context);
 
-        if (!empty($tokens) && in_array($tokens[0], ['==', '!=', '<', '>', '<=', '>='])) {
+        if (! empty($tokens) && in_array($tokens[0], ['==', '!=', '<', '>', '<=', '>='])) {
             $operator = array_shift($tokens);
             $right = $this->parseTerm($tokens, $context);
 
@@ -341,6 +345,7 @@ class PureSafeExpressionParser implements SafeExpressionInterface
                 throw new \InvalidArgumentException('Expected closing parenthesis');
             }
             array_shift($tokens);
+
             return $result;
         }
 

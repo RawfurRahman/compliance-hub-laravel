@@ -16,14 +16,29 @@ class FinancialExposureMetric extends Model
     protected $table = 'financial_exposure_metrics';
 
     protected $fillable = [
-        'risk_register_id',
-        'ale_value',
-        'created_at',
+        'project_id',
+        'scope',
+        'category',
+        'risk_count',
+        'single_loss_expectancy',
+        'annualized_loss_expectancy',
+        'expected_remediation_cost',
+        'business_interruption_impact',
+        'portfolio_exposure',
+        'currency',
+        'breakdown',
+        'calculated_at',
     ];
 
     protected $casts = [
-        'ale_value' => 'decimal:2',
-        'created_at' => 'datetime',
+        'risk_count' => 'integer',
+        'single_loss_expectancy' => 'decimal:2',
+        'annualized_loss_expectancy' => 'decimal:2',
+        'expected_remediation_cost' => 'decimal:2',
+        'business_interruption_impact' => 'decimal:2',
+        'portfolio_exposure' => 'decimal:2',
+        'breakdown' => 'array',
+        'calculated_at' => 'datetime',
     ];
 
     public function project()

@@ -2,29 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Meeting;
+use App\Models\Project;
+use App\Models\ProjectPciDssDetail;
+use App\Modules\RiskManagement\Resources\Dashboard\ComplianceScorecardResource;
+use App\Modules\RiskManagement\Resources\Dashboard\ControlEffectivenessResource;
+use App\Modules\RiskManagement\Resources\Dashboard\HeatmapCellResource;
+use App\Modules\RiskManagement\Resources\Dashboard\InherentVsResidualResource;
+use App\Modules\RiskManagement\Resources\Dashboard\IssuesAndRemediationResource;
+use App\Modules\RiskManagement\Resources\Dashboard\KpiResource;
+use App\Modules\RiskManagement\Resources\Dashboard\MaturityScoreResource;
+use App\Modules\RiskManagement\Resources\Dashboard\RiskAcceptanceSplitResource;
+use App\Modules\RiskManagement\Resources\Dashboard\RiskByDepartmentResource;
+use App\Modules\RiskManagement\Resources\Dashboard\TopRiskResource;
+use App\Modules\RiskManagement\Services\DashboardMetricsService;
+use App\Services\EvidenceScanService;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Models\ProjectPciDssDetail;
-use App\Models\PciSscProduct;
-use App\Models\PciTpsp;
-use App\Models\PciNetwork;
-use App\Models\PciLocation;
-use App\Models\PciComponent;
-use App\Models\PciExternalScan;
-use App\Models\PciInternalScan;
-use App\Models\PciDssFinding;
-use App\Models\Project;
-use App\Modules\RiskManagement\Services\DashboardMetricsService;
-use App\Modules\RiskManagement\Resources\Dashboard\KpiResource;
-use App\Modules\RiskManagement\Resources\Dashboard\HeatmapCellResource;
-use App\Modules\RiskManagement\Resources\Dashboard\TopRiskResource;
-use App\Modules\RiskManagement\Resources\Dashboard\InherentVsResidualResource;
-use App\Modules\RiskManagement\Resources\Dashboard\ControlEffectivenessResource;
-use App\Modules\RiskManagement\Resources\Dashboard\ComplianceScorecardResource;
-use App\Modules\RiskManagement\Resources\Dashboard\MaturityScoreResource;
-use App\Modules\RiskManagement\Resources\Dashboard\RiskByDepartmentResource;
-use App\Modules\RiskManagement\Resources\Dashboard\IssuesAndRemediationResource;
-use App\Modules\RiskManagement\Resources\Dashboard\RiskAcceptanceSplitResource;
 
 class DashboardController extends Controller
 {
@@ -33,8 +28,7 @@ class DashboardController extends Controller
 
     public function __construct(
         private DashboardMetricsService $metrics
-    ) {
-    }
+    ) {}
 
     /* --------------------------------------------------------------- *
      *  Analytics API (consumed by dashboard charts)
@@ -45,7 +39,7 @@ class DashboardController extends Controller
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
         $data = Cache::remember(
-            'dashboard.kpis.' . md5(json_encode($filters)),
+            'dashboard.kpis.'.md5(json_encode($filters)),
             self::HEAVY_CACHE_TTL,
             fn () => $this->metrics->setFilters($filters)->kpis()
         );
@@ -58,7 +52,7 @@ class DashboardController extends Controller
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
         $data = Cache::remember(
-            'dashboard.heatmap.' . md5(json_encode($filters)),
+            'dashboard.heatmap.'.md5(json_encode($filters)),
             self::HEAVY_CACHE_TTL,
             fn () => $this->metrics->setFilters($filters)->heatmap()
         );
@@ -70,15 +64,15 @@ class DashboardController extends Controller
     public function topRisks(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return TopRiskResource::collection($this->metrics->setFilters($filters)->topRisks());
     }
-
-
 
     /** Effective / partial / ineffective control split. */
     public function controlEffectiveness(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return new ControlEffectivenessResource($this->metrics->setFilters($filters)->controlEffectiveness());
     }
 
@@ -86,6 +80,7 @@ class DashboardController extends Controller
     public function complianceScorecard(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return ComplianceScorecardResource::collection($this->metrics->setFilters($filters)->complianceScorecard());
     }
 
@@ -93,6 +88,7 @@ class DashboardController extends Controller
     public function maturityScore(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return new MaturityScoreResource($this->metrics->setFilters($filters)->maturityScore());
     }
 
@@ -100,6 +96,7 @@ class DashboardController extends Controller
     public function riskByDepartment(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return RiskByDepartmentResource::collection($this->metrics->setFilters($filters)->riskByDepartment());
     }
 
@@ -107,6 +104,7 @@ class DashboardController extends Controller
     public function issuesAndRemediation(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return new IssuesAndRemediationResource($this->metrics->setFilters($filters)->issuesAndRemediation());
     }
 
@@ -114,14 +112,40 @@ class DashboardController extends Controller
     public function riskAcceptanceSplit(Request $request)
     {
         $filters = $request->only(['department', 'framework', 'risk_type', 'owner']);
+
         return new RiskAcceptanceSplitResource($this->metrics->setFilters($filters)->riskAcceptanceSplit());
     }
+
+    /**
+     * ClamAV scan statistics + recent quarantined files.
+     * Consumed by the dashboard "ClamAV Scan Health" panel.
+     */
+    public function scanStats(Request $request)
+    {
+        $service = app(EvidenceScanService::class);
+
+        return response()->json([
+            'stats' => $service->stats(),
+            'recent_quarantined' => $service->recentQuarantined(10)
+                ->map(fn ($log) => [
+                    'id' => $log->id,
+                    'evidence_file_id' => $log->evidence_file_id,
+                    'original_filename' => $log->original_filename,
+                    'virus_name' => $log->virus_name,
+                    'quarantined' => $log->quarantined,
+                    'quarantine_path' => $log->quarantine_path,
+                    'scanned_at' => $log->scanned_at?->toDateTimeString(),
+                    'project_name' => optional($log->project)->name,
+                ]),
+        ]);
+    }
+
     /**
      * Show the application dashboard.
      *
-     * @return \Illuminate\Contracts\Support\Renderable
+     * @return Renderable
      */
-     public function index()
+    public function index()
     {
         $stats = [
             'active_projects' => 0,
@@ -129,32 +153,33 @@ class DashboardController extends Controller
             'pending_requirements' => 0,
             'meetings' => 0,
         ];
-        
+
         $user = auth()->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             logger('Index Dashboard - Not authenticated - redirecting to login');
+
             return redirect()->route('login');
         }
 
         if ($user->hasRole('Admin')) {
             $stats['active_projects'] = Project::count();
             // Admins can see all upcoming meetings
-            $stats['meetings'] = \App\Models\Meeting::where('scheduled_at', '>=', now())->count();
+            $stats['meetings'] = Meeting::where('scheduled_at', '>=', now())->count();
         } else {
             $projects = $user->assignedProjects()->get();
             $stats['active_projects'] = $projects->count();
-            
+
             // Calculate upcoming meetings where the user is either the creator or an attendee
-            $stats['meetings'] = \App\Models\Meeting::where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                      ->orWhereHas('attendees', function ($uq) use ($user) {
-                          $uq->where('users.id', $user->id);
-                      });
-                })
+            $stats['meetings'] = Meeting::where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('attendees', function ($uq) use ($user) {
+                        $uq->where('users.id', $user->id);
+                    });
+            })
                 ->where('scheduled_at', '>=', now())
                 ->count();
-                
+
             $completed = 0;
             $pending = 0;
             foreach ($projects as $project) {
@@ -185,29 +210,16 @@ class DashboardController extends Controller
     public function inherentVsResidualByDept(Request $request)
     {
         $user = auth()->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             return redirect()->route('login');
         }
-        
+
         // Check if user has proper permissions or roles for accessing this data
         $result = $this->metrics->setFilters($request->only(['department', 'framework', 'risk_type', 'owner']))->inherentVsResidualByDept();
-        
+
         return InherentVsResidualResource::collection($result);
     }
-
-    /**
-     * Show the Governance Module.
-     */
-     public function governance()
-     {
-         $user = auth()->user();
-         
-         if (!$user) {
-             return redirect()->route('login');
-         }
-         return view('dashboard.governance');
-     }
 
     public function submitComplianceData(Request $request, Project $project)
     {

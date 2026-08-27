@@ -17,12 +17,14 @@ class RiskScenarioService
     public function create(array $data): RiskScenario
     {
         $data['created_by'] = Auth::id();
+
         return RiskScenario::create($data);
     }
 
     public function update(RiskScenario $scenario, array $data): RiskScenario
     {
         $scenario->update($data);
+
         return $scenario->fresh();
     }
 

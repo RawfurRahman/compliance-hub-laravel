@@ -2,6 +2,7 @@
 
 namespace App\Modules\Compliance\Jobs;
 
+use App\Modules\Compliance\Models\ControlMonitor;
 use App\Modules\Compliance\Services\ControlMonitorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class RunMonitoringChecksJob implements ShouldQueue
     public function handle(ControlMonitorService $service): void
     {
         if ($this->monitorId) {
-            $monitor = \App\Modules\Compliance\Models\ControlMonitor::find($this->monitorId);
+            $monitor = ControlMonitor::find($this->monitorId);
             if ($monitor) {
                 $service->runCheck($monitor);
             }

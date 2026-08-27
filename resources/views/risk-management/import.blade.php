@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 /* ======================================================
    IMPORTER WIZARD — Premium Aesthetics
    ====================================================== */
@@ -411,7 +411,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function workbookImporter() {
     return {
         step: 1,

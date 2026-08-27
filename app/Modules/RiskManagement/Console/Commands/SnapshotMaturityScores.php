@@ -48,7 +48,7 @@ class SnapshotMaturityScores extends Command
             ));
         }
 
-        $this->info('Maturity score snapshots saved for ' . now()->toDateString() . '.');
+        $this->info('Maturity score snapshots saved for '.now()->toDateString().'.');
 
         if ($projectId = $this->option('project-id')) {
             $this->riskSnapshotService->takeSnapshot((int) $projectId, 'full');

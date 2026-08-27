@@ -10,6 +10,7 @@ class PciDssFinding extends Model
     use HasFactory;
 
     protected $table = 'pci_dss_findings';
+
     protected $guarded = [];
 
     protected $casts = [

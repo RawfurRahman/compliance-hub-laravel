@@ -2,12 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\AssessmentFinding;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
-use App\Models\AssessmentFinding;
-use App\Models\Evidence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,8 +16,11 @@ class AssessmentControllerTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $project;
+
     protected $framework;
+
     protected $control;
 
     protected function setUp(): void
@@ -171,10 +173,10 @@ class AssessmentControllerTest extends TestCase
         $this->assertEquals('A.5.2', $finding->serial_no);
 
         // 2. Update Finding
-        $response = $this->putJson(route('assessments.findings.update', $finding), [
+        $response = $this->putJson('/assessments/findings/'.$finding->id, [
             'status' => 'Closed',
             'is_compliant' => true,
-            'observation_title' => 'Updated Observation title',
+            'observation' => 'Updated Observation title',
         ]);
 
         $response->assertStatus(200);
@@ -186,7 +188,7 @@ class AssessmentControllerTest extends TestCase
         ]);
 
         // 3. Destroy Finding
-        $response = $this->deleteJson(route('assessments.findings.destroy', $finding));
+        $response = $this->deleteJson('/assessments/findings/'.$finding->id);
         $response->assertStatus(200);
         $this->assertDatabaseMissing('assessment_findings', [
             'id' => $finding->id,

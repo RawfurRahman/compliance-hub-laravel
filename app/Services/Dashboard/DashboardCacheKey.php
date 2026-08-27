@@ -38,12 +38,12 @@ final class DashboardCacheKey
         $tag = self::snapshotTag($domain, $businessUnit, $framework);
         cache()->forget($tag);
 
-        $pattern = 'dashboard:' . $domain . ':*';
+        $pattern = 'dashboard:'.$domain.':*';
         if ($businessUnit) {
-            $pattern = 'dashboard:' . $domain . ':' . $businessUnit . ':*';
+            $pattern = 'dashboard:'.$domain.':'.$businessUnit.':*';
         }
         if ($framework) {
-            $pattern = 'dashboard:' . $domain . ':' . ($businessUnit ?? '*') . ':' . $framework . ':*';
+            $pattern = 'dashboard:'.$domain.':'.($businessUnit ?? '*').':'.$framework.':*';
         }
 
         logger()->info('Dashboard cache invalidated', [

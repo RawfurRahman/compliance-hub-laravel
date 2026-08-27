@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
         .glass-premium {
             background: rgba(255, 255, 255, 0.85);
@@ -361,7 +361,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function meetingsDashboard() {
     return {
         showScheduleModal: false,

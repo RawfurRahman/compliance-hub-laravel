@@ -47,11 +47,6 @@ class AuditFinding extends Model
         return $this->belongsTo(FrameworkControl::class, 'framework_control_id');
     }
 
-    public function slaTrackers()
-    {
-        return $this->morphMany(SLATracker::class, 'trackable');
-    }
-
     public function scopeOpen($query)
     {
         return $query->whereIn('status', ['open', 'in_review']);
@@ -61,6 +56,6 @@ class AuditFinding extends Model
     {
         return $this->due_date
             && $this->due_date->isPast()
-            && !in_array($this->status, ['resolved', 'closed']);
+            && ! in_array($this->status, ['resolved', 'closed']);
     }
 }

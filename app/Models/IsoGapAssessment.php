@@ -11,6 +11,7 @@ class IsoGapAssessment extends Model
 
     protected $fillable = [
         'project_id',
+        'evidence_file_id',
         'serial_no',
         'clause_reference',
         'observation_title',
@@ -25,5 +26,10 @@ class IsoGapAssessment extends Model
     public function project()
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function evidenceFile()
+    {
+        return $this->belongsTo(EvidenceFile::class);
     }
 }

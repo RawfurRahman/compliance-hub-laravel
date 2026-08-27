@@ -22,7 +22,7 @@ class RefreshDashboardSnapshots extends Command
     public function handle(): int
     {
         $domains = $this->option('domain')
-            ? [ $this->option('domain') ]
+            ? [$this->option('domain')]
             : DashboardDomains::ALL;
 
         $businessUnit = $this->option('business-unit');

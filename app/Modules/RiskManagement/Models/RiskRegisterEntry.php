@@ -44,7 +44,6 @@ class RiskRegisterEntry extends Model
         'risk_owner',
         'department',
         'date_identified',
-        'asset_id',
         'risk_category',
         'risk_description',
         'inherent_likelihood',
@@ -66,16 +65,16 @@ class RiskRegisterEntry extends Model
     ];
 
     protected $casts = [
-        'date_identified'      => 'date',
+        'date_identified' => 'date',
         'treatment_start_date' => 'date',
-        'treatment_end_date'   => 'date',
-        'inherent_likelihood'  => 'integer',
-        'inherent_impact'      => 'integer',
-        'inherent_score'       => 'integer',
-        'residual_likelihood'  => 'integer',
-        'residual_impact'      => 'integer',
-        'residual_score'       => 'integer',
-        'treatment_progress'   => 'integer',
+        'treatment_end_date' => 'date',
+        'inherent_likelihood' => 'integer',
+        'inherent_impact' => 'integer',
+        'inherent_score' => 'integer',
+        'residual_likelihood' => 'integer',
+        'residual_impact' => 'integer',
+        'residual_score' => 'integer',
+        'treatment_progress' => 'integer',
     ];
 
     /* ------------------------------------------------------------------ *
@@ -123,9 +122,16 @@ class RiskRegisterEntry extends Model
      */
     public static function scoreToLevel(int $score): string
     {
-        if ($score >= 20) return 'Critical';
-        if ($score >= 12) return 'High';
-        if ($score >= 6)  return 'Medium';
+        if ($score >= 20) {
+            return 'Critical';
+        }
+        if ($score >= 12) {
+            return 'High';
+        }
+        if ($score >= 6) {
+            return 'Medium';
+        }
+
         return 'Low';
     }
 
@@ -134,10 +140,10 @@ class RiskRegisterEntry extends Model
     {
         return match ($level) {
             'Critical' => 'risk-cell-critical',
-            'High'     => 'risk-cell-high',
-            'Medium'   => 'risk-cell-medium',
-            'Low'      => 'risk-cell-low',
-            default    => 'risk-cell-low',
+            'High' => 'risk-cell-high',
+            'Medium' => 'risk-cell-medium',
+            'Low' => 'risk-cell-low',
+            default => 'risk-cell-low',
         };
     }
 

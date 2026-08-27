@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch, computed } from 'vue'
 
 const filters = reactive({
   businessUnit: null,
@@ -53,5 +53,12 @@ export function useDashboardFilters() {
     if (onFilterChange) onFilterChange(filters)
   }, { deep: true })
 
-  return { filters, set, reset, toQueryParams, fromQueryParams, onChange }
+  // Track online/offline status reactively
+  const onlineStatus = computed(() => navigator.onLine)
+
+  function setOnline(value) {
+    // Can be overridden if needed
+  }
+
+  return { filters, set, reset, toQueryParams, fromQueryParams, onChange, onlineStatus }
 }

@@ -5,11 +5,12 @@ namespace App\Modules\RiskManagement\Services;
 use App\Models\AssessmentFinding;
 use App\Models\EvidenceFile;
 use App\Models\Framework;
-use App\Models\MaturityScoreSnapshot;
 use App\Models\FrameworkControl;
+use App\Models\MaturityScoreSnapshot;
 use App\Models\ProjectAssessment;
 use App\Modules\RiskManagement\Models\RiskControlMapping;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Calculates GRC maturity scores across four dimensions and persists daily
@@ -57,7 +58,7 @@ class MaturityScoreService
             ->count();
 
         $percentage = ($qualified / $total) * 100;
-        $score      = $this->percentageToScore($percentage);
+        $score = $this->percentageToScore($percentage);
 
         return $this->result(
             $score,
@@ -138,7 +139,7 @@ class MaturityScoreService
         }
 
         $average = array_sum($blendedScores) / $sampleSize;
-        $score   = $this->percentageToScore($average);
+        $score = $this->percentageToScore($average);
 
         return $this->result(
             $score,
@@ -180,7 +181,7 @@ class MaturityScoreService
             ->count('framework_control_id');
 
         $percentage = ($mappedControlIds / $totalControls) * 100;
-        $score      = $this->percentageToScore($percentage);
+        $score = $this->percentageToScore($percentage);
 
         return $this->result(
             $score,
@@ -226,7 +227,7 @@ class MaturityScoreService
             ->count();
 
         $percentage = ($remediated / $overdueTotal) * 100;
-        $score      = $this->percentageToScore($percentage);
+        $score = $this->percentageToScore($percentage);
 
         return $this->result(
             $score,
@@ -264,7 +265,7 @@ class MaturityScoreService
             ->count();
 
         $percentage = ($audited / $total) * 100;
-        $score      = $this->percentageToScore($percentage);
+        $score = $this->percentageToScore($percentage);
 
         return $this->result(
             $score,
@@ -293,7 +294,7 @@ class MaturityScoreService
             $this->calculateEvidenceAuditMaturity(),
         ];
 
-        $scores  = array_map(fn ($dimension) => $dimension['score_value'], $dimensions);
+        $scores = array_map(fn ($dimension) => $dimension['score_value'], $dimensions);
         $average = round(array_sum($scores) / count($scores), 1);
 
         return $this->result(
@@ -306,18 +307,18 @@ class MaturityScoreService
     /**
      * Persist all four dimension scores plus the composite for today.
      *
-     * @return \Illuminate\Support\Collection<int, MaturityScoreSnapshot>
+     * @return Collection<int, MaturityScoreSnapshot>
      */
     public function snapshotToday()
     {
         $today = Carbon::today();
 
         $payloads = [
-            MaturityScoreSnapshot::DIMENSION_RISK_MANAGEMENT      => $this->calculateRiskManagementMaturity(),
-            MaturityScoreSnapshot::DIMENSION_CONTROL_DESIGN       => $this->calculateControlDesignMaturity(),
-            MaturityScoreSnapshot::DIMENSION_CONTROL_COVERAGE     => $this->calculateControlCoverageMaturity(),
+            MaturityScoreSnapshot::DIMENSION_RISK_MANAGEMENT => $this->calculateRiskManagementMaturity(),
+            MaturityScoreSnapshot::DIMENSION_CONTROL_DESIGN => $this->calculateControlDesignMaturity(),
+            MaturityScoreSnapshot::DIMENSION_CONTROL_COVERAGE => $this->calculateControlCoverageMaturity(),
             MaturityScoreSnapshot::DIMENSION_REMEDIATION_VELOCITY => $this->calculateRemediationVelocity(),
-            MaturityScoreSnapshot::DIMENSION_EVIDENCE_AUDIT       => $this->calculateEvidenceAuditMaturity(),
+            MaturityScoreSnapshot::DIMENSION_EVIDENCE_AUDIT => $this->calculateEvidenceAuditMaturity(),
         ];
 
         // Composite is derived from the five dimensions above.
@@ -327,11 +328,11 @@ class MaturityScoreService
             return MaturityScoreSnapshot::updateOrCreate(
                 [
                     'snapshot_date' => $today,
-                    'dimension'     => $dimension,
+                    'dimension' => $dimension,
                 ],
                 [
-                    'score_value'       => $payload['score_value'],
-                    'sample_size'       => $payload['sample_size'],
+                    'score_value' => $payload['score_value'],
+                    'sample_size' => $payload['sample_size'],
                     'calculation_notes' => $payload['calculation_notes'],
                 ]
             );
@@ -348,7 +349,7 @@ class MaturityScoreService
             $percentage <= 50 => 2.0,
             $percentage <= 70 => 3.0,
             $percentage <= 90 => 4.0,
-            default           => 5.0,
+            default => 5.0,
         };
     }
 
@@ -358,8 +359,8 @@ class MaturityScoreService
     protected function result(float $score, int $sampleSize, string $notes): array
     {
         return [
-            'score_value'       => $score,
-            'sample_size'       => $sampleSize,
+            'score_value' => $score,
+            'sample_size' => $sampleSize,
             'calculation_notes' => $notes,
         ];
     }

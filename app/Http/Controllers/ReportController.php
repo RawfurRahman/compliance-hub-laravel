@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Services\ReportGenerationService;
-use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
@@ -18,6 +17,7 @@ class ReportController extends Controller
     public function generate(Project $project)
     {
         $this->authorize('view', $project);
+
         return $this->reportService->generate($project, 'pci_dss_roc');
     }
 }

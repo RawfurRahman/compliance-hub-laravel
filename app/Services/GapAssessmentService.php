@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Models\AssessmentFinding;
+use App\Models\EvidenceFile;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
-use Illuminate\Support\Str;
 
 class GapAssessmentService
 {
@@ -15,13 +15,13 @@ class GapAssessmentService
     {
         return ProjectAssessment::firstOrCreate(
             [
-                'project_id'   => $project->id,
+                'project_id' => $project->id,
                 'framework_id' => $framework->id,
-                'type'         => 'Gap',
+                'type' => 'Gap',
             ],
             [
                 'start_date' => now(),
-                'end_date'   => now()->addMonths(3),
+                'end_date' => now()->addMonths(3),
             ]
         );
     }
@@ -35,12 +35,20 @@ class GapAssessmentService
             AssessmentFinding::firstOrCreate(
                 [
                     'project_assessment_id' => $assessment->id,
-                    'framework_control_id'  => $control->id,
+                    'framework_control_id' => $control->id,
                 ],
                 [
-                    'status'       => 'Open',
-                    'risk_rating'  => 'None',
+                    'status' => 'Open',
+                    'risk_rating' => 'None',
                     'is_compliant' => false,
+                    'gap_category' => '',
+                    'non_compliant_details' => '',
+                    'compliant_description' => '',
+                    'remediation_plan' => '',
+                    'evidence_provided' => '',
+                    'test_results' => '',
+                    'meets_standard' => false,
+                    'auditor_notes' => '',
                 ]
             );
             $created++;
@@ -56,18 +64,19 @@ class GapAssessmentService
         $findings = $assessment->findings;
 
         $unknown = collect();
-        $groups  = [];
+        $groups = [];
 
         foreach ($findings as $finding) {
             $control = $finding->frameworkControl;
-            $domain  = $control ? $control->domain : 'Unknown';
+            $domain = $control ? $control->domain : 'Unknown';
 
             if ($domain === 'Unknown' || empty($domain)) {
                 $unknown->push($finding);
+
                 continue;
             }
 
-            if (!isset($groups[$domain])) {
+            if (! isset($groups[$domain])) {
                 $groups[$domain] = collect();
             }
             $groups[$domain]->push($finding);
@@ -96,16 +105,16 @@ class GapAssessmentService
         $groups = [];
 
         foreach ($groupedFindings as $domain => $findings) {
-            $total       = $findings->count();
-            $compliant   = $findings->where('is_compliant', true)->count();
-            $high        = $findings->where('risk_rating', 'High')->count();
-            $medium      = $findings->where('risk_rating', 'Medium')->count();
-            $low         = $findings->where('risk_rating', 'Low')->count();
-            $inProgress  = $findings->where('status', 'In Progress')->count();
-            $closed      = $findings->where('status', 'Closed')->count();
-            $open        = $findings->where('status', 'Open')->count();
+            $total = $findings->count();
+            $compliant = $findings->where('is_compliant', true)->count();
+            $high = $findings->where('risk_rating', 'High')->count();
+            $medium = $findings->where('risk_rating', 'Medium')->count();
+            $low = $findings->where('risk_rating', 'Low')->count();
+            $inProgress = $findings->where('status', 'In Progress')->count();
+            $closed = $findings->where('status', 'Closed')->count();
+            $open = $findings->where('status', 'Open')->count();
             $compliancePct = $total > 0 ? round(($compliant / $total) * 100, 1) : 0;
-            $progressScore  = $total > 0 ? round((($inProgress * 0.5) + ($closed * 1.0)) / $total * 100, 1) : 0;
+            $progressScore = $total > 0 ? round((($inProgress * 0.5) + ($closed * 1.0)) / $total * 100, 1) : 0;
 
             $groups[$domain] = compact(
                 'total', 'compliant', 'high', 'medium', 'low',
@@ -118,7 +127,7 @@ class GapAssessmentService
 
     public function updateFinding(AssessmentFinding $finding, array $data): AssessmentFinding
     {
-        $allowed = ['status', 'risk_rating', 'is_compliant', 'observation', 'gap_description', 'impact', 'recommendation', 'due_date', 'is_applicable'];
+        $allowed = ['status', 'risk_rating', 'is_compliant', 'observation', 'gap_description', 'impact', 'recommendation', 'due_date', 'is_applicable', 'gap_category', 'non_compliant_details', 'compliant_description', 'remediation_plan', 'evidence_provided', 'test_results', 'meets_standard', 'auditor_notes'];
 
         $filtered = array_intersect_key($data, array_flip($allowed));
 
@@ -145,23 +154,24 @@ class GapAssessmentService
                 $count++;
             }
         }
+
         return $count;
     }
 
     public function getEvidenceFiles(AssessmentFinding $finding): array
     {
         $legacy = $finding->evidence->map(fn ($e) => [
-            'id'   => $e->id,
+            'id' => $e->id,
             'name' => $e->name,
             'type' => 'legacy',
         ]);
 
-        $evidenceFiles = \App\Models\EvidenceFile::where('project_id', $finding->projectAssessment->project_id)
+        $evidenceFiles = EvidenceFile::where('project_id', $finding->projectAssessment->project_id)
             ->where('framework_control_id', $finding->framework_control_id)
             ->where('hitl_status', 'accepted')
             ->get()
             ->map(fn ($ef) => [
-                'id'   => $ef->id,
+                'id' => $ef->id,
                 'name' => $ef->original_filename,
                 'type' => 'evidence_file',
             ]);

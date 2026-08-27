@@ -21,13 +21,21 @@ class ControlMappingTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected Framework $pciFramework;
+
     protected Framework $isoFramework;
+
     protected FrameworkControl $pciControl;
+
     protected FrameworkControl $isoControl;
+
     protected FrameworkControl $bbictControl;
+
     protected FrameworkControl $swiftControl;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -300,7 +308,7 @@ class ControlMappingTest extends TestCase
     /** @test */
     public function it_exports_control_mapping_with_workbook_columns()
     {
-        $export = new ControlMappingSheetExport();
+        $export = new ControlMappingSheetExport;
 
         // Verify headings match workbook spec
         $headings = $export->headings();

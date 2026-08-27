@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\ProjectAssessment;
 use App\Models\AssessmentFinding;
 use App\Models\FrameworkControl;
+use App\Models\ProjectAssessment;
 
 class AssessmentService
 {
@@ -18,11 +18,11 @@ class AssessmentService
         foreach ($controls as $control) {
             AssessmentFinding::firstOrCreate([
                 'project_assessment_id' => $assessment->id,
-                'framework_control_id'  => $control->id,
+                'framework_control_id' => $control->id,
             ], [
-                'status'         => 'Open',
-                'risk_rating'    => 'None',
-                'is_compliant'   => false,
+                'status' => 'Open',
+                'risk_rating' => 'None',
+                'is_compliant' => false,
             ]);
         }
     }
@@ -34,7 +34,7 @@ class AssessmentService
     {
         $assessment = $finding->projectAssessment;
 
-        if (!$assessment || $assessment->type !== 'Gap' || ($assessment->framework && $assessment->framework->slug === 'risk_register')) {
+        if (! $assessment || $assessment->type !== 'Gap' || ($assessment->framework && $assessment->framework->slug === 'risk_register')) {
             return;
         }
 
@@ -48,12 +48,12 @@ class AssessmentService
         if ($isCompleted) {
             // Find or create the Final assessment
             $finalAssessment = ProjectAssessment::firstOrCreate([
-                'project_id'   => $assessment->project_id,
+                'project_id' => $assessment->project_id,
                 'framework_id' => $assessment->framework_id,
-                'type'         => 'Final',
+                'type' => 'Final',
             ], [
-                'start_date'     => $assessment->start_date ?? now(),
-                'end_date'       => $assessment->end_date ?? now(),
+                'start_date' => $assessment->start_date ?? now(),
+                'end_date' => $assessment->end_date ?? now(),
                 'cloned_from_id' => $assessment->id,
             ]);
 
@@ -63,16 +63,16 @@ class AssessmentService
                 $clonedFinding = AssessmentFinding::updateOrCreate(
                     [
                         'project_assessment_id' => $finalAssessment->id,
-                        'framework_control_id'  => $f->framework_control_id,
+                        'framework_control_id' => $f->framework_control_id,
                     ],
                     [
-                        'status'                 => $f->status,
-                        'risk_rating'            => $f->risk_rating,
-                        'observation'            => $f->observation,
-                        'gap_description'        => $f->gap_description,
-                        'impact'                 => $f->impact,
-                        'recommendation'         => $f->recommendation,
-                        'is_compliant'           => $f->is_compliant,
+                        'status' => $f->status,
+                        'risk_rating' => $f->risk_rating,
+                        'observation' => $f->observation,
+                        'gap_description' => $f->gap_description,
+                        'impact' => $f->impact,
+                        'recommendation' => $f->recommendation,
+                        'is_compliant' => $f->is_compliant,
                         'cloned_from_finding_id' => $f->id,
                     ]
                 );

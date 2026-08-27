@@ -4,13 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\PciTpsp;
-use App\Models\PciNetwork;
-use App\Models\PciLocation;
-use App\Models\PciComponent;
-use App\Models\PciExternalScan;
-use App\Models\PciInternalScan;
-use App\Models\PciDssFinding;
 
 class ProjectPciDssDetail extends Model
 {

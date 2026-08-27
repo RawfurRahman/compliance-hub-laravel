@@ -19,7 +19,9 @@ class RemediationPlanTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected AssessmentFinding $finding;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -121,7 +123,7 @@ class RemediationPlanTest extends TestCase
             'target_date' => now()->subDays(1),
         ]);
 
-        $overdue = $service->getOverdueBySLA();
+        $overdue = $service->getOverduePlans();
         $this->assertGreaterThanOrEqual(1, $overdue->count());
     }
 

@@ -2,8 +2,8 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         .font-outfit { font-family: 'Outfit', sans-serif; }
         .evidence-table th {
             font-size: 11px;
@@ -61,7 +61,7 @@
 @endpush
 
 @section('content')
-<div class="p-2 font-outfit max-w-full" x-data="evidenceHub()" x-init="initData()">
+<div class="p-2 font-outfit max-w-full" x-data="evidenceHub" x-init="initData()">
     
     {{-- Top Section --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
@@ -158,9 +158,6 @@
                             <th class="w-[12%]">Evidence ID / File Name</th>
                             <th class="w-[9%]">Upload Date & Time</th>
                             <th class="w-[9%]">Security Status (ClamAV)</th>
-                            @canany(['is-admin', 'is-auditor'])
-                            <th class="w-[8%]">Trust Center</th>
-                            @endcanany
                             <th class="w-[10%]">AI Preliminary Assessment</th>
                             <th class="w-[27%]">AI Evidence Observation</th>
                             <th class="w-[12%]">Auditor Determination</th>
@@ -208,38 +205,48 @@
                             {{-- Col 4: ClamAV --}}
                             <td class="px-4 py-4">
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                     :class="file.scan_status === 'clean' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : (file.scan_status === 'infected' ? 'bg-rose-50 text-rose-700 border-rose-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60')">
+                                     :class="file.scan_status === 'clean' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : (file.scan_status === 'infected' ? 'bg-rose-50 text-rose-700 border-rose-200/60' : (file.scan_status === 'failed' ? 'bg-slate-100 text-slate-600 border-slate-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60'))">
                                     <span class="w-1.5 h-1.5 rounded-full" 
-                                          :class="file.scan_status === 'clean' ? 'bg-emerald-500' : (file.scan_status === 'infected' ? 'bg-rose-500' : 'bg-amber-400')"></span>
-                                    <span x-text="file.scan_status === 'clean' ? 'Clean' : (file.scan_status === 'infected' ? 'Infected' : 'Scanning')"></span>
+                                          :class="file.scan_status === 'clean' ? 'bg-emerald-500' : (file.scan_status === 'infected' ? 'bg-rose-500' : (file.scan_status === 'failed' ? 'bg-slate-400' : 'bg-amber-400'))"></span>
+                                    <span x-text="file.scan_status === 'clean' ? 'Clean' : (file.scan_status === 'infected' ? 'Infected' : (file.scan_status === 'failed' ? 'Scan Failed' : 'Scanning'))"></span>
                                 </div>
                             </td>
                             
-                            @canany(['is-admin', 'is-auditor'])
-                            {{-- Col 5: Trust Center --}}
-                            <td class="px-4 py-4">
-                                <template x-if="hasTrustCenter">
-                                    <label class="flex items-center gap-2 cursor-pointer" @click.stop>
-                                        <input type="checkbox"
-                                               :checked="file.is_publicly_listed"
-                                               @change="toggleTrustCenterListing(file)"
-                                               class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
-                                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider"
-                                              x-text="file.is_publicly_listed ? 'Listed' : 'Hidden'"></span>
-                                    </label>
-                                </template>
-                                <template x-if="!hasTrustCenter">
-                                    <span class="text-[10px] text-slate-400">No TC</span>
-                                </template>
-                            </td>
-                            @endcanany
-
                             {{-- Col 6: AI Assessment --}}
                             <td class="px-4 py-4">
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                     :class="getAssessmentBadgeClass(file)">
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="getAssessmentDot(file)"></span>
-                                    <span x-text="getAssessmentLabel(file)"></span>
+                                <div class="flex flex-col gap-2 items-start">
+                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+                                         :class="getAssessmentBadgeClass(file)">
+                                        <span class="w-1.5 h-1.5 rounded-full" :class="getAssessmentDot(file)"></span>
+                                        <span x-text="getAssessmentLabel(file)"></span>
+                                    </div>
+
+                                    <template x-if="file.ai_gaps && file.ai_gaps.length > 0">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+                                            <i class="fas fa-triangle-exclamation text-[9px]"></i> Gap Identified
+                                        </span>
+                                    </template>
+
+                                    <template x-if="file.ai_analysis_status === 'awaiting_review'">
+                                        <button @click="approveAiAnalysis(file)" class="text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:text-emerald-900 flex items-center gap-1">
+                                            <i class="fas fa-stamp"></i> Approve AI Analysis
+                                        </button>
+                                    </template>
+                                    <template x-if="file.ai_analysis_status === 'approved'">
+                                        <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                                            <i class="fas fa-check"></i> AI Analysis Approved
+                                        </span>
+                                    </template>
+
+                                    <button @click="openAnalysisHistory(file)" class="text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                                        <i class="fas fa-clock-rotate-left"></i> History
+                                    </button>
+
+                                    <template x-if="file.scan_status !== 'infected'">
+                                        <button @click="openGapReviewModal(file)" class="w-full mt-1 py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition flex items-center justify-center gap-1 shadow-sm">
+                                            <i class="fas fa-clipboard-check"></i> Review & Push to Gap Assessment
+                                        </button>
+                                    </template>
                                 </div>
                             </td>
                             
@@ -275,13 +282,13 @@
                                             </template>
 
                                             {{-- Gap Warning Badge --}}
-                                            <template x-if="file.gaps && file.gaps.length > 0">
+                                            <template x-if="file.ai_gaps && file.ai_gaps.length > 0">
                                                 <div class="p-3.5 rounded-xl bg-amber-100/40 border border-amber-200/60 transition shadow-sm">
                                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-amber-800 uppercase tracking-widest mb-1.5">
                                                         <i class="fas fa-exclamation-triangle text-[10px]"></i> AI Gaps Detected
                                                     </span>
                                                     <div class="flex flex-wrap gap-1">
-                                                        <template x-for="g in file.gaps" :key="g.gap">
+                                                        <template x-for="g in file.ai_gaps" :key="g.gap">
                                                             <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity + ': ' + g.gap"></span>
                                                         </template>
                                                     </div>
@@ -337,9 +344,34 @@
                                             </div>
                                         </template>
                                     </div>
+
+                                    {{-- Gap Assessment / Observation / Risk workflow --}}
+                                    <template x-if="file.assessment_finding">
+                                        <div class="flex flex-col gap-1.5 w-full pt-2 border-t border-slate-100">
+                                            <template x-if="!file.assessment_finding.observations || file.assessment_finding.observations.length === 0">
+                                                <button @click="openObservationModal(file)" class="w-full py-1.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 hover:bg-indigo-100 transition flex items-center justify-center gap-1">
+                                                    <i class="fas fa-flag"></i> Raise Observation
+                                                </button>
+                                            </template>
+                                            <template x-for="obs in (file.assessment_finding.observations || [])" :key="obs.id">
+                                                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/60">
+                                                    <p class="text-[10px] font-bold text-slate-700 truncate" x-text="obs.title"></p>
+                                                    <p class="text-[9px] text-slate-400 uppercase font-bold mb-1" x-text="obs.status"></p>
+                                                    <template x-if="!obs.risk_register_id">
+                                                        <button @click="createRiskFromObservation(obs, file)" class="w-full py-1 px-2 text-[9px] font-black uppercase tracking-wider rounded-lg bg-rose-50 text-rose-700 border border-rose-200/60 hover:bg-rose-100 transition flex items-center justify-center gap-1">
+                                                            <i class="fas fa-triangle-exclamation"></i> Create Risk
+                                                        </button>
+                                                    </template>
+                                                    <template x-if="obs.risk_register_id">
+                                                        <span class="text-[9px] font-bold text-emerald-600 flex items-center gap-1"><i class="fas fa-check"></i> Risk Created</span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                             </td>
-                            
+
                             {{-- Col 8: Feedback Notes --}}
                             <td class="px-4 py-4">
                                 <div class="space-y-2">
@@ -414,12 +446,12 @@
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">AI Actionable Recommendations</h4>
                     <p class="text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed italic" x-text="selectedFile.ai_recommendations || 'None'"></p>
                 </div>
-                <div x-show="selectedFile.gaps && selectedFile.gaps.length > 0">
+                <div x-show="selectedFile.ai_gaps && selectedFile.ai_gaps.length > 0">
                     <h4 class="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">
                         <i class="fas fa-exclamation-triangle mr-1"></i> AI Gap Analysis
                     </h4>
                     <div class="space-y-1.5">
-                        <template x-for="g in selectedFile.gaps" :key="g.gap">
+                        <template x-for="g in selectedFile.ai_gaps" :key="g.gap">
                             <div class="flex items-start gap-2 p-2 rounded-lg bg-amber-50 border border-amber-100">
                                 <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity"></span>
                                 <span class="text-xs text-slate-700" x-text="g.gap"></span>
@@ -484,17 +516,214 @@
             </div>
         </div>
     </div>
+
+    {{-- Analysis History Modal --}}
+    <div x-show="historyModalOpen"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="historyModalOpen = false"
+         x-cloak
+         x-transition>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100" @click.away="historyModalOpen = false">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between" style="background: #f8fafc;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-clock-rotate-left text-slate-500"></i>
+                    <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">Analysis History</h3>
+                </div>
+                <button @click="historyModalOpen = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+                <template x-if="analysisVersions.length === 0">
+                    <p class="text-sm text-slate-400 italic">No analysis versions recorded yet.</p>
+                </template>
+                <template x-for="(v, idx) in analysisVersions" :key="v.id">
+                    <div class="p-3.5 rounded-xl border border-slate-200/60 bg-slate-50/50">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-black uppercase tracking-wider text-slate-700" x-text="'Version ' + (idx + 1) + ' — ' + (v.trigger_type === 'ai_analysis' ? 'AI Analysis' : 'Re-analysis Requested')"></span>
+                            <span class="text-[10px] text-slate-400 font-semibold" x-text="formatDate(v.created_at)"></span>
+                        </div>
+                        <template x-if="v.triggered_by">
+                            <p class="text-[10px] text-slate-500 mb-1">Requested by <span class="font-bold" x-text="v.triggered_by.username"></span></p>
+                        </template>
+                        <template x-if="v.reason">
+                            <p class="text-xs text-slate-600 italic mb-1" x-text="'“' + v.reason + '”'"></p>
+                        </template>
+                        <p class="text-xs text-slate-700 leading-relaxed" x-text="v.ai_observations || 'No observations recorded.'"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    {{-- Raise Observation Modal --}}
+    <div x-show="observationModalOpen"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="observationModalOpen = false"
+         x-cloak
+         x-transition>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100" @click.away="observationModalOpen = false">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between" style="background: #f8fafc;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-flag text-indigo-500"></i>
+                    <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">Raise Observation</h3>
+                </div>
+                <button @click="observationModalOpen = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Title <span class="text-rose-500">*</span></label>
+                    <input type="text" x-model="observationTitle"
+                           class="w-full text-sm p-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition border-slate-200"
+                           placeholder="Short summary of the observation">
+                    <p x-show="observationTitleError" class="text-xs text-rose-500 mt-1 font-semibold">A title is required.</p>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Target Date</label>
+                    <input type="date" x-model="observationTargetDate"
+                           class="w-full text-sm p-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition border-slate-200">
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+                <button @click="observationModalOpen = false" class="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+                    Cancel
+                </button>
+                <button @click="submitObservation()" class="px-5 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-xl transition shadow-sm bg-indigo-600 hover:bg-indigo-700">
+                    <i class="fas fa-flag mr-1"></i> Raise Observation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Gap Assessment Review Modal --}}
+    <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-start justify-center p-4 pt-12 overflow-y-auto"
+         x-show="gapReviewModalOpen"
+         x-transition.opacity
+         @keydown.escape.window="gapReviewModalOpen = false"
+         x-cloak>
+        <div class="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl border border-slate-100 my-8" @click.away="gapReviewModalOpen = false">
+            {{-- Modal Header --}}
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black uppercase tracking-wider shrink-0"
+                          x-text="gapReviewFile ? (getRequirementNum(gapReviewFile) || 'N/A') : 'N/A'"></span>
+                    <h3 class="text-lg font-bold text-slate-800 truncate" x-text="'Gap Assessment Review — ' + (gapReviewFile ? gapReviewFile.original_filename : '')"></h3>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button @click="submitGapReview()" :disabled="gapReviewSubmitting"
+                            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg disabled:opacity-50">
+                        <i class="fas fa-paper-plane mr-1"></i>
+                        <span x-text="gapReviewSubmitting ? 'Sending...' : 'Push to Gap Assessment'"></span>
+                    </button>
+                    <button @click="gapReviewModalOpen = false" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">
+                        <i class="fas fa-times mr-1"></i> Close
+                    </button>
+                </div>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                <p x-show="gapReviewError" class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-200/60 rounded-xl p-3" x-text="gapReviewError"></p>
+
+                {{-- Requirement --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Requirement</label>
+                    <p class="text-sm text-slate-700 leading-relaxed p-3 bg-slate-50 rounded-xl border border-slate-100"
+                       x-text="gapReviewFile ? (getRequirementDesc(gapReviewFile) || 'No requirement description is on file for this control — the AI analysis could not compare the evidence against specific requirement text.') : 'N/A'"></p>
+                </div>
+
+                {{-- Status & Risk Row --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Status</label>
+                        <select x-model="gapReviewForm.workflow_status"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Risk Rating</label>
+                        <select x-model="gapReviewForm.risk_rating"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <option value="None">None</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Compliance Status --}}
+                <div class="flex items-center gap-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Compliance Status</label>
+                    <button @click="gapReviewForm.is_compliant = !gapReviewForm.is_compliant; gapReviewForm.workflow_status = gapReviewForm.is_compliant ? 'Closed' : 'Open'"
+                            class="relative w-12 h-6 rounded-full transition-colors duration-200"
+                            :class="gapReviewForm.is_compliant ? 'bg-emerald-500' : 'bg-slate-300'">
+                        <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                              :class="gapReviewForm.is_compliant ? 'translate-x-6' : ''"></span>
+                    </button>
+                    <span class="text-xs font-bold uppercase tracking-wider"
+                          :class="gapReviewForm.is_compliant ? 'text-emerald-600' : 'text-rose-600'"
+                          x-text="gapReviewForm.is_compliant ? 'Compliant' : 'Non-Compliant'"></span>
+                    <span class="text-[10px] text-slate-400">(Status auto-set: Compliant → Closed, Non-Compliant → Open)</span>
+                </div>
+
+                {{-- Observation --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Observation</label>
+                    <textarea x-model="gapReviewForm.observation" rows="3"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              placeholder="What the evidence shows..."></textarea>
+                </div>
+
+                {{-- Recommendation --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Recommendation</label>
+                    <textarea x-model="gapReviewForm.recommended_action" rows="3"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              placeholder="Recommend remediation actions..."></textarea>
+                </div>
+
+                {{-- Gap Category --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Gap Category</label>
+                    <select x-model="gapReviewForm.gap_category"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Select gap category</option>
+                        <option value="Policy">Policy</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Process">Process</option>
+                        <option value="Organizational">Organizational</option>
+                        <option value="Physical">Physical</option>
+                    </select>
+                </div>
+
+                {{-- Evidence Files --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Evidence Files</label>
+                    <div class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700">
+                        <i class="fas fa-file text-slate-400"></i>
+                        <span x-text="gapReviewFile ? gapReviewFile.original_filename : ''"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     @endif
 
 </div>
 @endsection
 
 @push('scripts')
-<script>
-function evidenceHub() {
-    return {
+<script nonce="{{ $cspNonce }}">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('evidenceHub', () => {
+        return {
         files: @json($evidenceFiles),
-        hasTrustCenter: @json($hasTrustCenter),
         editingFeedbackId: null,
         feedbackInput: '',
         detailsModalOpen: false,
@@ -505,8 +734,25 @@ function evidenceHub() {
         rejectionType: 'ai', // 'ai' or 'customer'
         rejectionNote: '',
         rejectionNoteError: false,
+        // Analysis history modal state
+        historyModalOpen: false,
+        analysisVersions: [],
+        // Observation modal state
+        observationModalOpen: false,
+        observationFile: null,
+        observationTitle: '',
+        observationTargetDate: '',
+        observationTitleError: false,
+        // Gap Assessment review modal state
+        gapReviewModalOpen: false,
+        gapReviewFile: null,
+        gapReviewForm: {},
+        gapReviewSubmitting: false,
+        gapReviewError: '',
 
         initData() {
+            // Backfill ai_gaps for any row where getStatus() hasn't polled yet.
+            this.files.forEach(f => { if (!f.ai_gaps) f.ai_gaps = f.ai_gaps || []; });
             // Start polling status every 5 seconds
             setInterval(() => this.pollLoop(), 5000);
         },
@@ -523,7 +769,8 @@ function evidenceHub() {
                         f.hitl_status = data.hitl_status;
                         f.ai_observations = data.ai_observations;
                         f.ai_recommendations = data.ai_recommendations;
-                        f.gaps = data.gaps;
+                        f.ai_gaps = data.gaps;
+                        f.analysis_report_data = data.analysis_report_data;
                     }
                 } catch (e) {}
             }
@@ -779,28 +1026,177 @@ function evidenceHub() {
             }
         },
 
-        toggleTrustCenterListing(file) {
-            const newVal = !file.is_publicly_listed;
-            fetch('/evidence/' + file.id + '/trust-center-toggle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ is_publicly_listed: newVal })
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Failed');
-                file.is_publicly_listed = newVal;
-            })
-            .catch(err => alert('Failed to toggle trust center listing.'));
-        },
-
         openViewDetails(file) {
             this.selectedFile = file;
             this.detailsModalOpen = true;
+        },
+
+        async approveAiAnalysis(file) {
+            try {
+                const res = await fetch(`/evidence/${file.id}/ai/approve`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    file.ai_analysis_status = 'approved';
+                    file.assessment_finding = data.assessment_finding || file.assessment_finding;
+                } else {
+                    alert(data.message || 'Failed to approve AI analysis.');
+                }
+            } catch (err) {
+                alert('Network error: Failed to approve AI analysis.');
+            }
+        },
+
+        async openAnalysisHistory(file) {
+            this.analysisVersions = [];
+            this.historyModalOpen = true;
+            try {
+                const res = await fetch(`/evidence/${file.id}/analysis-versions`);
+                if (res.ok) {
+                    this.analysisVersions = await res.json();
+                }
+            } catch (err) {}
+        },
+
+        openObservationModal(file) {
+            this.observationFile = file;
+            this.observationTitle = '';
+            this.observationTargetDate = '';
+            this.observationTitleError = false;
+            this.observationModalOpen = true;
+        },
+
+        async submitObservation() {
+            if (!this.observationTitle.trim()) {
+                this.observationTitleError = true;
+                return;
+            }
+            this.observationTitleError = false;
+            const file = this.observationFile;
+            const findingId = file.assessment_finding.id;
+
+            try {
+                const res = await fetch(`/gap-assessment/findings/${findingId}/observations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        title: this.observationTitle,
+                        target_date: this.observationTargetDate || null,
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (!file.assessment_finding.observations) file.assessment_finding.observations = [];
+                    file.assessment_finding.observations.push(data.observation);
+                    this.observationModalOpen = false;
+                } else {
+                    alert(data.message || 'Failed to raise observation.');
+                }
+            } catch (err) {
+                alert('Network error: Failed to raise observation.');
+            }
+        },
+
+        async createRiskFromObservation(observation, file) {
+            if (!confirm('Create a risk register entry from this observation?')) return;
+            try {
+                const res = await fetch(`/observations/${observation.id}/add-to-risk-register`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    observation.risk_register_id = data.risk.id;
+                } else {
+                    alert(data.message || 'Failed to create risk.');
+                }
+            } catch (err) {
+                alert('Network error: Failed to create risk.');
+            }
+        },
+
+        openGapReviewModal(file) {
+            this.gapReviewFile = file;
+            this.gapReviewError = '';
+            const draft = file.analysis_report_data || {};
+            const isCompliant = draft.is_compliant ?? false;
+
+            // Prefer the full numbered gaps list over a single free-text gap_description --
+            // it's the authoritative structured source and avoids the two disagreeing.
+            const gapsNumbered = (file.ai_gaps && file.ai_gaps.length)
+                ? file.ai_gaps.map((g, i) => `${i + 1}. ${g.gap}`).join('\n')
+                : '';
+
+            // draft.status (when present) is the AI's three-class compliance verdict
+            // (compliant/partial/non_compliant) -- NOT the Open/In Progress/Closed
+            // workflow value this form's Status field holds. Translate it; never assign
+            // it directly, or the <select> silently ends up on no matching option.
+            const workflowStatus = { compliant: 'Closed', partial: 'In Progress', non_compliant: 'Open' }[draft.status]
+                || (isCompliant ? 'Closed' : 'Open');
+
+            this.gapReviewForm = {
+                // workflow_status isn't an AI judgment -- it's derived from the AI's
+                // compliance verdict (draft.status, a DIFFERENT field consumed by the
+                // evaluation harness) above, unless the auditor already set it explicitly
+                // on a prior submission.
+                workflow_status: ['Open', 'In Progress', 'Closed'].includes(draft.workflow_status) ? draft.workflow_status : workflowStatus,
+                risk_rating: draft.risk_rating || 'None',
+                is_compliant: isCompliant,
+                observation: draft.observation || file.ai_observations || '',
+                gap_description: gapsNumbered || draft.gap_description || '',
+                impact_assessment: draft.impact_assessment || '',
+                recommended_action: draft.recommended_action || file.ai_recommendations || '',
+                gap_category: draft.gap_category || '',
+                // Not shown in this form but still sent through so nothing the AI
+                // captured is lost -- the Gap Assessment page can still edit these.
+                due_date: draft.due_date || '',
+                non_compliant_details: draft.non_compliant_details || '',
+                compliant_description: draft.compliant_description || '',
+                remediation_plan: draft.remediation_plan || '',
+                evidence_provided: draft.evidence_provided || file.original_filename || '',
+                test_results: draft.test_results || '',
+                meets_standard: draft.meets_standard ?? false,
+                auditor_notes: draft.auditor_notes || '',
+            };
+
+            this.gapReviewModalOpen = true;
+        },
+
+        async submitGapReview() {
+            this.gapReviewSubmitting = true;
+            this.gapReviewError = '';
+            const file = this.gapReviewFile;
+
+            try {
+                const res = await fetch(`/evidence/${file.id}/review-and-send-to-gap-assessment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(this.gapReviewForm)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    file.analysis_report_data = { ...(file.analysis_report_data || {}), ...this.gapReviewForm };
+                    file.assessment_finding = { ...(data.finding || {}), observations: (file.assessment_finding && file.assessment_finding.observations) || [] };
+                    this.gapReviewModalOpen = false;
+                } else {
+                    this.gapReviewError = data.message || 'Failed to push analysis to gap assessment.';
+                }
+            } catch (err) {
+                this.gapReviewError = 'Network error: Failed to push analysis to gap assessment.';
+            } finally {
+                this.gapReviewSubmitting = false;
+            }
         }
-    };
-}
+        };
+    });
+});
 </script>
 @endpush

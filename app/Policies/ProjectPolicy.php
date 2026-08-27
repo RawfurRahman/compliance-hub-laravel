@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Project;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ProjectPolicy
 {
@@ -21,8 +20,8 @@ class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return $user->hasRole('Admin') 
-            || $project->user_id === $user->id 
+        return $user->hasRole('Admin')
+            || $project->user_id === $user->id
             || $project->assignedUsers->contains($user->id);
     }
 
@@ -39,8 +38,8 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        return $user->hasRole('Admin') 
-            || $project->user_id === $user->id 
+        return $user->hasRole('Admin')
+            || $project->user_id === $user->id
             || $project->assignedUsers->contains($user->id);
     }
 

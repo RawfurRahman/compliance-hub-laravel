@@ -20,12 +20,12 @@ namespace App\Modules\RiskManagement\Support\Scoring;
 final class InherentRiskFormulaConfig
 {
     /**
-     * @param string $version              Formula version identifier (e.g. "v1").
-     * @param string $tvExpression          Human readable TV formula, for explanation metadata.
-     * @param string $inherentExpression    Human readable inherent formula, for explanation metadata.
-     * @param array<string,int> $bands      Map of band name => inclusive lower bound, ordered high to low.
-     * @param int $maxScore                 Maximum theoretically possible inherent score (for normalisation).
-     * @param int $precision                Decimal precision used for derived/normalised values.
+     * @param  string  $version  Formula version identifier (e.g. "v1").
+     * @param  string  $tvExpression  Human readable TV formula, for explanation metadata.
+     * @param  string  $inherentExpression  Human readable inherent formula, for explanation metadata.
+     * @param  array<string,int>  $bands  Map of band name => inclusive lower bound, ordered high to low.
+     * @param  int  $maxScore  Maximum theoretically possible inherent score (for normalisation).
+     * @param  int  $precision  Decimal precision used for derived/normalised values.
      */
     public function __construct(
         public readonly string $version,
@@ -34,8 +34,7 @@ final class InherentRiskFormulaConfig
         public readonly array $bands,
         public readonly int $maxScore,
         public readonly int $precision
-    ) {
-    }
+    ) {}
 
     /**
      * Build a formula config for a given version from application config.
@@ -70,17 +69,17 @@ final class InherentRiskFormulaConfig
     public static function v1Defaults(): array
     {
         return [
-            'tv_expression'       => 'threat_level + vulnerability_level',
+            'tv_expression' => 'threat_level + vulnerability_level',
             'inherent_expression' => 'vulnerability_level * tv * likelihood',
-            'bands'               => [
+            'bands' => [
                 'Critical' => 128,
-                'High'     => 84,
-                'Medium'   => 54,
-                'Low'      => 0,
+                'High' => 84,
+                'Medium' => 54,
+                'Low' => 0,
             ],
             // 5 (vuln) * (5 + 5) (tv) * 5 (likelihood) = 250
-            'max_score'           => 250,
-            'precision'           => 2,
+            'max_score' => 250,
+            'precision' => 2,
         ];
     }
 

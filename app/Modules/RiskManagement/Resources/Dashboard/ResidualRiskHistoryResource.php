@@ -18,24 +18,24 @@ class ResidualRiskHistoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'               => $this->id,
+            'id' => $this->id,
             'risk_register_id' => $this->risk_register_id,
-            'inherent_score'   => (int) $this->inherent_score,
-            'residual_score'   => (int) $this->residual_score,
-            'severity_band'    => $this->severity_band,
-            'appetite_status'  => $this->appetite_status,
-            'reduction_pct'    => (float) $this->reduction_pct,
-            'heatmap'          => [
+            'inherent_score' => (int) $this->inherent_score,
+            'residual_score' => (int) $this->residual_score,
+            'severity_band' => $this->severity_band,
+            'appetite_status' => $this->appetite_status,
+            'reduction_pct' => (float) $this->reduction_pct,
+            'heatmap' => [
                 'likelihood' => (int) $this->heatmap_likelihood,
-                'impact'     => (int) $this->heatmap_impact,
+                'impact' => (int) $this->heatmap_impact,
             ],
-            'trend_direction'  => $this->trend_direction,
-            'manual_override'  => (bool) $this->manual_override,
-            'override_reason'  => $this->override_reason,
-            'formula_version'  => $this->formula_version,
-            'source'           => $this->source,
-            'explanation'      => $this->explanation,
-            'recorded_at'      => optional($this->created_at)->toIso8601String(),
+            'trend_direction' => $this->trend_direction,
+            'manual_override' => (bool) $this->manual_override,
+            'override_reason' => $this->override_reason,
+            'formula_version' => $this->formula_version,
+            'source' => $this->source,
+            'explanation' => $this->explanation,
+            'recorded_at' => optional($this->created_at)->toIso8601String(),
         ];
     }
 }

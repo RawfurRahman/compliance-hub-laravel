@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Framework;
+use Illuminate\Database\Seeder;
 
 class FrameworkSeeder extends Seeder
 {
@@ -38,16 +38,6 @@ class FrameworkSeeder extends Seeder
                 'name' => 'SWIFT CSP',
                 'version' => '2024',
                 'description' => 'Customer Security Programme',
-                'is_active' => true,
-            ]
-        );
-
-        Framework::firstOrCreate(
-            ['slug' => 'vapt'],
-            [
-                'name' => 'VAPT',
-                'version' => '',
-                'description' => 'Vulnerability Assessment and Penetration Testing',
                 'is_active' => true,
             ]
         );

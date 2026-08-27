@@ -19,6 +19,7 @@ class ComplianceFindingController extends Controller
     {
         $state = $request->get('state');
         $findings = $this->service->getByProject($project->id, $state);
+
         return view('compliance.findings', compact('project', 'findings'));
     }
 

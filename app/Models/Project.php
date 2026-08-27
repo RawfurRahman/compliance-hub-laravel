@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Project extends Model
 {
@@ -28,14 +29,9 @@ class Project extends Model
         return $this->belongsToMany(User::class, 'project_user')->withTimestamps();
     }
 
-    public function pciDssDetails()
+    public function pciDssDetails(): HasOne
     {
         return $this->hasOne(ProjectPciDssDetail::class);
-    }
-
-    public function scope()
-    {
-        return $this->hasOne(ProjectScope::class);
     }
 
     public function evidence()
@@ -70,6 +66,34 @@ class Project extends Model
 
     public function integrations()
     {
-        return $this->hasMany(\App\Models\Integration::class);
+        return $this->hasMany(Integration::class);
+    }
+
+    public function pciGapAssessments()
+    {
+        return $this->hasMany(PciGapAssessment::class);
+    }
+
+    public function isoGapAssessments()
+    {
+        return $this->hasMany(IsoGapAssessment::class);
+    }
+
+    public function requiredDocumentLists()
+    {
+        return $this->hasMany(RequiredDocumentList::class);
+    }
+
+    /**
+     * Get the active gap assessment (ProjectAssessment with type 'gap').
+     */
+    public function gapAssessment()
+    {
+        return $this->hasOne(ProjectAssessment::class)->where('type', 'gap');
+    }
+
+    public function projectAssessments()
+    {
+        return $this->hasMany(ProjectAssessment::class);
     }
 }

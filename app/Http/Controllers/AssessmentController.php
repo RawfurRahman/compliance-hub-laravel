@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\ProjectAssessment;
 use App\Models\AssessmentFinding;
+use App\Models\Evidence;
+use App\Models\EvidenceFile;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
-use App\Models\Evidence;
+use App\Models\Project;
+use App\Models\ProjectAssessment;
 use App\Services\AssessmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class AssessmentController extends Controller
     public function show(Project $project, Request $request)
     {
         $type = ucfirst(strtolower($request->query('type', 'gap')));
-        if (!in_array($type, ['Gap', 'Final'])) {
+        if (! in_array($type, ['Gap', 'Final'])) {
             $type = 'Gap';
         }
 
@@ -48,7 +49,7 @@ class AssessmentController extends Controller
                 ->where('type', 'Gap')
                 ->first();
 
-            if (!$gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
+            if (! $gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
                 return redirect()
                     ->route('assessments.show', [$project, 'type' => 'gap'])
                     ->with('error', 'Cannot start or access the Final Assessment (Phase 2) until the Gap Assessment (Phase 1) is 100% compliant.');
@@ -62,7 +63,7 @@ class AssessmentController extends Controller
             ->latest()
             ->first();
 
-        $stats     = $assessment ? $assessment->stats() : $this->emptyStats();
+        $stats = $assessment ? $assessment->stats() : $this->emptyStats();
         $ganttJson = $assessment ? json_encode($assessment->ganttTasks()) : '[]';
 
         // Get all available evidence files for this project to populate the linking dropdown
@@ -83,8 +84,8 @@ class AssessmentController extends Controller
     {
         $data = $request->validate([
             'assessment_type' => 'required|in:Gap,Final',
-            'start_date'      => 'required|date',
-            'end_date'        => 'required|date|after_or_equal:start_date',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
         $framework = Framework::where('slug', $project->module_type)->firstOrFail();
@@ -96,18 +97,18 @@ class AssessmentController extends Controller
                 ->where('type', 'Gap')
                 ->first();
 
-            if (!$gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
+            if (! $gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
                 return redirect()->back()->with('error', 'Cannot start Final Assessment (Phase 2) until the Gap Assessment (Phase 1) is 100% compliant.');
             }
         }
 
         $assessment = ProjectAssessment::firstOrCreate([
-            'project_id'   => $project->id,
+            'project_id' => $project->id,
             'framework_id' => $framework->id,
-            'type'         => $data['assessment_type'],
+            'type' => $data['assessment_type'],
         ], [
-            'start_date'     => $data['start_date'],
-            'end_date'       => $data['end_date'],
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
             'overall_status' => 'In Progress',
         ]);
 
@@ -116,7 +117,7 @@ class AssessmentController extends Controller
 
         return redirect()
             ->route('assessments.show', [$project, 'type' => strtolower($data['assessment_type'])])
-            ->with('success', $data['assessment_type'] . ' Assessment initialised.');
+            ->with('success', $data['assessment_type'].' Assessment initialised.');
     }
 
     // =========================================================================
@@ -126,9 +127,9 @@ class AssessmentController extends Controller
     public function clone(Request $request, Project $project)
     {
         $request->validate([
-            'source_id'  => 'required|exists:project_assessments,id',
+            'source_id' => 'required|exists:project_assessments,id',
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
         $source = ProjectAssessment::with('findings')->findOrFail($request->source_id);
@@ -139,12 +140,12 @@ class AssessmentController extends Controller
         }
 
         $final = ProjectAssessment::firstOrCreate([
-            'project_id'   => $project->id,
+            'project_id' => $project->id,
             'framework_id' => $source->framework_id,
-            'type'         => 'Final',
+            'type' => 'Final',
         ], [
-            'start_date'     => $request->start_date,
-            'end_date'       => $request->end_date,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
             'cloned_from_id' => $source->id,
             'overall_status' => 'In Progress',
         ]);
@@ -154,16 +155,16 @@ class AssessmentController extends Controller
             $clonedFinding = AssessmentFinding::updateOrCreate(
                 [
                     'project_assessment_id' => $final->id,
-                    'framework_control_id'  => $f->framework_control_id,
+                    'framework_control_id' => $f->framework_control_id,
                 ],
                 [
-                    'status'                 => $f->status,
-                    'risk_rating'            => $f->risk_rating,
-                    'observation'            => $f->observation,
-                    'gap_description'        => $f->gap_description,
-                    'impact'                 => $f->impact,
-                    'recommendation'         => $f->recommendation,
-                    'is_compliant'           => $f->is_compliant,
+                    'status' => $f->status,
+                    'risk_rating' => $f->risk_rating,
+                    'observation' => $f->observation,
+                    'gap_description' => $f->gap_description,
+                    'impact' => $f->impact,
+                    'recommendation' => $f->recommendation,
+                    'is_compliant' => $f->is_compliant,
                     'cloned_from_finding_id' => $f->id,
                 ]
             );
@@ -185,36 +186,36 @@ class AssessmentController extends Controller
     public function storeFinding(Request $request, ProjectAssessment $assessment)
     {
         $request->validate([
-            'serial_no'          => 'required|string|max:50',
-            'status'             => 'required|in:Open,In Progress,Closed',
-            'observation_title'  => 'required|string|max:255',
-            'risk_rating'        => 'required|in:High,Medium,Low,None',
-            'current_state'      => 'nullable|string',
-            'gap_description'    => 'nullable|string',
-            'impact_risk'        => 'nullable|string',
-            'recommendation'     => 'nullable|string',
+            'serial_no' => 'required|string|max:50',
+            'status' => 'required|in:Open,In Progress,Closed',
+            'observation_title' => 'required|string|max:255',
+            'risk_rating' => 'required|in:High,Medium,Low,None',
+            'current_state' => 'nullable|string',
+            'gap_description' => 'nullable|string',
+            'impact_risk' => 'nullable|string',
+            'recommendation' => 'nullable|string',
             'standard_reference' => 'nullable|string',
-            'is_compliant'       => 'sometimes|boolean',
+            'is_compliant' => 'sometimes|boolean',
         ]);
 
         // Resolve or create a FrameworkControl corresponding to serial_no (control_id)
         $control = FrameworkControl::firstOrCreate([
             'framework_id' => $assessment->framework_id,
-            'control_id'   => $request->serial_no,
+            'control_id' => $request->serial_no,
         ], [
-            'domain'                  => 'General',
+            'domain' => 'General',
             'requirement_description' => $request->observation_title,
         ]);
 
         $finding = $assessment->findings()->create([
             'framework_control_id' => $control->id,
-            'status'               => $request->status,
-            'risk_rating'          => $request->risk_rating,
-            'observation'          => $request->observation_title . ($request->current_state ? "\n\n" . $request->current_state : ""),
-            'gap_description'      => $request->gap_description . ($request->standard_reference ? "\n\nStandard Reference: " . $request->standard_reference : ""),
-            'impact'               => $request->impact_risk,
-            'recommendation'       => $request->recommendation,
-            'is_compliant'         => $request->has('is_compliant') || $request->input('is_compliant') == 1,
+            'status' => $request->status,
+            'risk_rating' => $request->risk_rating,
+            'observation' => $request->observation_title.($request->current_state ? "\n\n".$request->current_state : ''),
+            'gap_description' => $request->gap_description.($request->standard_reference ? "\n\nStandard Reference: ".$request->standard_reference : ''),
+            'impact' => $request->impact_risk,
+            'recommendation' => $request->recommendation,
+            'is_compliant' => $request->has('is_compliant') || $request->input('is_compliant') == 1,
         ]);
 
         if ($request->expectsJson()) {
@@ -227,18 +228,18 @@ class AssessmentController extends Controller
     public function updateFinding(Request $request, AssessmentFinding $finding)
     {
         $request->validate([
-            'serial_no'          => 'sometimes|string|max:50',
-            'status'             => 'sometimes|in:Open,In Progress,Closed',
-            'observation_title'  => 'sometimes|string|max:255',
-            'risk_rating'        => 'sometimes|in:High,Medium,Low,None',
-            'current_state'      => 'nullable|string',
-            'gap_description'    => 'nullable|string',
-            'impact_risk'        => 'nullable|string',
-            'recommendation'     => 'nullable|string',
+            'serial_no' => 'sometimes|string|max:50',
+            'status' => 'sometimes|in:Open,In Progress,Closed',
+            'observation_title' => 'sometimes|string|max:255',
+            'risk_rating' => 'sometimes|in:High,Medium,Low,None',
+            'current_state' => 'nullable|string',
+            'gap_description' => 'nullable|string',
+            'impact_risk' => 'nullable|string',
+            'recommendation' => 'nullable|string',
             'standard_reference' => 'nullable|string',
-            'is_compliant'       => 'sometimes|boolean',
-            'observation'        => 'nullable|string',
-            'impact'             => 'nullable|string',
+            'is_compliant' => 'sometimes|boolean',
+            'observation' => 'nullable|string',
+            'impact' => 'nullable|string',
         ]);
 
         $data = [];
@@ -246,9 +247,9 @@ class AssessmentController extends Controller
         if ($request->has('serial_no')) {
             $control = FrameworkControl::firstOrCreate([
                 'framework_id' => $finding->projectAssessment->framework_id,
-                'control_id'   => $request->serial_no,
+                'control_id' => $request->serial_no,
             ], [
-                'domain'                  => 'General',
+                'domain' => 'General',
                 'requirement_description' => $request->observation_title ?? '',
             ]);
             $data['framework_control_id'] = $control->id;
@@ -267,7 +268,7 @@ class AssessmentController extends Controller
         } elseif ($request->has('observation_title') || $request->has('current_state')) {
             $title = $request->observation_title ?? $finding->observation_title;
             $state = $request->current_state ?? '';
-            $data['observation'] = $title . ($state ? "\n\n" . $state : "");
+            $data['observation'] = $title.($state ? "\n\n".$state : '');
         }
 
         if ($request->has('gap_description')) {
@@ -294,7 +295,7 @@ class AssessmentController extends Controller
             return response()->json([
                 'success' => true,
                 'finding' => $finding->fresh(['frameworkControl', 'evidence']),
-                'stats'   => $finding->projectAssessment->stats()
+                'stats' => $finding->projectAssessment->stats(),
             ]);
         }
 
@@ -304,6 +305,7 @@ class AssessmentController extends Controller
     public function destroyFinding(AssessmentFinding $finding)
     {
         $finding->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -314,13 +316,13 @@ class AssessmentController extends Controller
     public function report(ProjectAssessment $assessment)
     {
         $assessment->load(['findings.frameworkControl', 'findings.evidence', 'project', 'framework']);
-        
-        $project   = $assessment->project;
-        $framework = $assessment->framework;
-        $stats     = $assessment->stats();
-        $findings  = $assessment->findings;
 
-        $acceptedEvidence = \App\Models\EvidenceFile::where('project_id', $project->id)
+        $project = $assessment->project;
+        $framework = $assessment->framework;
+        $stats = $assessment->stats();
+        $findings = $assessment->findings;
+
+        $acceptedEvidence = EvidenceFile::where('project_id', $project->id)
             ->where('hitl_status', 'accepted')
             ->where('ai_analysis_status', 'approved')
             ->whereNotNull('framework_control_id')

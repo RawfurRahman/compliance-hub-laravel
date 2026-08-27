@@ -15,9 +15,9 @@ class RiskAcceptanceSplitResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'accepted'  => (int) $this['accepted'],
+            'accepted' => (int) $this['accepted'],
             'mitigated' => (int) $this['mitigated'],
-            'open'      => (int) $this['open'],
+            'open' => (int) $this['open'],
         ];
     }
 }

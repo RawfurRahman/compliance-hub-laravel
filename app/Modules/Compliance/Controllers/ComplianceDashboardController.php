@@ -20,7 +20,7 @@ class ComplianceDashboardController extends Controller
 
         $counts = ComplianceFindingService::countByState($project->id);
         $byFramework = $this->queryService->complianceByFramework($project->id);
-        $overdue = $this->queryService->overdueBySLA($project->id);
+        $overdue = $this->queryService->overduePlans($project->id);
 
         return view('compliance.dashboard', compact('project', 'counts', 'byFramework', 'overdue'));
     }

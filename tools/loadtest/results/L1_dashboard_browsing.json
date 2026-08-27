@@ -1,0 +1,14 @@
+{
+  "scenario": "L1_dashboard_browsing",
+  "timestamp": "2026-08-21T10:46:39.369Z",
+  "metrics": {
+    "http_reqs": 12,
+    "http_req_failed": 0.5,
+    "http_req_duration_avg": 226.73862499999998,
+    "http_req_duration_p95": 250.892995,
+    "http_req_duration_max": 261.5735,
+    "errors_rate": 0.75,
+    "iterations": 2,
+    "vus_max": 1
+  }
+}

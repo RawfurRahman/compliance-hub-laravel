@@ -6,12 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $trustCenter->headline ?? config('app.name', 'ComplianceHub') }}</title>
     <meta name="description" content="Trust Center — Security and Compliance Information">
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <link href="{{ asset('fonts/inter.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ asset('vendor/font-awesome/css/all.min.css') }}">
     <link href="{{ asset('css/main.css') }}" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ asset('js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('js/alpine.min.js') }}" defer></script>
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-slate-50">
@@ -29,5 +29,6 @@
         </main>
     </div>
     @stack('scripts')
+    <script src="{{ asset('js/csp-bindings.js') }}" defer></script>
 </body>
 </html>

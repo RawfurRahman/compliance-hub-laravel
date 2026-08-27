@@ -17,10 +17,9 @@ class ResidualAppetiteCrossed
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param RiskRegister $risk
-     * @param string $previousStatus within_appetite | exceeds_appetite | unknown
-     * @param string $newStatus      within_appetite | exceeds_appetite | unknown
-     * @param int $residualScore     The residual score that triggered the crossing.
+     * @param  string  $previousStatus  within_appetite | exceeds_appetite | unknown
+     * @param  string  $newStatus  within_appetite | exceeds_appetite | unknown
+     * @param  int  $residualScore  The residual score that triggered the crossing.
      */
     public function __construct(
         public RiskRegister $risk,

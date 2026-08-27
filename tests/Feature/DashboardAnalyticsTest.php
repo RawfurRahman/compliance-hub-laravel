@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\AssessmentFinding;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
@@ -23,6 +22,7 @@ class DashboardAnalyticsTest extends TestCase
         if ($role) {
             $user->roles()->create(['name' => $role]);
         }
+
         return $user;
     }
 
@@ -36,32 +36,32 @@ class DashboardAnalyticsTest extends TestCase
     private function seedFramework(string $name, string $slug, int $total, int $compliant): Framework
     {
         $framework = Framework::create([
-            'name'      => $name,
-            'slug'      => $slug,
+            'name' => $name,
+            'slug' => $slug,
             'is_active' => true,
         ]);
 
         $project = Project::create([
-            'name'        => $name . ' Project',
+            'name' => $name.' Project',
             'module_type' => $slug,
-            'user_id'     => User::factory()->create()->id,
+            'user_id' => User::factory()->create()->id,
         ]);
 
         for ($i = 1; $i <= $total; $i++) {
             FrameworkControl::create([
-                'framework_id'            => $framework->id,
-                'control_id'              => "C.$i",
-                'domain'                  => 'General',
+                'framework_id' => $framework->id,
+                'control_id' => "C.$i",
+                'domain' => 'General',
                 'requirement_description' => "Control $i",
             ]);
         }
 
         $gap = ProjectAssessment::create([
-            'project_id'   => $project->id,
+            'project_id' => $project->id,
             'framework_id' => $framework->id,
-            'type'         => 'Gap',
-            'start_date'   => now(),
-            'end_date'     => now()->addMonth(),
+            'type' => 'Gap',
+            'start_date' => now(),
+            'end_date' => now()->addMonth(),
         ]);
         app(AssessmentService::class)->initialize($gap);
 
@@ -205,7 +205,7 @@ class DashboardAnalyticsTest extends TestCase
         // No Final assessment should have been created for a sub-100% Gap.
         $this->assertDatabaseMissing('project_assessments', [
             'framework_id' => $row ? Framework::where('name', 'Stuck Framework')->first()->id : null,
-            'type'         => 'Final',
+            'type' => 'Final',
         ]);
     }
 
@@ -218,9 +218,9 @@ class DashboardAnalyticsTest extends TestCase
         $emptyFilterKey = md5(json_encode([]));
 
         $this->actingAs($user)->get('/dashboard/kpis')->assertOk();
-        $this->assertTrue(Cache::has('dashboard.kpis.' . $emptyFilterKey));
+        $this->assertTrue(Cache::has('dashboard.kpis.'.$emptyFilterKey));
 
         $this->actingAs($user)->get('/dashboard/heatmap')->assertOk();
-        $this->assertTrue(Cache::has('dashboard.heatmap.' . $emptyFilterKey));
+        $this->assertTrue(Cache::has('dashboard.heatmap.'.$emptyFilterKey));
     }
 }

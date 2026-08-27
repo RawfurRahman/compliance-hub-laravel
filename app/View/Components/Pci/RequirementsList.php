@@ -2,14 +2,16 @@
 
 namespace App\View\Components\Pci;
 
-use App\Models\ProjectPciDssDetail;
 use App\Models\PciDssRequirement;
+use App\Models\ProjectPciDssDetail;
 use Illuminate\View\Component;
 
 class RequirementsList extends Component
 {
     public $details;
+
     public $requirements;
+
     public $findings;
 
     /**

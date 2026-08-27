@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your OTP Code</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
         .header { font-size: 24px; font-weight: bold; color: #1e3a8a; text-align: center; }

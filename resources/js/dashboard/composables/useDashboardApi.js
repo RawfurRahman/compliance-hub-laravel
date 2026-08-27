@@ -25,7 +25,7 @@ export function useDashboardApi(endpoint, filterSource, options = {}) {
       const url = `/api/v1/dashboard/${endpoint}`
       const response = await api.get(url, { params })
 
-      let result = response.data
+      let result = response.data?.data !== undefined ? response.data.data : response.data
       if (transform) {
         result = transform(result)
       }
@@ -35,6 +35,14 @@ export function useDashboardApi(endpoint, filterSource, options = {}) {
     } catch (e) {
       const status = e.response?.status
       
+      // Handle offline case
+      if (navigator.onLine === false) {
+        error.value = 'You are offline. Showing cached data. Some features may be limited.'
+        data.value = null
+        isRetrying.value = false
+        return
+      }
+
       if (status === 401) {
         error.value = 'Authentication failed. Please log in to access this dashboard.'
         data.value = null

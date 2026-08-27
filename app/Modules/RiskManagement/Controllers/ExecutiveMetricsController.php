@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 
 /**
  * Dashboard query endpoints for executive metrics: financial exposure and
- * remediation performance (MTTR / SLA). Thin pass-through over the domain
- * services so the dashboard stays a rendering layer.
+ * remediation performance. Thin pass-through over the domain services so the
+ * dashboard stays a rendering layer.
  */
 class ExecutiveMetricsController extends Controller
 {
@@ -32,13 +32,13 @@ class ExecutiveMetricsController extends Controller
     }
 
     /**
-     * Current remediation metrics (MTTR / SLA).
+     * Current remediation metrics.
      */
     public function remediationMetrics(Request $request)
     {
         $projectId = $request->filled('project_id') ? (int) $request->get('project_id') : null;
         $scope = $request->get('scope', 'all');
-        if (!in_array($scope, ['all', 'risk', 'control'], true)) {
+        if (! in_array($scope, ['all', 'risk', 'control'], true)) {
             $scope = 'all';
         }
 

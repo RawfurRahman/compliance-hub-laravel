@@ -16,7 +16,7 @@
         <form method="GET" class="flex flex-wrap items-end gap-4">
             <div>
                 <label class="form-label text-xs">Status</label>
-                <select name="status" class="form-input text-sm" onchange="this.form.submit()">
+                <select name="status" class="form-input text-sm js-auto-submit">
                     <option value="">All Statuses</option>
                     @foreach($statuses as $s)
                         <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
@@ -25,7 +25,7 @@
             </div>
             <div>
                 <label class="form-label text-xs">Risk Entry</label>
-                <select name="risk_register_id" class="form-input text-sm" onchange="this.form.submit()">
+                <select name="risk_register_id" class="form-input text-sm js-auto-submit">
                     <option value="">All Risks</option>
                     @foreach($risks as $r)
                         <option value="{{ $r->id }}" {{ request('risk_register_id') == $r->id ? 'selected' : '' }}>

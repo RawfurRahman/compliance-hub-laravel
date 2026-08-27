@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\EvidenceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EvidenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,5 +26,3 @@ Route::post('/n8n/send-email', [EvidenceController::class, 'sendAiAnalysisMail']
 Route::get('/evidence/file/{id}', [EvidenceController::class, 'getFile']);
 
 // @see app/Modules/RiskManagement/Routes/api.php for RMM Control Mapping API routes
-
-

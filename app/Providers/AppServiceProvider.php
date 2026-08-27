@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Fallback for views rendered outside an HTTP request (e.g. emails),
+        // where the SecurityHeaders middleware does not run to share a nonce.
+        View::share('cspNonce', '');
     }
 }

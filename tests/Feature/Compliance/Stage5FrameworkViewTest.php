@@ -15,9 +15,13 @@ class Stage5FrameworkViewTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected Framework $fwPci;
+
     protected Framework $fwIso;
+
     protected Framework $fwEmpty;
 
     protected function setUp(): void
@@ -44,7 +48,6 @@ class Stage5FrameworkViewTest extends TestCase
             'owner_user_id' => $this->user->id,
             'team' => 'Security',
             'test_type' => $testType,
-            'sla_days' => 30,
             'status' => $status,
             'last_run_at' => now(),
             'next_due_at' => now()->addDays(30),

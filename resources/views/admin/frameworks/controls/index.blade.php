@@ -158,7 +158,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <form action="{{ route('admin.frameworks.controls.destroy', [$framework, $ctrl]) }}" method="POST" onsubmit="return confirm('Delete this control?');">
+                                    <form action="{{ route('admin.frameworks.controls.destroy', [$framework, $ctrl]) }}" method="POST" data-confirm="Delete this control?">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all text-xs" title="Delete Control">
                                             <i class="fas fa-trash"></i>

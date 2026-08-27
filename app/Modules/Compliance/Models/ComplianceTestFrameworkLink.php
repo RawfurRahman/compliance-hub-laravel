@@ -2,7 +2,6 @@
 
 namespace App\Modules\Compliance\Models;
 
-use App\Modules\Compliance\Models\ComplianceTest;
 use App\Models\Framework;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

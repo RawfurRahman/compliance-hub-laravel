@@ -18,7 +18,6 @@ return new class extends Migration
             $table->foreignId('owner_user_id')->constrained('users')->cascadeOnDelete();
             $table->string('team');
             $table->string('test_type');
-            $table->unsignedInteger('sla_days')->nullable();
             $table->string('status');
             $table->timestamp('last_run_at')->nullable();
             $table->timestamp('next_due_at')->nullable();

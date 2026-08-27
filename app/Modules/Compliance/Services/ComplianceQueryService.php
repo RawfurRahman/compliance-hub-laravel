@@ -3,7 +3,6 @@
 namespace App\Modules\Compliance\Services;
 
 use App\Models\AssessmentFinding;
-use App\Models\Framework;
 use App\Modules\Compliance\Models\ControlTest;
 use App\Modules\Compliance\Models\FrameworkControlMap;
 use App\Modules\RiskManagement\Models\RiskTreatmentPlan;
@@ -40,7 +39,7 @@ class ComplianceQueryService
             ->get();
     }
 
-    public function overdueBySLA(int $projectId): Collection
+    public function overduePlans(int $projectId): Collection
     {
         return RiskTreatmentPlan::overdue()
             ->whereHas('risk', fn ($q) => $q->where('project_id', $projectId))

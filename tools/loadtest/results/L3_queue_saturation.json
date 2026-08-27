@@ -1,0 +1,26 @@
+{
+  "scenario": "L3_queue_saturation",
+  "timestamp": "2026-08-21T10:50:33.034Z",
+  "interpretation": {
+    "queue_peak": 0,
+    "drain_stalled_at_iteration": -1,
+    "drain_stalled": false,
+    "final_pending": 0,
+    "time_to_drain": "completed",
+    "throughput_ceiling_note": "Queue continued draining — increase VU count or upload rate to find the ceiling."
+  },
+  "metrics": {
+    "http_reqs": 11,
+    "http_req_failed": 0.8181818181818182,
+    "http_req_duration_avg": 220.90717272727272,
+    "http_req_duration_p95": 270.5671,
+    "http_req_duration_max": 299.6752,
+    "errors_rate": 1,
+    "upload_count": 9,
+    "poll_count": 0,
+    "queue_depth_last": 0,
+    "queue_depth_max": 0,
+    "iterations": 9,
+    "vus_max": 1
+  }
+}

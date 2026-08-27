@@ -2,10 +2,10 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Modules\RiskManagement\Models\ThirdPartyVendor;
 use App\Modules\RiskManagement\Services\ThirdPartyVendorService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class VendorController extends Controller
@@ -17,6 +17,7 @@ class VendorController extends Controller
     public function index(Request $request, ?Project $project = null)
     {
         $vendors = $this->service->listForProject($project?->id);
+
         return response()->json(['data' => $vendors]);
     }
 
@@ -52,6 +53,7 @@ class VendorController extends Controller
     public function show(ThirdPartyVendor $vendor)
     {
         $vendor->load('assessments');
+
         return response()->json(['data' => $vendor]);
     }
 
@@ -59,7 +61,7 @@ class VendorController extends Controller
     {
         $data = $request->validate([
             'vendor_name' => 'sometimes|string|max:255',
-            'vendor_code' => 'sometimes|string|max:100|unique:third_party_vendors,vendor_code,' . $vendor->id,
+            'vendor_code' => 'sometimes|string|max:100|unique:third_party_vendors,vendor_code,'.$vendor->id,
             'contact_name' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
             'contact_phone' => 'nullable|string|max:50',
@@ -83,6 +85,7 @@ class VendorController extends Controller
     public function destroy(ThirdPartyVendor $vendor)
     {
         $this->service->delete($vendor);
+
         return response()->json(['success' => true]);
     }
 }

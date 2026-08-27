@@ -17,12 +17,14 @@ class RiskTreatmentPlanService
     public function create(array $data): RiskTreatmentPlan
     {
         $data['created_by'] = Auth::id();
+
         return RiskTreatmentPlan::create($data);
     }
 
     public function update(RiskTreatmentPlan $plan, array $data): RiskTreatmentPlan
     {
         $plan->update($data);
+
         return $plan->fresh();
     }
 
@@ -39,12 +41,14 @@ class RiskTreatmentPlanService
             'progress_pct' => 100,
             'effectiveness_rating' => $effectivenessRating,
         ]);
+
         return $plan->fresh();
     }
 
     public function updateProgress(RiskTreatmentPlan $plan, int $progressPct): RiskTreatmentPlan
     {
         $plan->update(['progress_pct' => min(100, max(0, $progressPct))]);
+
         return $plan->fresh();
     }
 }

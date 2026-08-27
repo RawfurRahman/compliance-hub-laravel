@@ -33,7 +33,6 @@ class DashboardSnapshot extends Model
         'compliance_scorecard',
         'third_party_risk',
         'policy_metrics',
-        'ownership_sla',
         'remediation_trend',
     ];
 

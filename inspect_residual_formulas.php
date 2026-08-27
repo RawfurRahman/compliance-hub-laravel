@@ -1,4 +1,5 @@
 <?php
+
 require 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -8,12 +9,24 @@ $sheet = $spreadsheet->getSheetByName('Risk Register');
 $rows = $sheet->toArray(null, true, true, true);
 
 $formulas = [
-    'av * tv * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $av * $tv * $resLh; },
-    'res_tv * tv * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $tv * $resLh; },
-    'res_tv * av * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $av * $resLh; },
-    'res_tv * t * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $t * $resLh; },
-    'res_tv * tv * lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $tv * $lh; },
-    'res_tv * res_tv * res_lh' => function($t, $av, $tv, $lh, $resTv, $resLh) { return $resTv * $resTv * $resLh; },
+    'av * tv * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $av * $tv * $resLh;
+    },
+    'res_tv * tv * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $tv * $resLh;
+    },
+    'res_tv * av * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $av * $resLh;
+    },
+    'res_tv * t * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $t * $resLh;
+    },
+    'res_tv * tv * lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $tv * $lh;
+    },
+    'res_tv * res_tv * res_lh' => function ($t, $av, $tv, $lh, $resTv, $resLh) {
+        return $resTv * $resTv * $resLh;
+    },
 ];
 
 foreach ($formulas as $name => $f) {
@@ -22,7 +35,9 @@ foreach ($formulas as $name => $f) {
     for ($r = 4; $r <= count($rows); $r++) {
         $row = $rows[$r];
         $serialNo = isset($row['A']) ? trim($row['A']) : '';
-        if (empty($serialNo)) continue;
+        if (empty($serialNo)) {
+            continue;
+        }
 
         $t = intval($row['G']);
         $av = intval($row['M']);

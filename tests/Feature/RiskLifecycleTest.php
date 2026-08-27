@@ -4,12 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
-use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskAcceptance;
-use App\Modules\RiskManagement\Services\RiskRegisterService;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Services\RiskCalculationService;
+use App\Modules\RiskManagement\Services\RiskRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class RiskLifecycleTest extends TestCase
@@ -17,7 +16,9 @@ class RiskLifecycleTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -95,7 +96,7 @@ class RiskLifecycleTest extends TestCase
     public function test_can_transition_from_draft_to_assessed(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $risk = $service->transitionLifecycle($this->risk, 'assessed');
 
@@ -105,7 +106,7 @@ class RiskLifecycleTest extends TestCase
     public function test_cannot_transition_from_draft_to_closed_directly(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $this->expectException(\InvalidArgumentException::class);
 
@@ -115,7 +116,7 @@ class RiskLifecycleTest extends TestCase
     public function test_cannot_transition_from_draft_to_expired_directly(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $this->expectException(\InvalidArgumentException::class);
 
@@ -125,7 +126,7 @@ class RiskLifecycleTest extends TestCase
     public function test_lifecycle_transition_creates_activity_log(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $service->transitionLifecycle($this->risk, 'assessed');
 
@@ -137,7 +138,7 @@ class RiskLifecycleTest extends TestCase
     public function test_can_transition_full_lifecycle(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $service->transitionLifecycle($this->risk, 'assessed');
         $this->assertEquals('assessed', $this->risk->fresh()->lifecycle_status);
@@ -168,7 +169,7 @@ class RiskLifecycleTest extends TestCase
     public function test_lifecycle_can_escalate(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskRegisterService(new RiskCalculationService());
+        $service = new RiskRegisterService(new RiskCalculationService);
 
         $service->transitionLifecycle($this->risk, 'assessed');
         $service->transitionLifecycle($this->risk->fresh(), 'treated');

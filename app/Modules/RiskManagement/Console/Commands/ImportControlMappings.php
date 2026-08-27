@@ -2,6 +2,7 @@
 
 namespace App\Modules\RiskManagement\Console\Commands;
 
+use App\Models\FrameworkControl;
 use App\Modules\RiskManagement\Imports\ControlMappingSheetImport;
 use Illuminate\Console\Command;
 use Maatwebsite\Excel\Facades\Excel;
@@ -20,8 +21,9 @@ class ImportControlMappings extends Command
         $filePath = $this->argument('file');
         $frameworkSlug = $this->argument('framework');
 
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             $this->error("File not found: {$filePath}");
+
             return Command::FAILURE;
         }
 
@@ -31,8 +33,9 @@ class ImportControlMappings extends Command
         $import = new ControlMappingSheetImport($frameworkSlug);
         $frameworkId = $import->getFrameworkId();
 
-        if (!$frameworkId) {
+        if (! $frameworkId) {
             $this->error("Framework '{$frameworkSlug}' not found. Make sure it exists in the frameworks table.");
+
             return Command::FAILURE;
         }
 
@@ -42,10 +45,11 @@ class ImportControlMappings extends Command
             Excel::import($import, $filePath);
         } catch (\Exception $e) {
             $this->error("Import failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
 
-        $count = \App\Models\FrameworkControl::where('framework_id', $frameworkId)->count();
+        $count = FrameworkControl::where('framework_id', $frameworkId)->count();
         $this->info("Import complete. Framework now has {$count} control(s).");
 
         return Command::SUCCESS;

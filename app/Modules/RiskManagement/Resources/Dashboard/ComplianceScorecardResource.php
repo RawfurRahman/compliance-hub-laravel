@@ -18,11 +18,11 @@ class ComplianceScorecardResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'framework'       => $this['framework'],
-            'percentage'      => (float) $this['percentage'],
-            'phase'           => $this['phase'],
+            'framework' => $this['framework'],
+            'percentage' => (float) $this['percentage'],
+            'phase' => $this['phase'],
             'fully_compliant' => (bool) $this['fully_compliant'],
-            'test_pass_rate'  => $this['test_pass_rate'],
+            'test_pass_rate' => $this['test_pass_rate'],
         ];
     }
 }

@@ -3,28 +3,14 @@
 namespace App\Modules\Compliance\Services;
 
 use App\Models\AssessmentFinding;
-use App\Modules\Compliance\Models\SLATracker;
-use App\Modules\RiskManagement\Models\RemediationMetric;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * RemediationMetricsService
  *
- * Computes remediation performance metrics (MTTR / SLA) from source data so
- * the dashboard is a pure rendering layer.
- *
- * Remediation items are assessment (control) findings, which are tied to risk
- * records via assessment_findings.risk_register_id and to SLA trackers via the
- * polymorphic comp_sla_trackers table. The same ticket lifecycle therefore
- * supports both governance (risk) and compliance reporting.
- *
- * Lifecycle timestamps used:
- *   created_at  -> opened
- *   status "In Progress" -> acknowledged / assigned (first non-Open transition,
- *                 approximated by updated_at while not yet closed)
- *   status "Closed"      -> closed (approximated by updated_at when closed)
- *   due_date    -> SLA deadline (falls back to comp_sla_trackers.deadline_at)
+ * Computes remediation performance metrics from source data so the dashboard
+ * is a pure rendering layer.
  *
  * Durations are returned in hours.
  */
@@ -32,17 +18,17 @@ class RemediationMetricsService
 {
     /** Aging buckets in days (upper-bound inclusive); last bucket is open-ended. */
     private const AGING_BUCKETS = [
-        '0-7'   => 7,
-        '8-30'  => 30,
+        '0-7' => 7,
+        '8-30' => 30,
         '31-60' => 60,
         '61-90' => 90,
-        '90+'   => PHP_INT_MAX,
+        '90+' => PHP_INT_MAX,
     ];
 
     /**
      * Compute the full remediation metric profile for a project (or all).
      *
-     * @param string $scope all | risk | control
+     * @param  string  $scope  all | risk | control
      * @return array<string,mixed>
      */
     public function forProject(?int $projectId = null, string $scope = 'all'): array
@@ -67,32 +53,30 @@ class RemediationMetricsService
         $mttc = $this->meanHours($closed, fn ($f) => $this->hoursBetween($f->created_at, $f->updated_at));
 
         $overdue = $findings->filter(fn ($f) => $this->isOverdue($f))->count();
-        $slaBreachRate = $total > 0 ? round($this->breachedCount($findings) / $total * 100, 2) : 0.0;
         $closureRate = $total > 0 ? round($closedCount / $total * 100, 2) : 0.0;
 
         return [
-            'project_id'       => $projectId,
-            'scope'            => $scope,
-            'total_items'      => $total,
-            'open_items'       => $openCount,
-            'closed_items'     => $closedCount,
-            'overdue_count'    => $overdue,
-            'mttr_hours'       => $mttr,
-            'mtta_hours'       => $mtta,
-            'mt_assign_hours'  => $mttAssign,
-            'mttc_hours'       => $mttc,
-            'sla_breach_rate'  => $slaBreachRate,
-            'closure_rate'     => $closureRate,
-            'aging_buckets'    => $this->agingBuckets($open),
+            'project_id' => $projectId,
+            'scope' => $scope,
+            'total_items' => $total,
+            'open_items' => $openCount,
+            'closed_items' => $closedCount,
+            'overdue_count' => $overdue,
+            'mttr_hours' => $mttr,
+            'mtta_hours' => $mtta,
+            'mt_assign_hours' => $mttAssign,
+            'mttc_hours' => $mttc,
+            'closure_rate' => $closureRate,
+            'aging_buckets' => $this->agingBuckets($open),
         ];
     }
 
     /**
      * Query historical remediation metric snapshots for trend charts.
      *
-     * @return \Illuminate\Support\Collection<int,array{month:string,opened:int,closed:int,mttr_hours:?float,sla_breach_rate:float}>
+     * @return Collection<int,array{month:string,opened:int,closed:int,mttr_hours:?float}>
      */
-    public function getTrendData(?int $projectId = null, ?string $dateFrom = null, ?string $dateTo = null): \Illuminate\Support\Collection
+    public function getTrendData(?int $projectId = null, ?string $dateFrom = null, ?string $dateTo = null): Collection
     {
         $query = RemediationMetric::query()
             ->where('scope', 'all')
@@ -109,15 +93,14 @@ class RemediationMetricsService
         }
 
         return $query->get()->map(fn (RemediationMetric $m) => [
-            'id'             => $m->id,
-            'month'          => $m->calculated_at->format('Y-m'),
-            'opened'         => $m->open_items,
-            'closed'         => $m->closed_items,
-            'overdue'        => $m->overdue_count,
-            'mttr_hours'     => $m->mttr_hours !== null ? (float) $m->mttr_hours : null,
-            'sla_breach_rate'=> (float) $m->sla_breach_rate,
-            'closure_rate'   => (float) $m->closure_rate,
-            'aging_buckets'  => $m->aging_buckets,
+            'id' => $m->id,
+            'month' => $m->calculated_at->format('Y-m'),
+            'opened' => $m->open_items,
+            'closed' => $m->closed_items,
+            'overdue' => $m->overdue_count,
+            'mttr_hours' => $m->mttr_hours !== null ? (float) $m->mttr_hours : null,
+            'closure_rate' => (float) $m->closure_rate,
+            'aging_buckets' => $m->aging_buckets,
         ]);
     }
 
@@ -129,31 +112,30 @@ class RemediationMetricsService
         $profile = $this->forProject($projectId, $scope);
 
         return RemediationMetric::create([
-            'project_id'      => $projectId,
-            'scope'           => $scope,
-            'total_items'     => $profile['total_items'],
-            'open_items'      => $profile['open_items'],
-            'closed_items'    => $profile['closed_items'],
-            'overdue_count'   => $profile['overdue_count'],
-            'mttr_hours'      => $profile['mttr_hours'],
-            'mtta_hours'      => $profile['mtta_hours'],
+            'project_id' => $projectId,
+            'scope' => $scope,
+            'total_items' => $profile['total_items'],
+            'open_items' => $profile['open_items'],
+            'closed_items' => $profile['closed_items'],
+            'overdue_count' => $profile['overdue_count'],
+            'mttr_hours' => $profile['mttr_hours'],
+            'mtta_hours' => $profile['mtta_hours'],
             'mt_assign_hours' => $profile['mt_assign_hours'],
-            'mttc_hours'      => $profile['mttc_hours'],
-            'sla_breach_rate' => $profile['sla_breach_rate'],
-            'closure_rate'    => $profile['closure_rate'],
-            'aging_buckets'   => $profile['aging_buckets'],
-            'breakdown'       => null,
-            'calculated_at'   => now(),
+            'mttc_hours' => $profile['mttc_hours'],
+            'closure_rate' => $profile['closure_rate'],
+            'aging_buckets' => $profile['aging_buckets'],
+            'breakdown' => null,
+            'calculated_at' => now(),
         ]);
     }
 
     /* ------------------------------------------------------------------ */
-    /* Internal helpers                                                    */
+    /* Internal helpers */
     /* ------------------------------------------------------------------ */
 
     private function findingsQuery(?int $projectId, string $scope)
     {
-        $query = AssessmentFinding::query()->with('slaTrackers');
+        $query = AssessmentFinding::query();
 
         if ($projectId !== null) {
             $query->whereHas('projectAssessment', fn ($q) => $q->where('project_id', $projectId));
@@ -169,7 +151,7 @@ class RemediationMetricsService
     }
 
     /**
-     * @param Collection<int,AssessmentFinding> $items
+     * @param  Collection<int,AssessmentFinding>  $items
      */
     private function meanHours(Collection $items, callable $resolver): ?float
     {
@@ -183,7 +165,7 @@ class RemediationMetricsService
 
     private function hoursBetween($start, $end): ?float
     {
-        if (!$start || !$end) {
+        if (! $start || ! $end) {
             return null;
         }
 
@@ -202,36 +184,11 @@ class RemediationMetricsService
             return false;
         }
 
-        if ($finding->due_date) {
-            return Carbon::parse($finding->due_date)->isPast();
-        }
-
-        $tracker = $this->latestTracker($finding);
-        return $tracker && $tracker->deadline_at && $tracker->deadline_at->isPast();
+        return $finding->due_date && Carbon::parse($finding->due_date)->isPast();
     }
 
     /**
-     * @param Collection<int,AssessmentFinding> $findings
-     */
-    private function breachedCount(Collection $findings): int
-    {
-        return $findings->filter(function (AssessmentFinding $f) {
-            $tracker = $this->latestTracker($f);
-            if ($tracker && $tracker->status === 'breached') {
-                return true;
-            }
-            // No tracker: a still-open finding past due_date is a breach.
-            return $this->isOverdue($f);
-        })->count();
-    }
-
-    private function latestTracker(AssessmentFinding $finding): ?SLATracker
-    {
-        return $finding->slaTrackers->sortByDesc('id')->first();
-    }
-
-    /**
-     * @param Collection<int,AssessmentFinding> $openFindings
+     * @param  Collection<int,AssessmentFinding>  $openFindings
      * @return array<string,int>
      */
     private function agingBuckets(Collection $openFindings): array

@@ -10,6 +10,7 @@ class PciDssRequirement extends Model
     use HasFactory;
 
     protected $table = 'pci_dss_requirements';
+
     protected $guarded = [];
 
     protected $casts = [

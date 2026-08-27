@@ -20,16 +20,16 @@ use App\Modules\RiskManagement\Models\RiskRegister;
 final class InherentRiskInput
 {
     /**
-     * @param int $threatLevel              Threat level (T).
-     * @param int $vulnerabilityLevel       Vulnerability level (AV).
-     * @param array<string,int> $impactDimensions Impact dimensions keyed by name
-     *                                      (e.g. confidentiality, integrity, availability).
-     * @param int $likelihood               Likelihood (LH).
-     * @param float $assetValue             Monetary asset value.
-     * @param string|null $category         Risk category (context only).
-     * @param array<int|string> $controlReferences References to mapped controls (context only).
-     * @param array<string,mixed> $treatmentContext Treatment context (context only).
-     * @param int|null $riskRegisterId      Originating risk register id, when available.
+     * @param  int  $threatLevel  Threat level (T).
+     * @param  int  $vulnerabilityLevel  Vulnerability level (AV).
+     * @param  array<string,int>  $impactDimensions  Impact dimensions keyed by name
+     *                                               (e.g. confidentiality, integrity, availability).
+     * @param  int  $likelihood  Likelihood (LH).
+     * @param  float  $assetValue  Monetary asset value.
+     * @param  string|null  $category  Risk category (context only).
+     * @param  array<int|string>  $controlReferences  References to mapped controls (context only).
+     * @param  array<string,mixed>  $treatmentContext  Treatment context (context only).
+     * @param  int|null  $riskRegisterId  Originating risk register id, when available.
      */
     public function __construct(
         public readonly int $threatLevel,
@@ -41,8 +41,7 @@ final class InherentRiskInput
         public readonly array $controlReferences = [],
         public readonly array $treatmentContext = [],
         public readonly ?int $riskRegisterId = null
-    ) {
-    }
+    ) {}
 
     /**
      * Build a canonical input DTO from a loose associative array.
@@ -51,7 +50,7 @@ final class InherentRiskInput
      * compatible aliases so it can be fed directly from import rows, request
      * payloads, or model attributes.
      *
-     * @param array<string,mixed> $data
+     * @param  array<string,mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -78,15 +77,15 @@ final class InherentRiskInput
             vulnerabilityLevel: (int) $risk->vulnerability_level_av,
             impactDimensions: [
                 'confidentiality' => (int) $risk->impact_confidentiality,
-                'integrity'       => (int) $risk->impact_integrity,
-                'availability'    => (int) $risk->impact_availability,
+                'integrity' => (int) $risk->impact_integrity,
+                'availability' => (int) $risk->impact_availability,
             ],
             likelihood: (int) $risk->likelihood_lh,
             assetValue: (float) $risk->asset_value_bdt,
             category: $risk->category,
             controlReferences: $risk->controlMappings()->pluck('framework_control_id')->filter()->values()->all(),
             treatmentContext: [
-                'measurement'      => $risk->measurement,
+                'measurement' => $risk->measurement,
                 'lifecycle_status' => $risk->lifecycle_status,
             ],
             riskRegisterId: $risk->id
@@ -114,19 +113,19 @@ final class InherentRiskInput
     public function toSnapshot(): array
     {
         return [
-            'threat_level'        => $this->threatLevel,
+            'threat_level' => $this->threatLevel,
             'vulnerability_level' => $this->vulnerabilityLevel,
-            'impact_dimensions'   => $this->impactDimensions,
-            'likelihood'          => $this->likelihood,
-            'asset_value'         => $this->assetValue,
-            'category'            => $this->category,
-            'control_references'  => $this->controlReferences,
-            'treatment_context'   => $this->treatmentContext,
+            'impact_dimensions' => $this->impactDimensions,
+            'likelihood' => $this->likelihood,
+            'asset_value' => $this->assetValue,
+            'category' => $this->category,
+            'control_references' => $this->controlReferences,
+            'treatment_context' => $this->treatmentContext,
         ];
     }
 
     /**
-     * @param array<string,mixed> $data
+     * @param  array<string,mixed>  $data
      * @return array<string,int>
      */
     private static function extractImpact(array $data): array
@@ -137,8 +136,8 @@ final class InherentRiskInput
 
         return [
             'confidentiality' => (int) ($data['impact_confidentiality'] ?? $data['confidentiality'] ?? 0),
-            'integrity'       => (int) ($data['impact_integrity'] ?? $data['integrity'] ?? 0),
-            'availability'    => (int) ($data['impact_availability'] ?? $data['availability'] ?? 0),
+            'integrity' => (int) ($data['impact_integrity'] ?? $data['integrity'] ?? 0),
+            'availability' => (int) ($data['impact_availability'] ?? $data['availability'] ?? 0),
         ];
     }
 }

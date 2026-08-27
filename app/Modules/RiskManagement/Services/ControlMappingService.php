@@ -2,38 +2,40 @@
 
 namespace App\Modules\RiskManagement\Services;
 
-use App\Models\FrameworkControl;
 use App\Models\Control;
-use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Models\FrameworkControl;
 use App\Modules\RiskManagement\Models\RiskControlMapping;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ControlMappingService
 {
     private float $minConfidence;
+
     private int $suggestionLimit;
+
     private float $fuzzyWeight;
+
     private float $keywordWeight;
+
     private float $presenceBonus;
 
     public function __construct()
     {
-        $this->minConfidence   = config('rmm.matching.min_confidence', 15.0);
+        $this->minConfidence = config('rmm.matching.min_confidence', 15.0);
         $this->suggestionLimit = config('rmm.matching.suggestion_limit', 10);
-        $this->fuzzyWeight     = config('rmm.matching.fuzzy_weight', 0.40);
-        $this->keywordWeight   = config('rmm.matching.keyword_weight', 0.25);
-        $this->presenceBonus   = config('rmm.matching.presence_bonus', 20.0);
+        $this->fuzzyWeight = config('rmm.matching.fuzzy_weight', 0.40);
+        $this->keywordWeight = config('rmm.matching.keyword_weight', 0.25);
+        $this->presenceBonus = config('rmm.matching.presence_bonus', 20.0);
     }
 
     /**
      * Suggest framework controls that match a given risk entry or free-text query.
      *
-     * @param RiskRegister|string $source  RiskRegister model OR a free-text description
-     * @param int|null            $limit
-     * @param int|null            $frameworkId  Restrict suggestions to a specific framework
-     * @return Collection  [{framework_control, confidence_score, match_type, ...}]
+     * @param  RiskRegister|string  $source  RiskRegister model OR a free-text description
+     * @param  int|null  $frameworkId  Restrict suggestions to a specific framework
+     * @return Collection [{framework_control, confidence_score, match_type, ...}]
      */
     public function suggest(RiskRegister|string $source, ?int $limit = null, ?int $frameworkId = null): Collection
     {
@@ -49,12 +51,12 @@ class ControlMappingService
 
         $scores = $controls->map(fn (FrameworkControl $fc) => [
             'framework_control' => $fc,
-            'confidence_score'  => $this->computeCombinedScore($query, $fc),
+            'confidence_score' => $this->computeCombinedScore($query, $fc),
         ])
-        ->filter(fn ($s) => $s['confidence_score'] >= $this->minConfidence)
-        ->sortByDesc('confidence_score')
-        ->values()
-        ->take($limit);
+            ->filter(fn ($s) => $s['confidence_score'] >= $this->minConfidence)
+            ->sortByDesc('confidence_score')
+            ->values()
+            ->take($limit);
 
         return $scores;
     }
@@ -70,7 +72,7 @@ class ControlMappingService
 
         return [
             'framework_controls' => $frameworkSuggestions,
-            'local_controls'     => $localSuggestions,
+            'local_controls' => $localSuggestions,
         ];
     }
 
@@ -90,7 +92,7 @@ class ControlMappingService
 
         return $controls
             ->map(fn (Control $c) => [
-                'control'          => $c,
+                'control' => $c,
                 'confidence_score' => $this->computeLocalScore($query, $c),
             ])
             ->filter(fn ($s) => $s['confidence_score'] >= $this->minConfidence)
@@ -106,15 +108,15 @@ class ControlMappingService
     {
         return RiskControlMapping::updateOrCreate(
             [
-                'risk_register_id'     => $riskRegisterId,
+                'risk_register_id' => $riskRegisterId,
                 'framework_control_id' => $frameworkControlId,
             ],
             [
-                'control_id'       => $controlId,
-                'mapping_status'   => 'suggested',
+                'control_id' => $controlId,
+                'mapping_status' => 'suggested',
                 'confidence_score' => $confidence,
-                'mapped_by'        => Auth::id(),
-                'mapped_at'        => now(),
+                'mapped_by' => Auth::id(),
+                'mapped_at' => now(),
             ]
         );
     }
@@ -127,9 +129,10 @@ class ControlMappingService
         $mapping = RiskControlMapping::findOrFail($mappingId);
         $mapping->update([
             'mapping_status' => 'confirmed',
-            'mapped_by'      => Auth::id(),
-            'mapped_at'      => now(),
+            'mapped_by' => Auth::id(),
+            'mapped_at' => now(),
         ]);
+
         return $mapping->fresh();
     }
 
@@ -141,9 +144,10 @@ class ControlMappingService
         $mapping = RiskControlMapping::findOrFail($mappingId);
         $mapping->update([
             'mapping_status' => 'rejected',
-            'mapped_by'      => Auth::id(),
-            'mapped_at'      => now(),
+            'mapped_by' => Auth::id(),
+            'mapped_at' => now(),
         ]);
+
         return $mapping->fresh();
     }
 
@@ -154,16 +158,16 @@ class ControlMappingService
     {
         return RiskControlMapping::updateOrCreate(
             [
-                'risk_register_id'     => $riskRegisterId,
+                'risk_register_id' => $riskRegisterId,
                 'framework_control_id' => $frameworkControlId,
             ],
             [
-                'control_id'       => $controlId,
-                'mapping_status'   => 'confirmed',
+                'control_id' => $controlId,
+                'mapping_status' => 'confirmed',
                 'confidence_score' => 100.0,
-                'notes'            => $notes,
-                'mapped_by'        => Auth::id(),
-                'mapped_at'        => now(),
+                'notes' => $notes,
+                'mapped_by' => Auth::id(),
+                'mapped_at' => now(),
             ]
         );
     }
@@ -176,7 +180,7 @@ class ControlMappingService
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Internal — Scoring                                                 */
+    /*  Internal — Scoring */
     /* ------------------------------------------------------------------ */
 
     private function computeCombinedScore(string $query, FrameworkControl $fc): float
@@ -254,7 +258,7 @@ class ControlMappingService
 
         return array_filter(
             preg_split('/\W+/', strtolower($text)),
-            fn ($t) => strlen($t) > 2 && !in_array($t, $stopWords, true)
+            fn ($t) => strlen($t) > 2 && ! in_array($t, $stopWords, true)
         );
     }
 
@@ -329,7 +333,7 @@ class ControlMappingService
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Internal — Helpers                                                  */
+    /*  Internal — Helpers */
     /* ------------------------------------------------------------------ */
 
     private function buildQueryFromRisk(RiskRegister $risk): string
@@ -360,6 +364,7 @@ class ControlMappingService
     {
         $text = strip_tags($text);
         $text = preg_replace('/\s+/', ' ', $text);
+
         return trim(mb_strtolower($text));
     }
 }

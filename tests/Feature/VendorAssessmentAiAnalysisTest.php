@@ -4,16 +4,15 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
 use App\Modules\RiskManagement\Models\ThirdPartyVendor;
 use App\Modules\RiskManagement\Models\VendorAssessment;
 use App\Modules\RiskManagement\Models\VendorQuestionnaireResponse;
 use App\Services\VendorAssessmentAnalysisService;
-use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class VendorAssessmentAiAnalysisTest extends TestCase
@@ -21,93 +20,19 @@ class VendorAssessmentAiAnalysisTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected ThirdPartyVendor $vendor;
+
     protected VendorAssessment $assessment;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        Schema::dropIfExists('vendor_questionnaire_responses');
-        Schema::dropIfExists('vendor_assessments');
-        Schema::dropIfExists('third_party_vendors');
-        Schema::dropIfExists('user_roles');
-        Schema::dropIfExists('roles');
-
-        Schema::create('roles', function ($table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->timestamps();
-        });
-        Schema::create('user_roles', function ($table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
-            $table->timestamps();
-        });
-
-        Schema::create('third_party_vendors', function ($table) {
-            $table->id();
-            $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('vendor_name');
-            $table->string('vendor_code')->nullable();
-            $table->string('contact_name')->nullable();
-            $table->string('contact_email')->nullable();
-            $table->string('contact_phone')->nullable();
-            $table->string('website')->nullable();
-            $table->string('service_category')->nullable();
-            $table->string('criticality')->nullable();
-            $table->string('risk_tier')->nullable();
-            $table->date('contract_start')->nullable();
-            $table->date('contract_end')->nullable();
-            $table->string('data_classification')->nullable();
-            $table->text('data_shared')->nullable();
-            $table->string('status')->nullable();
-            $table->text('notes')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        Schema::create('vendor_assessments', function ($table) {
-            $table->id();
-            $table->foreignId('vendor_id')->constrained('third_party_vendors')->cascadeOnDelete();
-            $table->foreignId('assessor_id')->constrained('users')->cascadeOnDelete();
-            $table->string('assessment_type');
-            $table->date('assessment_date')->nullable();
-            $table->date('due_date')->nullable();
-            $table->date('completed_date')->nullable();
-            $table->string('status')->default('pending');
-            $table->decimal('overall_score', 5, 2)->nullable();
-            $table->string('risk_rating')->nullable();
-            $table->text('findings_summary')->nullable();
-            $table->boolean('remediation_required')->default(false);
-            $table->date('remediation_deadline')->nullable();
-            $table->text('notes')->nullable();
-            $table->text('ai_summary')->nullable();
-            $table->timestamp('ai_summary_generated_at')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        Schema::create('vendor_questionnaire_responses', function ($table) {
-            $table->id();
-            $table->foreignId('vendor_assessment_id')->constrained()->cascadeOnDelete();
-            $table->string('section')->nullable();
-            $table->string('question_key');
-            $table->string('question_text');
-            $table->text('response_text')->nullable();
-            $table->string('response_type')->nullable();
-            $table->decimal('score', 5, 2)->nullable();
-            $table->decimal('max_score', 5, 2)->nullable();
-            $table->string('evidence_file')->nullable();
-            $table->boolean('is_compliant')->nullable();
-            $table->text('comments')->nullable();
-            $table->text('ai_suggested_answer')->nullable();
-            $table->boolean('needs_vendor_review')->default(false);
-            $table->timestamps();
-        });
+        config(['services.ai.provider' => 'ollama']);
+        config(['services.ollama.url' => 'http://localhost:11434']);
 
         $this->user = User::factory()->create([
             'username' => 'testadmin',
@@ -145,10 +70,10 @@ class VendorAssessmentAiAnalysisTest extends TestCase
     public function test_analysis_generates_strengths_and_weaknesses(): void
     {
         Http::fake([
-            'https://generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => '{"strengths":[{"strength":"Vendor has a clear encryption policy for data at rest","questions":["Q1"]},{"strength":"Access controls follow least-privilege principle","questions":["Q2"]}],"weaknesses":[{"weakness":"No evidence of independent penetration testing in the last 12 months","questions":["Q4"]}],"suggestions":[]}']]]]
-                ]
+            'http://localhost:11434/*' => Http::response([
+                'model' => 'qwen3.5:4b',
+                'response' => '{"strengths":[{"strength":"Vendor has a clear encryption policy for data at rest","questions":["Q1"]},{"strength":"Access controls follow least-privilege principle","questions":["Q2"]}],"weaknesses":[{"weakness":"No evidence of independent penetration testing in the last 12 months","questions":["Q4"]}],"suggestions":[]}',
+                'done' => true,
             ], 200),
         ]);
 
@@ -171,10 +96,10 @@ class VendorAssessmentAiAnalysisTest extends TestCase
     public function test_analysis_stores_suggestions_for_unanswered_questions(): void
     {
         Http::fake([
-            'https://generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => '{"strengths":[],"weaknesses":[],"suggestions":[{"question_key":"incident_response","suggested_answer":"Vendor likely has a 24/7 SOC with SIEM monitoring aligned with industry standards for cloud service providers."}]}']]]]
-                ]
+            'http://localhost:11434/*' => Http::response([
+                'model' => 'qwen3.5:4b',
+                'response' => '{"strengths":[],"weaknesses":[],"suggestions":[{"question_key":"incident_response","suggested_answer":"Vendor likely has a 24/7 SOC with SIEM monitoring aligned with industry standards for cloud service providers."}]}',
+                'done' => true,
             ], 200),
         ]);
 
@@ -191,10 +116,10 @@ class VendorAssessmentAiAnalysisTest extends TestCase
     public function test_analysis_question_references_are_present(): void
     {
         Http::fake([
-            'https://generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => '{"strengths":[{"strength":"Encryption policy is well-documented","questions":["Q1","Q3"]}],"weaknesses":[{"weakness":"No recent DR test","questions":["Q4","Q5"]}],"suggestions":[]}']]]]
-                ]
+            'http://localhost:11434/*' => Http::response([
+                'model' => 'qwen3.5:4b',
+                'response' => '{"strengths":[{"strength":"Encryption policy is well-documented","questions":["Q1","Q3"]}],"weaknesses":[{"weakness":"No recent DR test","questions":["Q4","Q5"]}],"suggestions":[]}',
+                'done' => true,
             ], 200),
         ]);
 
@@ -282,21 +207,10 @@ class VendorAssessmentAiAnalysisTest extends TestCase
     public function test_summary_is_specific_not_generic_filler(): void
     {
         Http::fake([
-            'https://generativelanguage.googleapis.com/*' => Http::response([
-                'candidates' => [
-                    ['content' => ['parts' => [['text' => '{
-                        "strengths":[
-                            {"strength":"Vendor encrypts all data at rest using AES-256 and transit using TLS 1.3, directly meeting the encryption question requirements","questions":["Q1"]},
-                            {"strength":"Access control policy enforces role-based access with quarterly review cycles, addressing the access governance concern","questions":["Q2"]},
-                            {"strength":"SOC 2 Type II report is current and covers all relevant trust service criteria for the services provided","questions":["Q5"]}
-                        ],
-                        "weaknesses":[
-                            {"weakness":"Business continuity plan exists but no evidence of a tabletop exercise or full-scale DR test within the last 12 months","questions":["Q3","Q4"]},
-                            {"weakness":"Incident response procedure does not include specific SLAs for containment and eradication phases","questions":["Q6"]}
-                        ],
-                        "suggestions":[]
-                    }']]]]
-                ]
+            'http://localhost:11434/*' => Http::response([
+                'model' => 'qwen3.5:4b',
+                'response' => '{"strengths":[{"strength":"Vendor encrypts all data at rest using AES-256 and transit using TLS 1.3, directly meeting the encryption question requirements","questions":["Q1"]},{"strength":"Access control policy enforces role-based access with quarterly review cycles, addressing the access governance concern","questions":["Q2"]},{"strength":"SOC 2 Type II report is current and covers all relevant trust service criteria for the services provided","questions":["Q5"]}],"weaknesses":[{"weakness":"Business continuity plan exists but no evidence of a tabletop exercise or full-scale DR test within the last 12 months","questions":["Q3","Q4"]},{"weakness":"Incident response procedure does not include specific SLAs for containment and eradication phases","questions":["Q6"]}],"suggestions":[]}',
+                'done' => true,
             ], 200),
         ]);
 

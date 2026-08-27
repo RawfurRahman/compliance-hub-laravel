@@ -30,12 +30,12 @@ class RiskRecalculationJob implements ShouldQueue
     public function handle(RiskService $service): void
     {
         $risk = RiskRegister::find($this->riskId);
-        if (!$risk) {
+        if (! $risk) {
             return;
         }
 
         $service->recalculateRisk($risk);
-        
+
         if ($risk->project_id) {
             $service->updateHeatmap($risk->project_id);
         }

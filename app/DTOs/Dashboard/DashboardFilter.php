@@ -43,6 +43,7 @@ final class DashboardFilter
         if ($this->riskStatus && $this->riskStatus !== 'All Risk Types') {
             $legacy['risk_type'] = $this->riskStatus;
         }
+
         return $legacy;
     }
 

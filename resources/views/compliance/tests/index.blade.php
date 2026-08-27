@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compliance Tests - Compliance Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <script src="{{ asset('js/tailwind.min.js') }}"></script>
+    <link href="{{ asset('fonts/inter.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         * { font-family: 'Inter', sans-serif; }
     </style>
 </head>
@@ -285,6 +285,6 @@
         @endif
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="{{ asset('js/alpine.min.js') }}" defer></script>
 </body>
 </html>

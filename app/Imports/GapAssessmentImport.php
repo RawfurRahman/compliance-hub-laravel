@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class GapAssessmentImport implements WithMultipleSheets
 {
     protected $projectId;
+
     protected $filePath;
 
     public function __construct(int $projectId, string $filePath)
@@ -30,7 +31,7 @@ class GapAssessmentImport implements WithMultipleSheets
         try {
             $reader = IOFactory::createReaderForFile($this->filePath);
             $sheetNames = $reader->listWorksheetNames($this->filePath);
-            
+
             foreach ($sheetNames as $name) {
                 $sheets[$name] = new DepartmentSheetImport($this->projectId, $name);
             }
@@ -46,6 +47,7 @@ class GapAssessmentImport implements WithMultipleSheets
 class DepartmentSheetImport implements ToCollection, WithHeadingRow
 {
     protected $projectId;
+
     protected $departmentName;
 
     public function __construct(int $projectId, string $departmentName)
@@ -61,19 +63,19 @@ class DepartmentSheetImport implements ToCollection, WithHeadingRow
     {
         // 1. Create or retrieve the department corresponding to the sheet name
         $department = Department::firstOrCreate([
-            'name' => trim($this->departmentName)
+            'name' => trim($this->departmentName),
         ]);
 
         // 2. Loop through rows and insert/update GapControl models
         foreach ($rows as $row) {
             $controlId = $row['control_id'] ?? $row['controlid'] ?? null;
-            if (!$controlId) {
+            if (! $controlId) {
                 continue;
             }
 
             $description = $row['requirement_description'] ?? $row['requirement'] ?? $row['description'] ?? 'No description provided.';
             $evidence = $row['required_evidence'] ?? $row['evidence'] ?? null;
-            
+
             // Map status
             $doneVal = strtolower(trim($row['done'] ?? $row['status'] ?? ''));
             $isDone = in_array($doneVal, ['yes', 'done', '1', 'true', 'x']);

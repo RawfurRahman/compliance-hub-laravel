@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Project;
 use App\Models\GeneratedReport;
+use App\Models\Project;
+use App\Reports\Generators\PciDssRocGenerator;
 use App\Reports\Generators\ReportGenerator;
+use App\Reports\Generators\UnifiedAssessmentGenerator;
+use App\Support\Reports\ReportRegistry;
 use Illuminate\Support\Collection;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ReportGenerationService
 {
@@ -16,11 +19,27 @@ class ReportGenerationService
      */
     public function generate(Project $project, string $type, array $options = []): View
     {
-        if (!$this->validateReportType($project, $type)) {
+        if (! $this->validateReportType($project, $type)) {
             abort(404, "Report type '{$type}' not available for this project.");
         }
 
         // Log report generation
+        // Dispatch to appropriate generator based on report type
+        $generator = $this->getReportGenerator($type);
+        $view = $generator->generate($project, $type, $options);
+
+        $viewData = $view->getData();
+        $compliancePercentage = 0;
+        if (isset($viewData['stats']['compliancePct'])) {
+            $compliancePercentage = $viewData['stats']['compliancePct'];
+        } elseif (isset($viewData['complianceMetrics']['compliance_percentage'])) {
+            $compliancePercentage = $viewData['complianceMetrics']['compliance_percentage'];
+        }
+
+        $metadata = array_merge($options['metadata'] ?? [], [
+            'compliance_percentage' => $compliancePercentage,
+        ]);
+
         $report = GeneratedReport::create([
             'project_id' => $project->id,
             'report_type' => $type,
@@ -28,12 +47,11 @@ class ReportGenerationService
             'framework_version' => $options['framework_version'] ?? null,
             'generated_by' => Auth::id(),
             'status' => 'final',
-            'metadata' => $options['metadata'] ?? null,
+            'metadata' => $metadata,
+            'generated_at' => now(),
         ]);
 
-        // Dispatch to appropriate generator based on report type
-        $generator = $this->getReportGenerator($type);
-        return $generator->generate($project, $type, $options);
+        return $view;
     }
 
     /**
@@ -42,7 +60,8 @@ class ReportGenerationService
     protected function getReportGenerator(string $type): ReportGenerator
     {
         return match (true) {
-            $type === 'pci_dss_roc' => new PciDssRocGenerator(),
+            $type === 'pci_dss_roc' => new PciDssRocGenerator,
+            $type === 'unified_gap' || $type === 'unified_final' => new UnifiedAssessmentGenerator,
             default => throw new \Exception("No generator found for report type: {$type}"),
         };
     }
@@ -52,7 +71,7 @@ class ReportGenerationService
      */
     public function getAvailableReports(Project $project): Collection
     {
-        return ReportRegistry::getAvailableReports($project);
+        return collect(ReportRegistry::getAvailableReports($project));
     }
 
     /**

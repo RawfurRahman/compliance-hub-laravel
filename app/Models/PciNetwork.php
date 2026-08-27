@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PciNetwork extends Model
 {
     use HasFactory;
+
     protected $table = 'pci_networks';
+
     protected $guarded = [];
 }

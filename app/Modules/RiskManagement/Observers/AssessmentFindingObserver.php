@@ -3,8 +3,9 @@
 namespace App\Modules\RiskManagement\Observers;
 
 use App\Models\AssessmentFinding;
-use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskControlMapping;
+use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Modules\RiskManagement\Services\RiskRegisterService;
 use App\Services\Dashboard\DashboardCacheKey;
 
 class AssessmentFindingObserver
@@ -41,7 +42,7 @@ class AssessmentFindingObserver
     private function createOrUpdateRiskFromFinding(AssessmentFinding $finding): void
     {
         $projectAssessment = $finding->projectAssessment;
-        if (!$projectAssessment) {
+        if (! $projectAssessment) {
             return;
         }
 
@@ -57,7 +58,7 @@ class AssessmentFindingObserver
 
         $this->ensureControlMapping($risk, $finding);
 
-        if (!$finding->risk_register_id) {
+        if (! $finding->risk_register_id) {
             $finding->risk_register_id = $risk->id;
             $finding->saveQuietly();
         }
@@ -71,9 +72,9 @@ class AssessmentFindingObserver
         return [
             'project_id' => $projectId,
             'framework_control_id' => $finding->framework_control_id,
-            'serial_no' => app(\App\Modules\RiskManagement\Services\RiskRegisterService::class)
+            'serial_no' => app(RiskRegisterService::class)
                 ->generateRiskId($projectId),
-            'asset_process_service' => $finding->observation ?? ($finding->frameworkControl?->domain ?? 'Assessment Finding'),
+            'asset_process_service' => $finding->observation ?? ($finding->frameworkControl->domain ?? 'Assessment Finding'),
             'risk_owner' => 'Assessment Auto-Created',
             'risk_calculation_date' => now()->toDateString(),
             'asset_value_bdt' => 0,
@@ -103,7 +104,7 @@ class AssessmentFindingObserver
 
     private function ensureControlMapping(RiskRegister $risk, AssessmentFinding $finding): void
     {
-        if (!$finding->framework_control_id) {
+        if (! $finding->framework_control_id) {
             return;
         }
 
@@ -125,7 +126,7 @@ class AssessmentFindingObserver
     private function closeAssociatedRisk(AssessmentFinding $finding): void
     {
         $risk = RiskRegister::find($finding->risk_register_id);
-        if (!$risk) {
+        if (! $risk) {
             return;
         }
 

@@ -5,6 +5,7 @@ namespace App\Modules\RiskManagement\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Modules\RiskManagement\Services\WorkbookImportService;
+use App\Services\UploadRejectionLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ class RiskImportController extends Controller
 
     public function __construct()
     {
-        $this->service = new WorkbookImportService();
+        $this->service = new WorkbookImportService;
     }
 
     /**
@@ -24,6 +25,7 @@ class RiskImportController extends Controller
     public function showImportForm(Project $project)
     {
         $this->authorize('view', $project);
+
         return view('risk-management.import', compact('project'));
     }
 
@@ -34,14 +36,31 @@ class RiskImportController extends Controller
     {
         $this->authorize('view', $project);
 
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv,txt|max:10240', // Limit file size to 10MB
-        ]);
+        $formats = implode(', ', config('uploads.imports.extensions'));
+
+        UploadRejectionLogger::validate(
+            $request,
+            [
+                'file' => [
+                    'required',
+                    'file',
+                    'mimes:'.implode(',', config('uploads.imports.extensions')),
+                    'mimetypes:'.implode(',', config('uploads.imports.mimetypes')),
+                    'max:'.(int) config('uploads.imports.max_size_kb'),
+                ],
+            ],
+            'data-import.rejected',
+            [
+                'file.mimes' => "The file must be one of the accepted import formats: {$formats}.",
+                'file.mimetypes' => "The file content does not match the accepted import formats. Allowed: {$formats}.",
+                'file.max' => 'The file may not be larger than '.((int) config('uploads.imports.max_size_kb') / 1024).' MB.',
+            ],
+        );
 
         $file = $request->file('file');
-        
+
         // Save to temp imports folder
-        $tempPath = $file->storeAs('imports/temp', Str::random(20) . '.' . $file->getClientOriginalExtension());
+        $tempPath = $file->storeAs('imports/temp', Str::random(20).'.'.$file->getClientOriginalExtension());
         $absolutePath = Storage::path($tempPath);
 
         try {
@@ -56,6 +75,7 @@ class RiskImportController extends Controller
             ]);
         } catch (\Exception $e) {
             Storage::delete($tempPath);
+
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -78,7 +98,7 @@ class RiskImportController extends Controller
         $tempFile = $request->input('temp_file');
         $absolutePath = Storage::path($tempFile);
 
-        if (!file_exists($absolutePath)) {
+        if (! file_exists($absolutePath)) {
             return response()->json([
                 'success' => false,
                 'error' => 'Temporary file not found or expired. Please upload again.',
@@ -87,9 +107,9 @@ class RiskImportController extends Controller
 
         try {
             $mappings = $request->input('mappings');
-            
+
             $result = $this->service->import($absolutePath, $mappings, $project->id);
-            
+
             // Clean up file
             Storage::delete($tempFile);
 

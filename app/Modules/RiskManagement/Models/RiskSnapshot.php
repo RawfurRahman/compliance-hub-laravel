@@ -17,10 +17,10 @@ class RiskSnapshot extends Model
     ];
 
     protected $casts = [
-        'snapshot_data'      => 'array',
-        'metadata'           => 'array',
-        'snapped_at'         => 'datetime',
-        'total_exposure'     => 'decimal:2',
+        'snapshot_data' => 'array',
+        'metadata' => 'array',
+        'snapped_at' => 'datetime',
+        'total_exposure' => 'decimal:2',
         'avg_inherent_score' => 'decimal:2',
         'avg_residual_score' => 'decimal:2',
     ];

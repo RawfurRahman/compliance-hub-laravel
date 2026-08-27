@@ -2,8 +2,8 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         .font-outfit { font-family: 'Outfit', sans-serif; }
         .va-score-low { background-color: #d1fae5; color: #065f46; }
         .va-score-medium { background-color: #fef3c7; color: #92400e; }
@@ -256,7 +256,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function vendorAssessmentDetail() {
     return {
         showAiSummary: {{ $assessment->ai_summary ? 'true' : 'false' }},

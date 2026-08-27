@@ -2,14 +2,14 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
 use App\Modules\RiskManagement\Models\ThirdPartyVendor;
 use App\Modules\RiskManagement\Models\VendorAssessment;
 use App\Modules\RiskManagement\Models\VendorQuestionnaireResponse;
 use App\Modules\RiskManagement\Services\VendorAssessmentService;
-use App\Modules\RiskManagement\Events\VendorAssessmentCompleted;
 use App\Services\VendorAssessmentAnalysisService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class VendorAssessmentController extends Controller
@@ -44,6 +44,7 @@ class VendorAssessmentController extends Controller
     public function show(ThirdPartyVendor $vendor, VendorAssessment $assessment)
     {
         $assessment->load('responses');
+
         return response()->json(['data' => $assessment]);
     }
 
@@ -68,6 +69,7 @@ class VendorAssessmentController extends Controller
     public function destroy(ThirdPartyVendor $vendor, VendorAssessment $assessment)
     {
         $this->service->delete($assessment);
+
         return response()->json(['success' => true]);
     }
 
@@ -122,7 +124,7 @@ class VendorAssessmentController extends Controller
 
         $aiSummary = $assessment->ai_summary;
 
-        if (!$aiSummary || empty($aiSummary['strengths'] ?? []) && empty($aiSummary['weaknesses'] ?? [])) {
+        if (! $aiSummary || empty($aiSummary['strengths'] ?? []) && empty($aiSummary['weaknesses'] ?? [])) {
             return response()->json(['summary' => null, 'message' => 'No AI summary available yet.']);
         }
 
@@ -136,7 +138,7 @@ class VendorAssessmentController extends Controller
         }
 
         $response->update([
-            'needs_vendor_review' => !$response->needs_vendor_review,
+            'needs_vendor_review' => ! $response->needs_vendor_review,
         ]);
 
         return response()->json([

@@ -20,14 +20,14 @@ class ComplianceTestTemplateSeeder extends Seeder
             ],
             [
                 'name' => 'AI Analysis Completion Check',
-                'description' => 'Verifies that Gemini AI analysis completed successfully for all uploaded evidence within the expected time window.',
+                'description' => 'Verifies that AI analysis completed successfully for all uploaded evidence within the expected time window.',
                 'integration_type' => 'n8n',
                 'test_type' => 'Automated',
                 'sla_days' => 1,
                 'check_expression' => 'current_score >= threshold',
             ],
             [
-                'name' => 'Evidence Processing SLA Check',
+                'name' => 'Evidence Processing Check',
                 'description' => 'Detects evidence files that were not processed through the n8n pipeline within the defined SLA window.',
                 'integration_type' => 'n8n',
                 'test_type' => 'Automated',

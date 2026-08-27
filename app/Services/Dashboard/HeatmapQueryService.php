@@ -34,12 +34,12 @@ class HeatmapQueryService extends BaseQueryService
 
         $rows = $query->groupBy('status', 'risk_rating')
             ->get()
-            ->keyBy(fn ($row) => $row->status . '|' . $row->risk_rating);
+            ->keyBy(fn ($row) => $row->status.'|'.$row->risk_rating);
 
         $cells = [];
         foreach ($likelihoodAxis as $likelihood) {
             foreach ($impactAxis as $impact) {
-                $key = $likelihood . '|' . $impact;
+                $key = $likelihood.'|'.$impact;
                 $cells[] = [
                     'likelihood' => $likelihood,
                     'impact' => $impact,

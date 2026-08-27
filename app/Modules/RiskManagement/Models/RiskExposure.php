@@ -18,10 +18,10 @@ class RiskExposure extends Model
     protected $casts = [
         'inherent_exposure' => 'decimal:2',
         'residual_exposure' => 'decimal:2',
-        'financial_amount'  => 'decimal:2',
-        'probability_pct'   => 'decimal:2',
-        'impact_rating'     => 'integer',
-        'calculated_at'     => 'datetime',
+        'financial_amount' => 'decimal:2',
+        'probability_pct' => 'decimal:2',
+        'impact_rating' => 'integer',
+        'calculated_at' => 'datetime',
     ];
 
     public function risk()
@@ -37,9 +37,16 @@ class RiskExposure extends Model
     public function getExposureLevelAttribute(): string
     {
         $val = $this->residual_exposure ?? $this->inherent_exposure ?? 0;
-        if ($val >= 1000000) return 'Critical';
-        if ($val >= 500000)  return 'High';
-        if ($val >= 100000)  return 'Medium';
+        if ($val >= 1000000) {
+            return 'Critical';
+        }
+        if ($val >= 500000) {
+            return 'High';
+        }
+        if ($val >= 100000) {
+            return 'Medium';
+        }
+
         return 'Low';
     }
 

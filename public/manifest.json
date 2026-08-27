@@ -1,0 +1,27 @@
+{
+  "name": "ComplianceHub Dashboard",
+  "short_name": "ComplianceHub",
+  "description": "Enterprise compliance and risk management dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#2c3e50",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/build/assets/logo-apple-touch-180-1176666b630471328323.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/build/assets/logo-192-96196c2d8716053144.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/build/assets/logo-512-7070707070707070.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

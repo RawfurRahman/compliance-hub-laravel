@@ -7,6 +7,7 @@ use App\Models\Control;
 use App\Models\Framework;
 use App\Models\User;
 use App\Modules\RiskManagement\Imports\ControlMappingSheetImport;
+use App\Services\UploadRejectionLogger;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -28,13 +29,13 @@ class ControlCatalogController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'code'           => 'required|string|max:100|unique:controls,code',
-            'title'          => 'required|string|max:255',
-            'description'    => 'nullable|string',
-            'framework_id'   => 'nullable|integer|exists:frameworks,id',
-            'status'         => 'nullable|string|max:50',
+            'code' => 'required|string|max:100|unique:controls,code',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'framework_id' => 'nullable|integer|exists:frameworks,id',
+            'status' => 'nullable|string|max:50',
             'effectiveness_score' => 'nullable|numeric|min:0|max:100',
-            'control_owner_id'    => 'nullable|integer|exists:users,id',
+            'control_owner_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $data['control_code'] = $data['code'];
@@ -63,13 +64,13 @@ class ControlCatalogController extends Controller
     public function update(Request $request, Control $control)
     {
         $data = $request->validate([
-            'code'           => "required|string|max:100|unique:controls,code,{$control->id}",
-            'title'          => 'required|string|max:255',
-            'description'    => 'nullable|string',
-            'framework_id'   => 'nullable|integer|exists:frameworks,id',
-            'status'         => 'nullable|string|max:50',
+            'code' => "required|string|max:100|unique:controls,code,{$control->id}",
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'framework_id' => 'nullable|integer|exists:frameworks,id',
+            'status' => 'nullable|string|max:50',
             'effectiveness_score' => 'nullable|numeric|min:0|max:100',
-            'control_owner_id'    => 'nullable|integer|exists:users,id',
+            'control_owner_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $data['control_code'] = $data['code'];
@@ -83,17 +84,35 @@ class ControlCatalogController extends Controller
     public function destroy(Control $control)
     {
         $control->delete();
+
         return redirect()->route('admin.controls.index')->with('success', 'Control deleted.');
     }
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file'       => 'required|file|mimes:xlsx,xls,csv',
-            'framework'  => 'required|string|exists:frameworks,slug',
-        ]);
+        $formats = implode(', ', config('uploads.imports.extensions'));
 
-        $import = new ControlMappingSheetImport($request->framework);
+        $validated = UploadRejectionLogger::validate(
+            $request,
+            [
+                'file' => [
+                    'required',
+                    'file',
+                    'mimes:'.implode(',', config('uploads.imports.extensions')),
+                    'mimetypes:'.implode(',', config('uploads.imports.mimetypes')),
+                    'max:'.(int) config('uploads.imports.max_size_kb'),
+                ],
+                'framework' => 'required|string|exists:frameworks,slug',
+            ],
+            'data-import.rejected',
+            [
+                'file.mimes' => "The file must be one of the accepted import formats: {$formats}.",
+                'file.mimetypes' => "The file content does not match the accepted import formats. Allowed: {$formats}.",
+                'file.max' => 'The file may not be larger than '.((int) config('uploads.imports.max_size_kb') / 1024).' MB.',
+            ],
+        );
+
+        $import = new ControlMappingSheetImport($validated['framework']);
         Excel::import($import, $request->file('file'));
 
         return redirect()->route('admin.frameworks.controls.index', ['framework' => $request->framework])

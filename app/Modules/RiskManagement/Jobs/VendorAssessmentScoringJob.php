@@ -21,7 +21,7 @@ class VendorAssessmentScoringJob implements ShouldQueue
     public function handle(VendorAssessmentService $service): void
     {
         $assessment = VendorAssessment::find($this->assessmentId);
-        if (!$assessment) {
+        if (! $assessment) {
             return;
         }
 

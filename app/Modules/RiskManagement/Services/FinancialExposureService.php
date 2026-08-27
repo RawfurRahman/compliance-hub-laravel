@@ -43,8 +43,7 @@ class FinancialExposureService
     public function __construct(
         private float $remediationCostRatio = 0.15,
         private float $businessInterruptionFactor = 0.30,
-    ) {
-    }
+    ) {}
 
     public function getSnapshot(): array
     {
@@ -96,16 +95,16 @@ class FinancialExposureService
         $businessInterruption = $assetValue * $this->businessInterruptionFactor * $exposureFactor;
 
         return [
-            'risk_register_id'             => $risk->id,
-            'serial_no'                    => $risk->serial_no,
-            'category'                     => $risk->category,
-            'asset_value'                  => round($assetValue, 2),
-            'single_loss_expectancy'       => round($sle, 2),
+            'risk_register_id' => $risk->id,
+            'serial_no' => $risk->serial_no,
+            'category' => $risk->category,
+            'asset_value' => round($assetValue, 2),
+            'single_loss_expectancy' => round($sle, 2),
             'annualized_rate_of_occurrence' => $aro,
-            'annualized_loss_expectancy'   => round($ale, 2),
-            'expected_remediation_cost'    => round($remediationCost, 2),
+            'annualized_loss_expectancy' => round($ale, 2),
+            'expected_remediation_cost' => round($remediationCost, 2),
             'business_interruption_impact' => round($businessInterruption, 2),
-            'residual_annualized_loss'     => round($residualAle, 2),
+            'residual_annualized_loss' => round($residualAle, 2),
         ];
     }
 
@@ -133,24 +132,25 @@ class FinancialExposureService
                 $agg = $this->aggregate($group);
                 $agg['category'] = $category;
                 $agg['portfolio_exposure'] = round($group->sum('residual_annualized_loss'), 2);
+
                 return $agg;
             })
             ->values();
 
         return [
             'project_id' => $projectId,
-            'portfolio'  => $portfolio,
+            'portfolio' => $portfolio,
             'categories' => $byCategory,
-            'risks'      => $perRisk->values(),
+            'risks' => $perRisk->values(),
         ];
     }
 
     /**
      * Query historical exposure metric snapshots for trend charts.
      *
-     * @return \Illuminate\Support\Collection<int,array{date:string,sle:float,ale:float,portfolio_exposure:float}>
+     * @return Collection<int,array{date:string,sle:float,ale:float,portfolio_exposure:float}>
      */
-    public function getTrendData(?int $projectId = null, ?string $dateFrom = null, ?string $dateTo = null): \Illuminate\Support\Collection
+    public function getTrendData(?int $projectId = null, ?string $dateFrom = null, ?string $dateTo = null): Collection
     {
         $query = FinancialExposureMetric::query()
             ->where('scope', 'portfolio')
@@ -167,13 +167,13 @@ class FinancialExposureService
         }
 
         return $query->get()->map(fn (FinancialExposureMetric $m) => [
-            'id'                 => $m->id,
-            'date'               => $m->calculated_at->toDateString(),
-            'sle'                => (float) $m->single_loss_expectancy,
-            'ale'                => (float) $m->annualized_loss_expectancy,
+            'id' => $m->id,
+            'date' => $m->calculated_at->toDateString(),
+            'sle' => (float) $m->single_loss_expectancy,
+            'ale' => (float) $m->annualized_loss_expectancy,
             'portfolio_exposure' => (float) $m->portfolio_exposure,
-            'risk_count'         => $m->risk_count,
-            'remediation_cost'   => (float) $m->expected_remediation_cost,
+            'risk_count' => $m->risk_count,
+            'remediation_cost' => (float) $m->expected_remediation_cost,
         ]);
     }
 
@@ -187,32 +187,32 @@ class FinancialExposureService
         $portfolio = $profile['portfolio'];
 
         $metric = FinancialExposureMetric::create([
-            'project_id'                   => $projectId,
-            'scope'                        => 'portfolio',
-            'category'                     => null,
-            'risk_count'                   => $portfolio['risk_count'],
-            'single_loss_expectancy'       => $portfolio['single_loss_expectancy'],
-            'annualized_loss_expectancy'   => $portfolio['annualized_loss_expectancy'],
-            'expected_remediation_cost'    => $portfolio['expected_remediation_cost'],
+            'project_id' => $projectId,
+            'scope' => 'portfolio',
+            'category' => null,
+            'risk_count' => $portfolio['risk_count'],
+            'single_loss_expectancy' => $portfolio['single_loss_expectancy'],
+            'annualized_loss_expectancy' => $portfolio['annualized_loss_expectancy'],
+            'expected_remediation_cost' => $portfolio['expected_remediation_cost'],
             'business_interruption_impact' => $portfolio['business_interruption_impact'],
-            'portfolio_exposure'           => $portfolio['portfolio_exposure'],
-            'breakdown'                    => $profile['risks'],
-            'calculated_at'                => now(),
+            'portfolio_exposure' => $portfolio['portfolio_exposure'],
+            'breakdown' => $profile['risks'],
+            'calculated_at' => now(),
         ]);
 
         foreach ($profile['categories'] as $category) {
             FinancialExposureMetric::create([
-                'project_id'                   => $projectId,
-                'scope'                        => 'category:' . $category['category'],
-                'category'                     => $category['category'],
-                'risk_count'                   => $category['risk_count'],
-                'single_loss_expectancy'       => $category['single_loss_expectancy'],
-                'annualized_loss_expectancy'   => $category['annualized_loss_expectancy'],
-                'expected_remediation_cost'    => $category['expected_remediation_cost'],
+                'project_id' => $projectId,
+                'scope' => 'category:'.$category['category'],
+                'category' => $category['category'],
+                'risk_count' => $category['risk_count'],
+                'single_loss_expectancy' => $category['single_loss_expectancy'],
+                'annualized_loss_expectancy' => $category['annualized_loss_expectancy'],
+                'expected_remediation_cost' => $category['expected_remediation_cost'],
                 'business_interruption_impact' => $category['business_interruption_impact'],
-                'portfolio_exposure'           => $category['portfolio_exposure'],
-                'breakdown'                    => null,
-                'calculated_at'                => now(),
+                'portfolio_exposure' => $category['portfolio_exposure'],
+                'breakdown' => null,
+                'calculated_at' => now(),
             ]);
         }
 
@@ -220,22 +220,22 @@ class FinancialExposureService
     }
 
     /* ------------------------------------------------------------------ */
-    /* Internal helpers                                                    */
+    /* Internal helpers */
     /* ------------------------------------------------------------------ */
 
     /**
      * Aggregate a collection of per-risk exposure rows into a rollup.
      *
-     * @param Collection<int,array<string,mixed>> $rows
+     * @param  Collection<int,array<string,mixed>>  $rows
      * @return array<string,mixed>
      */
     private function aggregate(Collection $rows): array
     {
         return [
-            'risk_count'                   => $rows->count(),
-            'single_loss_expectancy'       => round($rows->sum('single_loss_expectancy'), 2),
-            'annualized_loss_expectancy'   => round($rows->sum('annualized_loss_expectancy'), 2),
-            'expected_remediation_cost'    => round($rows->sum('expected_remediation_cost'), 2),
+            'risk_count' => $rows->count(),
+            'single_loss_expectancy' => round($rows->sum('single_loss_expectancy'), 2),
+            'annualized_loss_expectancy' => round($rows->sum('annualized_loss_expectancy'), 2),
+            'expected_remediation_cost' => round($rows->sum('expected_remediation_cost'), 2),
             'business_interruption_impact' => round($rows->sum('business_interruption_impact'), 2),
         ];
     }

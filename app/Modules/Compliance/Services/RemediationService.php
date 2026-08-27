@@ -37,7 +37,7 @@ class RemediationService
         $plan->update([
             'status' => 'completed',
             'completion_date' => now(),
-            'notes' => $notes ? ($plan->notes . "\n" . $notes) : $plan->notes,
+            'notes' => $notes ? ($plan->notes."\n".$notes) : $plan->notes,
         ]);
 
         event(new RemediationPlanClosed($plan, $notes));
@@ -45,7 +45,7 @@ class RemediationService
         return $plan;
     }
 
-    public function getOverdueBySLA(?int $projectId = null): Collection
+    public function getOverduePlans(?int $projectId = null): Collection
     {
         $query = RiskTreatmentPlan::overdue()->with('risk');
 

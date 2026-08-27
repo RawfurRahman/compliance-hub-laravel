@@ -3,8 +3,8 @@
 namespace App\Modules\Compliance\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Control;
 use App\Models\Project;
+use App\Modules\Compliance\Models\ControlTest;
 use App\Modules\Compliance\Services\ControlTestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +19,7 @@ class ControlTestController extends Controller
     public function index(Request $request, Project $project)
     {
         $failed = $this->service->getFailedTests($project->id);
+
         return view('compliance.control-tests', compact('project', 'failed'));
     }
 
@@ -54,13 +55,15 @@ class ControlTestController extends Controller
 
     public function show(Project $project, int $testId)
     {
-        $test = \App\Modules\Compliance\Models\ControlTest::with('control', 'testedBy', 'assessmentFinding')->findOrFail($testId);
+        $test = ControlTest::with('control', 'testedBy', 'assessmentFinding')->findOrFail($testId);
+
         return view('compliance.control-test-show', compact('project', 'test'));
     }
 
     public function history(Project $project, int $controlId): JsonResponse
     {
         $history = $this->service->getHistory($controlId);
+
         return response()->json($history);
     }
 }

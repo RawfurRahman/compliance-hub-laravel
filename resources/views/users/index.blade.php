@@ -116,7 +116,7 @@
                                         <a href="{{ route('users.edit', $user) }}" class="text-sky-600 hover:text-indigo-700 font-bold text-xs uppercase tracking-widest transition-colors">Edit</a>
                                         
                                         @if(auth()->id() !== $user->id)
-                                        <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Terminate this user access?');">
+                                        <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline-block" data-confirm="Terminate this user access?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-rose-400 hover:text-rose-600 transition-colors">

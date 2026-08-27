@@ -90,7 +90,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
     function pciProjectManager(project, details, findings) {
         return {
             isEditing: false,

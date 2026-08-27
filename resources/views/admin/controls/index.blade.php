@@ -128,7 +128,7 @@
                                     <a href="{{ route('admin.controls.edit', $c) }}" class="btn-ghost text-xs">
                                         <i class="fas fa-edit mr-1"></i> Edit
                                     </a>
-                                    <form action="{{ route('admin.controls.destroy', $c) }}" method="POST" onsubmit="return confirm('Delete this control?');" class="inline">
+                                    <form action="{{ route('admin.controls.destroy', $c) }}" method="POST" data-confirm="Delete this control?" class="inline">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn-ghost text-xs text-red-500 hover:text-red-700">
                                             <i class="fas fa-trash mr-1"></i> Delete

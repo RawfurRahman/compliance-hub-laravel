@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Database\Seeders\FrameworkControlSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,11 +17,13 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             FrameworkSeeder::class,
             FrameworkControlSeeder::class, // Seeds PCI DSS v4.0, ISO 27001:2022, BB ICT, SWIFT CSCF 2026 controls
+            EvaluationCorpusSeeder::class, // Seeds the 60-item Chapter 6/7 evaluation corpus
             AdminUserSeeder::class,
             AuditorCustomerSeeder::class,
             PciDssRequirementSeeder::class, // Add the new seeder here
             AlexJohnUserSeeder::class,
             ComplianceTestTemplateSeeder::class,
+            DepartmentSeeder::class,
         ]);
     }
 }

@@ -1,11 +1,12 @@
 <?php
+
 require 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Models\ProjectAssessment;
-use App\Models\Framework;
+use Illuminate\Contracts\Console\Kernel;
 
 echo "All project assessments in database:\n";
 foreach (ProjectAssessment::with('framework', 'project')->get() as $pa) {

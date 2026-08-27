@@ -2,20 +2,17 @@
 
 namespace App\Modules\RiskManagement\Services;
 
-use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Models\Asset;
 use App\Models\Department;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\HeatmapConfig;
-use App\Modules\RiskManagement\Models\RiskHeatmapSnapshot;
-use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
-use App\Models\User;
 use App\Models\Project;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\User;
+use App\Modules\RiskManagement\Models\RiskRegister;
+use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class WorkbookImportService
 {
@@ -53,19 +50,19 @@ class WorkbookImportService
      */
     public function getHeaderMappings(string $filePath): array
     {
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             throw new \Exception("File not found at: {$filePath}");
         }
 
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getSheetByName('Risk Register') ?? $spreadsheet->getActiveSheet();
-        
+
         // Let's read row 3 which is usually the header row in our workbook
         $row3 = $sheet->rangeToArray('A3:Z3', null, true, true, true)[3] ?? [];
         $mappings = [];
 
         foreach ($row3 as $colLetter => $header) {
-            $headerText = trim((string)$header);
+            $headerText = trim((string) $header);
             if (empty($headerText)) {
                 continue;
             }
@@ -73,13 +70,13 @@ class WorkbookImportService
             // Find closest mapping suggestion
             $dbField = null;
             $bestScore = 0;
-            
+
             foreach (self::DEFAULT_MAPPINGS as $excelHeader => $field) {
                 if (strcasecmp($headerText, $excelHeader) === 0) {
                     $dbField = $field;
                     break;
                 }
-                
+
                 similar_text(strtolower($headerText), strtolower($excelHeader), $percent);
                 if ($percent > $bestScore && $percent > 60) {
                     $bestScore = $percent;
@@ -102,7 +99,7 @@ class WorkbookImportService
      */
     public function dryRun(string $filePath, array $columnMappings): array
     {
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             throw new \Exception("File not found at: {$filePath}");
         }
 
@@ -113,7 +110,7 @@ class WorkbookImportService
         // Header mapping lookup: db_field => col_letter
         $lookup = [];
         foreach ($columnMappings as $mapping) {
-            if (!empty($mapping['db_field'])) {
+            if (! empty($mapping['db_field'])) {
                 $lookup[$mapping['db_field']] = $mapping['col'];
             }
         }
@@ -125,8 +122,8 @@ class WorkbookImportService
                 continue;
             }
 
-            $serialNo = isset($lookup['serial_no']) ? trim((string)($row[$lookup['serial_no']] ?? '')) : '';
-            $assetProcess = isset($lookup['asset_process_service']) ? trim((string)($row[$lookup['asset_process_service']] ?? '')) : '';
+            $serialNo = isset($lookup['serial_no']) ? trim((string) ($row[$lookup['serial_no']] ?? '')) : '';
+            $assetProcess = isset($lookup['asset_process_service']) ? trim((string) ($row[$lookup['asset_process_service']] ?? '')) : '';
 
             // Skip empty rows
             if (empty($serialNo) && empty($assetProcess)) {
@@ -138,17 +135,17 @@ class WorkbookImportService
 
             // 1. Validate Serial No
             if (empty($serialNo)) {
-                $rowErrors[] = "Serial number (#) is required.";
+                $rowErrors[] = 'Serial number (#) is required.';
             }
 
             // 2. Validate Asset / Process / Service
             if (empty($assetProcess)) {
-                $rowErrors[] = "Asset / Process / Service description is required.";
+                $rowErrors[] = 'Asset / Process / Service description is required.';
             }
 
             // 3. Validate Date
-            $dateVal = isset($lookup['risk_calculation_date']) ? trim((string)($row[$lookup['risk_calculation_date']] ?? '')) : '';
-            if (!empty($dateVal)) {
+            $dateVal = isset($lookup['risk_calculation_date']) ? trim((string) ($row[$lookup['risk_calculation_date']] ?? '')) : '';
+            if (! empty($dateVal)) {
                 try {
                     Carbon::parse($dateVal);
                 } catch (\Exception $e) {
@@ -158,7 +155,7 @@ class WorkbookImportService
 
             // 4. Validate Asset Value BDT
             $valBdt = isset($lookup['asset_value_bdt']) ? $row[$lookup['asset_value_bdt']] : 0;
-            if (!is_numeric(str_replace(',', '', (string)$valBdt))) {
+            if (! is_numeric(str_replace(',', '', (string) $valBdt))) {
                 $rowWarnings[] = "Asset value ('{$valBdt}') is not numeric, defaulting to 0.";
             }
 
@@ -216,7 +213,7 @@ class WorkbookImportService
                 'row_index' => $index,
                 'serial_no' => $serialNo,
                 'asset_process' => $assetProcess,
-                'risk_owner' => isset($lookup['risk_owner']) ? trim((string)($row[$lookup['risk_owner']] ?? '')) : '',
+                'risk_owner' => isset($lookup['risk_owner']) ? trim((string) ($row[$lookup['risk_owner']] ?? '')) : '',
                 'inherent_rating' => $workbookRating,
                 'inherent_level' => $inherentLevel,
                 'residual_rating' => $workbookResidual,
@@ -225,7 +222,7 @@ class WorkbookImportService
                 'errors' => $rowErrors,
                 'warnings' => $rowWarnings,
                 // Raw cell values to display formatted row preview identical to workbook
-                'raw_values' => array_map(fn($col) => $row[$col] ?? '', $lookup),
+                'raw_values' => array_map(fn ($col) => $row[$col] ?? '', $lookup),
             ];
         }
 
@@ -237,7 +234,7 @@ class WorkbookImportService
      */
     public function import(string $filePath, array $columnMappings, int $projectId): array
     {
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             throw new \Exception("File not found at: {$filePath}");
         }
 
@@ -272,13 +269,13 @@ class WorkbookImportService
         // Header mapping lookup: db_field => col_letter
         $lookup = [];
         foreach ($columnMappings as $mapping) {
-            if (!empty($mapping['db_field'])) {
+            if (! empty($mapping['db_field'])) {
                 $lookup[$mapping['db_field']] = $mapping['col'];
             }
         }
 
         $importedCount = 0;
-        $scoringService = new RiskScoringService();
+        $scoringService = new RiskScoringService;
 
         DB::transaction(function () use ($rows, $lookup, $project, $adminUser, $scoringService, &$importedCount) {
             foreach ($rows as $index => $row) {
@@ -286,19 +283,19 @@ class WorkbookImportService
                     continue;
                 }
 
-                $serialNo = isset($lookup['serial_no']) ? trim((string)($row[$lookup['serial_no']] ?? '')) : '';
-                $assetProcess = isset($lookup['asset_process_service']) ? trim((string)($row[$lookup['asset_process_service']] ?? '')) : '';
+                $serialNo = isset($lookup['serial_no']) ? trim((string) ($row[$lookup['serial_no']] ?? '')) : '';
+                $assetProcess = isset($lookup['asset_process_service']) ? trim((string) ($row[$lookup['asset_process_service']] ?? '')) : '';
 
                 if (empty($serialNo) || empty($assetProcess)) {
                     continue;
                 }
 
-                $riskOwner = isset($lookup['risk_owner']) ? trim((string)($row[$lookup['risk_owner']] ?? '')) : 'Unknown';
+                $riskOwner = isset($lookup['risk_owner']) ? trim((string) ($row[$lookup['risk_owner']] ?? '')) : 'Unknown';
 
                 // Resolve calculation date
                 $calculationDate = now();
-                $dateVal = isset($lookup['risk_calculation_date']) ? trim((string)($row[$lookup['risk_calculation_date']] ?? '')) : '';
-                if (!empty($dateVal)) {
+                $dateVal = isset($lookup['risk_calculation_date']) ? trim((string) ($row[$lookup['risk_calculation_date']] ?? '')) : '';
+                if (! empty($dateVal)) {
                     try {
                         $calculationDate = Carbon::parse($dateVal);
                     } catch (\Exception $e) {
@@ -308,34 +305,34 @@ class WorkbookImportService
 
                 // Resolve BDT asset value
                 $valBdtRaw = isset($lookup['asset_value_bdt']) ? $row[$lookup['asset_value_bdt']] : 0;
-                $assetValueBdt = floatval(str_replace(',', '', (string)$valBdtRaw));
+                $assetValueBdt = floatval(str_replace(',', '', (string) $valBdtRaw));
 
-                $threatStr = isset($lookup['threats']) ? trim((string)($row[$lookup['threats']] ?? 'General Threat')) : 'General Threat';
+                $threatStr = isset($lookup['threats']) ? trim((string) ($row[$lookup['threats']] ?? 'General Threat')) : 'General Threat';
                 $threatLevel = isset($lookup['threat_level_t']) ? intval($row[$lookup['threat_level_t']] ?? 1) : 1;
-                $vulnStr = isset($lookup['vulnerabilities']) ? trim((string)($row[$lookup['vulnerabilities']] ?? 'General Vulnerability')) : 'General Vulnerability';
-                
+                $vulnStr = isset($lookup['vulnerabilities']) ? trim((string) ($row[$lookup['vulnerabilities']] ?? 'General Vulnerability')) : 'General Vulnerability';
+
                 $impactC = isset($lookup['impact_confidentiality']) ? intval($row[$lookup['impact_confidentiality']] ?? 1) : 1;
                 $impactI = isset($lookup['impact_integrity']) ? intval($row[$lookup['impact_integrity']] ?? 1) : 1;
                 $impactA = isset($lookup['impact_availability']) ? intval($row[$lookup['impact_availability']] ?? 1) : 1;
-                
-                $existingControl = isset($lookup['existing_control']) ? trim((string)($row[$lookup['existing_control']] ?? 'None')) : 'None';
+
+                $existingControl = isset($lookup['existing_control']) ? trim((string) ($row[$lookup['existing_control']] ?? 'None')) : 'None';
                 $vulnLevelAv = isset($lookup['vulnerability_level_av']) ? intval($row[$lookup['vulnerability_level_av']] ?? 1) : 1;
-                
+
                 // Store workbook exact scores
                 $tvTAv = isset($lookup['tv_t_av']) ? intval($row[$lookup['tv_t_av']] ?? 0) : ($threatLevel + $vulnLevelAv);
                 $likelihoodLh = isset($lookup['likelihood_lh']) ? intval($row[$lookup['likelihood_lh']] ?? 1) : 1;
                 $riskRating = isset($lookup['risk_rating_avtvlh']) ? intval($row[$lookup['risk_rating_avtvlh']] ?? 0) : ($vulnLevelAv * $tvTAv * $likelihoodLh);
 
-                $measurementRaw = isset($lookup['measurement']) ? trim((string)($row[$lookup['measurement']] ?? 'Not Accepted')) : 'Not Accepted';
+                $measurementRaw = isset($lookup['measurement']) ? trim((string) ($row[$lookup['measurement']] ?? 'Not Accepted')) : 'Not Accepted';
                 $measurement = (strcasecmp($measurementRaw, 'Accepted') === 0) ? 'Accepted' : 'Not Accepted';
 
-                $proposedControl = isset($lookup['proposed_control']) ? trim((string)($row[$lookup['proposed_control']] ?? '')) : null;
-                $communication = isset($lookup['communication']) ? trim((string)($row[$lookup['communication']] ?? '')) : null;
+                $proposedControl = isset($lookup['proposed_control']) ? trim((string) ($row[$lookup['proposed_control']] ?? '')) : null;
+                $communication = isset($lookup['communication']) ? trim((string) ($row[$lookup['communication']] ?? '')) : null;
 
                 // Implementation dates
                 $implFrom = null;
-                $fromVal = isset($lookup['implementation_from']) ? trim((string)($row[$lookup['implementation_from']] ?? '')) : '';
-                if (!empty($fromVal)) {
+                $fromVal = isset($lookup['implementation_from']) ? trim((string) ($row[$lookup['implementation_from']] ?? '')) : '';
+                if (! empty($fromVal)) {
                     try {
                         $implFrom = Carbon::parse($fromVal)->format('Y-m-d');
                     } catch (\Exception $e) {
@@ -343,8 +340,8 @@ class WorkbookImportService
                     }
                 }
                 $implTo = null;
-                $toVal = isset($lookup['implementation_to']) ? trim((string)($row[$lookup['implementation_to']] ?? '')) : '';
-                if (!empty($toVal)) {
+                $toVal = isset($lookup['implementation_to']) ? trim((string) ($row[$lookup['implementation_to']] ?? '')) : '';
+                if (! empty($toVal)) {
                     try {
                         $implTo = Carbon::parse($toVal)->format('Y-m-d');
                     } catch (\Exception $e) {
@@ -353,7 +350,7 @@ class WorkbookImportService
                 }
 
                 // Implementation status
-                $statusRaw = isset($lookup['implementation_status']) ? trim((string)($row[$lookup['implementation_status']] ?? 'Not Started')) : 'Not Started';
+                $statusRaw = isset($lookup['implementation_status']) ? trim((string) ($row[$lookup['implementation_status']] ?? 'Not Started')) : 'Not Started';
                 $status = 'Not Started';
                 if (strcasecmp($statusRaw, 'Pending') === 0) {
                     $status = 'Pending';
@@ -367,20 +364,10 @@ class WorkbookImportService
                 $residualLh = isset($lookup['residual_lh']) ? intval($row[$lookup['residual_lh']] ?? 1) : 1;
                 $residualRating = isset($lookup['residual_rating']) ? intval($row[$lookup['residual_rating']] ?? 0) : ($residualTv * $residualLh);
 
-                $followUpNote = isset($lookup['follow_up_note']) ? trim((string)($row[$lookup['follow_up_note']] ?? '')) : null;
+                $followUpNote = isset($lookup['follow_up_note']) ? trim((string) ($row[$lookup['follow_up_note']] ?? '')) : null;
 
                 // Create or link Department
                 Department::firstOrCreate(['name' => $riskOwner]);
-
-                // Create or link Asset
-                $asset = Asset::firstOrCreate(
-                    ['name' => $assetProcess],
-                    [
-                        'type' => 'Process',
-                        'value_bdt' => $assetValueBdt,
-                        'owner_id' => $adminUser->id,
-                    ]
-                );
 
                 // Compute canonical calculations
                 $computedTv = $threatLevel + $vulnLevelAv;
@@ -428,22 +415,21 @@ class WorkbookImportService
                         'category' => 'Cybersecurity',
                         'department' => $riskOwner,
                         'owner_user_id' => $adminUser->id,
-                        'asset_id' => $asset->id,
                         'evidence_ids' => [],
                         'source' => 'import',
-                        'legacy_source_id' => 'workbook_row_' . $index,
+                        'legacy_source_id' => 'workbook_row_'.$index,
                         'created_by' => $adminUser->id,
                         'updated_by' => $adminUser->id,
-                        
+
                         // Populate computed columns
                         'computed_tv' => $computedTv,
                         'computed_risk_rating' => $computedRating,
                         'computed_residual_rating' => $computedResidual,
-                        
+
                         'custom_fields' => [
                             'raw_imported_tv' => $tvTAv,
                             'original_row_number' => $index,
-                        ]
+                        ],
                     ]
                 );
 
@@ -455,8 +441,8 @@ class WorkbookImportService
                         vulnerabilityLevel: $vulnLevelAv,
                         impactDimensions: [
                             'confidentiality' => $impactC,
-                            'integrity'       => $impactI,
-                            'availability'    => $impactA,
+                            'integrity' => $impactI,
+                            'availability' => $impactA,
                         ],
                         likelihood: $likelihoodLh,
                         assetValue: $assetValueBdt,
@@ -486,7 +472,7 @@ class WorkbookImportService
     private function processControlMapping($spreadsheet): void
     {
         $sheet = $spreadsheet->getSheetByName('Control Mapping');
-        if (!$sheet) {
+        if (! $sheet) {
             return;
         }
 
@@ -525,8 +511,8 @@ class WorkbookImportService
             // Collect all framework refs for this row (for cross-referencing)
             $rowRefs = [];
             foreach ($frameworks as $slug => $info) {
-                $ref = isset($row[$info['ref_col']]) ? trim((string)$row[$info['ref_col']]) : '';
-                $desc = isset($row[$info['desc_col']]) ? trim((string)$row[$info['desc_col']]) : '';
+                $ref = isset($row[$info['ref_col']]) ? trim((string) $row[$info['ref_col']]) : '';
+                $desc = isset($row[$info['desc_col']]) ? trim((string) $row[$info['desc_col']]) : '';
                 $rowRefs[$slug] = ['ref' => $ref, 'desc' => $desc];
             }
 
@@ -540,10 +526,10 @@ class WorkbookImportService
                 }
 
                 // Build cross-references from the other framework columns in this row
-                $pciDssRef = ($slug !== 'pci_dss')     ? ($rowRefs['pci_dss']['ref'] ?? null)     : null;
-                $isoRef    = ($slug !== 'iso_27001')   ? ($rowRefs['iso_27001']['ref'] ?? null)   : null;
-                $bbIctRef  = ($slug !== 'bb_ict')       ? ($rowRefs['bb_ict']['ref'] ?? null)     : null;
-                $swiftRef  = ($slug !== 'swift_cscf')   ? ($rowRefs['swift_cscf']['ref'] ?? null) : null;
+                $pciDssRef = ($slug !== 'pci_dss') ? ($rowRefs['pci_dss']['ref'] ?? null) : null;
+                $isoRef = ($slug !== 'iso_27001') ? ($rowRefs['iso_27001']['ref'] ?? null) : null;
+                $bbIctRef = ($slug !== 'bb_ict') ? ($rowRefs['bb_ict']['ref'] ?? null) : null;
+                $swiftRef = ($slug !== 'swift_cscf') ? ($rowRefs['swift_cscf']['ref'] ?? null) : null;
 
                 // If ISO has comma separated control IDs (like "5.1, 5.37"), we can split and insert
                 $refs = ($slug === 'iso_27001') ? explode(',', $ref) : [$ref];
@@ -560,14 +546,14 @@ class WorkbookImportService
                             'control_id' => $singleRef,
                         ],
                         [
-                            'domain'                => $this->deriveDomain($singleRef, $slug),
+                            'domain' => $this->deriveDomain($singleRef, $slug),
                             'requirement_description' => $desc ?: "Description for control {$singleRef}",
-                            'required_evidence'     => 'Audit reports, Policy documents',
-                            'pci_dss_ref'           => $pciDssRef,
-                            'iso_ref'               => $isoRef,
-                            'bb_ict_ref'            => $bbIctRef,
-                            'swift_ref'             => $swiftRef,
-                            'status'                => 'active',
+                            'required_evidence' => 'Audit reports, Policy documents',
+                            'pci_dss_ref' => $pciDssRef,
+                            'iso_ref' => $isoRef,
+                            'bb_ict_ref' => $bbIctRef,
+                            'swift_ref' => $swiftRef,
+                            'status' => 'active',
                         ]
                     );
                 }
@@ -582,11 +568,13 @@ class WorkbookImportService
     {
         if ($frameworkSlug === 'pci_dss') {
             $parts = explode('.', $ref);
-            return 'Requirement ' . ($parts[0] ?? '1');
+
+            return 'Requirement '.($parts[0] ?? '1');
         }
         if ($frameworkSlug === 'iso_27001') {
-            return 'ISO Section ' . explode('.', $ref)[0];
+            return 'ISO Section '.explode('.', $ref)[0];
         }
+
         return 'General Control Security';
     }
 
@@ -595,8 +583,8 @@ class WorkbookImportService
      */
     private function findMatchingControl(?string $threat, ?string $existingControl, ?string $proposedControl): ?FrameworkControl
     {
-        $text = strtolower($threat . ' ' . $existingControl . ' ' . $proposedControl);
-        
+        $text = strtolower($threat.' '.$existingControl.' '.$proposedControl);
+
         // Scan active framework controls and check if any control_id or keyword is present
         // Let's do a simple cache query
         $controls = FrameworkControl::take(200)->get();
@@ -616,9 +604,9 @@ class WorkbookImportService
     public function seedDashboardAndHeatmap(int $projectId): void
     {
         // 1. Snapshot Heatmap Matrix
-        $calc = new RiskCalculationService();
+        $calc = new RiskCalculationService;
         $service = new RiskRegisterService($calc);
-        
+
         // Save inherent and residual snapshots
         $service->snapshotHeatmap($projectId, 'inherent');
         $service->snapshotHeatmap($projectId, 'residual');

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @push('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    <link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
         body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
         .glass-premium {
             background: rgba(255, 255, 255, 0.85);
@@ -149,23 +149,6 @@
             </div>
         </template>
 
-        {{-- Framework Selector (if multiple) --}}
-        <template x-if="frameworks.length > 1">
-            <div class="mb-8">
-                <div class="flex flex-wrap gap-2">
-                    <template x-for="fw in frameworks" :key="fw.id">
-                        <a :href="`{{ url('gap-assessment') }}/${fw.slug}/{{ $project->id }}`"
-                           class="px-4 py-2 rounded-xl text-xs font-bold transition-all border"
-                           :class="selectedFrameworkSlug === fw.slug
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg'
-                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'"
-                           x-text="fw.name">
-                        </a>
-                    </template>
-                </div>
-            </div>
-        </template>
-
         {{-- Header Stats Row --}}
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             <div class="glass-premium rounded-2xl p-6 lg:col-span-1 flex flex-col items-center justify-center">
@@ -300,6 +283,40 @@
                                     <span x-text="`${finding.evidence_count || 0} files`"></span>
                                 </div>
                             </div>
+
+                            {{-- Gap Category --}}
+                            <template x-if="finding.gap_description || finding.gap_category">
+                                <div class="mt-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] font-semibold text-indigo-700">
+                                    <i class="fas fa-fw fa-folder text-indigo-500 mr-1"></i>
+                                    <span x-if="finding.gap_category" text="`Gap Category: ${finding.gap_category}`"></span>
+                                    <span x-if="!finding.gap_category" text="`Gap Category: Not set`"></span>
+                                    <span x-if="finding.gap_description" class="block mt-1 text-[10px] text-indigo-600" x-text="`${finding.gap_description.substring(0, 80)}${finding.gap_description.length > 80 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Non-Compliant Details --}}
+                            <template x-if="!finding.is_compliant && finding.non_compliant_details">
+                                <div class="mt-2 p-2 bg-rose-50 rounded-lg border border-rose-100 text-[10px] font-semibold text-rose-700">
+                                    <i class="fas fa-fw fa-exclamation-triangle text-rose-500 mr-1"></i>
+                                    <span x-text="`Non-Compliant: ${finding.non_compliant_details.substring(0, 60)}${finding.non_compliant_details.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Compliant Description --}}
+                            <template x-if="finding.is_compliant && finding.compliant_description">
+                                <div class="mt-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100 text-[10px] font-semibold text-emerald-700">
+                                    <i class="fas fa-fw fa-check-circle text-emerald-500 mr-1"></i>
+                                    <span x-text="`Compliant: ${finding.compliant_description.substring(0, 60)}${finding.compliant_description.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Remediation Plan --}}
+                            <template x-if="finding.remediation_plan">
+                                <div class="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100 text-[10px] font-semibold text-amber-700">
+                                    <i class="fas fa-fw fa-list-ol text-amber-500 mr-1"></i>
+                                    <span x-text="`Remediation: ${finding.remediation_plan.substring(0, 60)}${finding.remediation_plan.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
@@ -420,24 +437,6 @@
                     </div>
                 </div>
 
-                {{-- Gap Description --}}
-                <div>
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Gap Description</label>
-                    <textarea x-model="editForm.gap_description"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
-                              rows="3"
-                              placeholder="Describe the gap..."></textarea>
-                </div>
-
-                {{-- Impact --}}
-                <div>
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Impact</label>
-                    <textarea x-model="editForm.impact"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
-                              rows="3"
-                              placeholder="Describe the business impact..."></textarea>
-                </div>
-
                 {{-- Recommendation --}}
                 <div>
                     <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Recommendation</label>
@@ -447,11 +446,26 @@
                               placeholder="Recommend remediation actions..."></textarea>
                 </div>
 
-                {{-- Due Date --}}
+                {{-- Gap Category --}}
                 <div>
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Due Date</label>
-                    <input type="date" x-model="editForm.due_date"
-                           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Gap Category</label>
+                    <select x-model="editForm.gap_category"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Select gap category</option>
+                        <option value="Policy">Policy</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Process">Process</option>
+                        <option value="Organizational">Organizational</option>
+                        <option value="Physical">Physical</option>
+                    </select>
+                </div>
+
+                {{-- Evidence Provided --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Evidence Provided</label>
+                    <input type="text" x-model="editForm.evidence_provided"
+                           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                           placeholder="Evidence file names or references...">
                 </div>
 
                 {{-- Evidence Section --}}
@@ -521,13 +535,12 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function gapAssessmentWorkspace() {
     return {
         // State
         assessmentExists: {{ $assessment->exists ? 'true' : 'false' }},
-        selectedFrameworkSlug: '{{ $framework?->slug ?? '' }}',
-        frameworks: @json($frameworks),
+
         groupedFindings: @json($groupedFindings),
         groupedStats: @json($groupedStats),
         overallStats: @json($overallStats),
@@ -550,6 +563,14 @@ function gapAssessmentWorkspace() {
             impact: '',
             recommendation: '',
             due_date: '',
+            gap_category: '',
+            non_compliant_details: '',
+            compliant_description: '',
+            remediation_plan: '',
+            evidence_provided: '',
+            test_results: '',
+            meets_standard: false,
+            auditor_notes: '',
         },
 
         get totalFindings() {
@@ -591,6 +612,14 @@ function gapAssessmentWorkspace() {
                 impact: finding.impact || '',
                 recommendation: finding.recommendation || '',
                 due_date: finding.due_date || '',
+                gap_category: finding.gap_category || '',
+                non_compliant_details: finding.non_compliant_details || '',
+                compliant_description: finding.compliant_description || '',
+                remediation_plan: finding.remediation_plan || '',
+                evidence_provided: finding.evidence_provided || '',
+                test_results: finding.test_results || '',
+                meets_standard: finding.meets_standard || false,
+                auditor_notes: finding.auditor_notes || '',
             };
             this.loadEvidence(finding);
             this.editorOpen = true;

@@ -21,13 +21,13 @@ class VendorAssessment extends Model
     ];
 
     protected $casts = [
-        'assessment_date'         => 'date',
-        'due_date'                => 'date',
-        'completed_date'          => 'date',
-        'remediation_deadline'    => 'date',
-        'overall_score'           => 'decimal:2',
-        'remediation_required'    => 'boolean',
-        'ai_summary'              => 'array',
+        'assessment_date' => 'date',
+        'due_date' => 'date',
+        'completed_date' => 'date',
+        'remediation_deadline' => 'date',
+        'overall_score' => 'decimal:2',
+        'remediation_required' => 'boolean',
+        'ai_summary' => 'array',
         'ai_summary_generated_at' => 'datetime',
     ];
 
@@ -50,15 +50,24 @@ class VendorAssessment extends Model
     {
         return $this->due_date
             && $this->due_date->isPast()
-            && !in_array($this->status, ['completed', 'failed']);
+            && ! in_array($this->status, ['completed', 'failed']);
     }
 
     public function scoreToRating(?float $score): ?string
     {
-        if ($score === null) return null;
-        if ($score >= 90) return 'Low';
-        if ($score >= 70) return 'Medium';
-        if ($score >= 50) return 'High';
+        if ($score === null) {
+            return null;
+        }
+        if ($score >= 90) {
+            return 'Low';
+        }
+        if ($score >= 70) {
+            return 'Medium';
+        }
+        if ($score >= 50) {
+            return 'High';
+        }
+
         return 'Critical';
     }
 

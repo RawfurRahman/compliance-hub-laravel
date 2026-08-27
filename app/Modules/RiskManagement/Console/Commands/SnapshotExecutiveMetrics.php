@@ -8,13 +8,14 @@ use App\Modules\RiskManagement\Services\RemediationMetricsService;
 use Illuminate\Console\Command;
 
 /**
- * Scheduled snapshot of executive metrics (financial exposure + remediation
- * MTTR/SLA) so the dashboard can render trends without recomputation.
+ * Scheduled snapshot of executive metrics (financial exposure + remediation)
+ * so the dashboard can render trends without recomputation.
  */
 class SnapshotExecutiveMetrics extends Command
 {
     protected $signature = 'risks:snapshot-executive-metrics {--project-id=}';
-    protected $description = 'Snapshot financial exposure and remediation (MTTR/SLA) metrics for trend reporting';
+
+    protected $description = 'Snapshot financial exposure and remediation metrics for trend reporting';
 
     public function handle(
         FinancialExposureService $exposure,

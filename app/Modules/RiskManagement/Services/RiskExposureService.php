@@ -33,16 +33,16 @@ class RiskExposureService
         $financialAmount = $overrideAmount ?? $assetValue;
 
         return RiskExposure::create([
-            'risk_register_id'  => $risk->id,
-            'exposure_type'     => 'financial',
+            'risk_register_id' => $risk->id,
+            'exposure_type' => 'financial',
             'inherent_exposure' => round($inherentExposure, 2),
             'residual_exposure' => round($residualExposure, 2),
-            'financial_amount'  => round($financialAmount, 2),
-            'probability_pct'   => $lh * 20,
-            'impact_rating'     => max(1, min(5, (int) ceil($tv / 2))),
-            'currency'          => 'BDT',
-            'calculated_at'     => now(),
-            'created_by'        => Auth::id(),
+            'financial_amount' => round($financialAmount, 2),
+            'probability_pct' => $lh * 20,
+            'impact_rating' => max(1, min(5, (int) ceil($tv / 2))),
+            'currency' => 'BDT',
+            'calculated_at' => now(),
+            'created_by' => Auth::id(),
         ]);
     }
 }

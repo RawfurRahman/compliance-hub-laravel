@@ -2,14 +2,14 @@
 
 namespace App\Modules\RiskManagement\Console\Commands;
 
-use App\Modules\RiskManagement\Models\RiskAcceptance;
-use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Events\RiskLifecycleChanged;
+use App\Modules\RiskManagement\Models\RiskAcceptance;
 use Illuminate\Console\Command;
 
 class ExpireRiskAcceptances extends Command
 {
     protected $signature = 'risks:expire-acceptances';
+
     protected $description = 'Expire risk acceptances past their expiry date';
 
     public function handle(): int

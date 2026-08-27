@@ -1,0 +1,20 @@
+{
+  "scenario": "L4_mixed_workload",
+  "timestamp": "2026-08-21T10:50:52.452Z",
+  "weights": {
+    "read": "60%",
+    "write": "30%",
+    "monitor": "10%"
+  },
+  "metrics": {
+    "http_reqs": 7,
+    "http_req_failed": 0.7142857142857143,
+    "http_req_duration_avg": 236.2837,
+    "http_req_duration_p95": 283.87370999999996,
+    "http_req_duration_max": 288.3651,
+    "errors_rate": 1,
+    "action_count": 5,
+    "iterations": 5,
+    "vus_max": 1
+  }
+}

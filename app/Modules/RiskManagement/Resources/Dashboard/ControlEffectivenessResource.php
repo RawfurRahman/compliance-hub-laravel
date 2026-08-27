@@ -15,8 +15,8 @@ class ControlEffectivenessResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'effective'   => (int) $this['effective'],
-            'partial'     => (int) $this['partial'],
+            'effective' => (int) $this['effective'],
+            'partial' => (int) $this['partial'],
             'ineffective' => (int) $this['ineffective'],
         ];
     }

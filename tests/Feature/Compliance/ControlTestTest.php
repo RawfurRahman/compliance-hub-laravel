@@ -6,7 +6,6 @@ use App\Models\Control;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\User;
-use App\Modules\Compliance\Models\ControlTest;
 use App\Modules\Compliance\Services\ControlTestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,6 +15,7 @@ class ControlTestTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Control $control;
 
     protected function setUp(): void

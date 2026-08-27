@@ -11,6 +11,7 @@ class PciGapAssessment extends Model
 
     protected $fillable = [
         'project_id',
+        'evidence_file_id',
         'requirement_text',
         'is_section_header',
         'status',
@@ -27,5 +28,10 @@ class PciGapAssessment extends Model
     public function project()
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function evidenceFile()
+    {
+        return $this->belongsTo(EvidenceFile::class);
     }
 }

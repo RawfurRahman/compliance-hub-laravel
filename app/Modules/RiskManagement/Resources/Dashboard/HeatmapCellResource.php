@@ -14,8 +14,8 @@ class HeatmapCellResource extends JsonResource
     {
         return [
             'likelihood' => $this['likelihood'],
-            'impact'     => $this['impact'],
-            'count'      => (int) $this['count'],
+            'impact' => $this['impact'],
+            'count' => (int) $this['count'],
         ];
     }
 }

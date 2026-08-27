@@ -3,9 +3,9 @@
 namespace App\Modules\Compliance\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Integration;
 use App\Models\Project;
 use App\Modules\Compliance\Models\ComplianceTestTemplate;
-use App\Models\Integration;
 use App\Services\IntegrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

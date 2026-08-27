@@ -2,17 +2,17 @@
 
 namespace App\View\Components\Pci;
 
+use App\Models\Project;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
-use App\Models\Project;
 
 class ProjectInfo extends Component
 {
     /**
      * The project instance.
      *
-     * @var \App\Models\Project
+     * @var Project
      */
     public $project;
 

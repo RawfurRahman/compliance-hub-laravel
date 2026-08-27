@@ -2,9 +2,8 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
-use App\Modules\RiskManagement\Models\Project;
-use App\Modules\RiskManagement\Services\RiskSnapshotService;
 use App\Http\Controllers\Controller;
+use App\Modules\RiskManagement\Services\RiskSnapshotService;
 use Illuminate\Http\Request;
 
 class RiskSnapshotController extends Controller

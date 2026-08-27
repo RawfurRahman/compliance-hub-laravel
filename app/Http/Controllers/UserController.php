@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 
@@ -24,6 +23,16 @@ class UserController extends Controller
         $roles = Role::all();
 
         return view('users.index', compact('users', 'roles'));
+    }
+
+    /**
+     * Display the specified user.
+     */
+    public function show(User $user)
+    {
+        $user->load('roles');
+
+        return view('users.show', compact('user'));
     }
 
     /**
@@ -57,6 +66,7 @@ class UserController extends Controller
     {
         // Fetch all roles to populate the dropdown in the edit form
         $roles = Role::all();
+
         return view('users.edit', compact('user', 'roles'));
     }
 
@@ -82,7 +92,7 @@ class UserController extends Controller
         // 3. Update password only if a new one was provided
         if ($request->filled('password')) {
             $user->update([
-                'password' => $request->password
+                'password' => $request->password,
             ]);
         }
 
@@ -103,8 +113,14 @@ class UserController extends Controller
             return redirect()->route('users.index')->with('error', 'You cannot delete your own account.');
         }
 
-        // Detach roles and delete the user
+        // Detach all relationships
         $user->roles()->detach();
+        $user->assignedProjects()->detach();
+        $user->assignedMeetings()->detach();
+
+        // Nullify parent_id on sub-users to break self-referencing FK
+        User::where('parent_id', $user->id)->update(['parent_id' => null]);
+
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully!');

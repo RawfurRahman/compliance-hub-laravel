@@ -14,8 +14,8 @@ class InherentVsResidualResource extends JsonResource
     {
         return [
             'department' => $this['department'],
-            'inherent'   => (int) $this['inherent'],
-            'residual'   => (int) $this['residual'],
+            'inherent' => (int) $this['inherent'],
+            'residual' => (int) $this['residual'],
         ];
     }
 }

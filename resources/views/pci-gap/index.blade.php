@@ -1,348 +1,816 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link href="{{ asset('fonts/outfit.css') }}" rel="stylesheet">
+    <style nonce="{{ $cspNonce }}">
+        body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+        .glass-premium {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.03);
+        }
+        [x-cloak] { display: none !important; }
+
+        .compliance-gauge {
+            position: relative;
+            width: 160px;
+            height: 80px;
+            overflow: hidden;
+        }
+        .compliance-gauge-fill {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 10px solid #e2e8f0;
+            border-bottom-color: transparent;
+            border-left-color: transparent;
+            border-right-color: transparent;
+            transform-origin: center bottom;
+            transition: border-color 0.8s ease;
+        }
+        .gauge-green { border-top-color: #10b981; }
+        .gauge-yellow { border-top-color: #f59e0b; }
+        .gauge-red { border-top-color: #ef4444; }
+
+        .control-card {
+            transition: all 0.2s ease;
+        }
+        .control-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        }
+
+        .risk-badge {
+            @apply px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-md;
+        }
+        .risk-High { @apply bg-red-100 text-red-700; }
+        .risk-Medium { @apply bg-amber-100 text-amber-700; }
+        .risk-Low { @apply bg-emerald-100 text-emerald-700; }
+        .risk-None { @apply bg-slate-100 text-slate-500; }
+
+        .status-badge {
+            @apply px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg;
+        }
+        .status-Open { @apply bg-amber-50 text-amber-700 border border-amber-200; }
+        .status-In\ Progress { @apply bg-blue-50 text-blue-700 border border-blue-200; }
+        .status-Closed { @apply bg-emerald-50 text-emerald-700 border border-emerald-200; }
+
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .tab-active {
+            @apply text-indigo-600 border-indigo-600;
+        }
+        .tab-inactive {
+            @apply text-slate-500 hover:text-slate-700 border-transparent hover:border-slate-300;
+        }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.3s ease-out;
+        }
+    </style>
+@endpush
+
 @section('content')
-<div class="max-w-7xl mx-auto" x-data="pciGapTracker()">
-    {{-- Breadcrumb & Title Header --}}
-    <div class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-            <div class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                <a href="{{ route('projects.show', $project) }}" class="hover:text-sky-600 transition-colors">{{ $project->name }}</a>
-                <i class="fas fa-chevron-right text-[9px]"></i>
-                <span>PCI DSS v4.0.1</span>
+<div class="min-h-screen" x-data="pciGapAssessmentWorkspace()" x-cloak>
+
+    {{-- Top Navigation Bar --}}
+    <div class="sticky top-0 z-40 glass-premium border-b border-slate-200/60">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <a href="{{ route('dashboard') }}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+                        <i class="fas fa-chevron-right text-[7px]"></i>
+                        <a href="{{ route('projects.index') }}" class="hover:text-indigo-600 transition-colors">Projects</a>
+                        <i class="fas fa-chevron-right text-[7px]"></i>
+                        <span class="text-indigo-600">{{ $project->name }}</span>
+                        <i class="fas fa-chevron-right text-[7px]"></i>
+                        <span class="text-slate-600">Gap Assessment</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <template x-if="!assessmentExists">
+                        <button @click="initializeAssessment()
+"
+                                class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">
+                            <i class="fas fa-rocket mr-1.5"></i> Initialize Assessment
+                        </button>
+                    </template>
+                    <template x-if="assessmentExists">
+                        <a :href="'{{ route('gap-assessment.report', $project) }}'"
+                           class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all shadow-sm">
+                            <i class="fas fa-file-pdf mr-1.5"></i> Export Report
+                        </a>
+                    </template>
+                    <a href="{{ route('projects.show', $project) }}"
+                       class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all">
+                        <i class="fas fa-arrow-left mr-1"></i> Back
+                    </a>
+                </div>
             </div>
-            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">PCI DSS v4.0.1 Gap Assessment Report</h1>
-            <p class="mt-2 text-sm font-medium text-slate-500 font-sans">Assess, document, and manage the compliance gaps for the project.</p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-            @can('update', $project)
-                <button @click="importModalOpen = true" class="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition hover:shadow-sky-500/40 inline-flex items-center">
-                    <i class="fas fa-file-excel mr-2 text-xs"></i> Import Assessment Data
-                </button>
-            @endcan
         </div>
     </div>
 
-    {{-- Alert Messages --}}
-    @if(session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 flex items-center">
-            <i class="fas fa-check-circle mr-2.5 text-emerald-500"></i>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 flex items-center">
-            <i class="fas fa-exclamation-circle mr-2.5 text-rose-500"></i>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        {{-- Flash Messages --}}
+        <template x-if="flashMessage">
+            <div class="mb-6 p-4 rounded-xl text-sm font-semibold flex items-center shadow-sm transition-all"
+                 :class="flashType === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-rose-50 border border-rose-200 text-rose-800'"
+                 x-text="flashMessage"
+                 x-init="setTimeout(() => flashMessage = null, 5000)">
+            </div>
+        </template>
 
-    {{-- Gap Summary Cards / Progress Section --}}
-    <section class="mb-10">
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500">Assessment Metrics</h2>
-            <span class="text-sm font-semibold text-slate-500">{{ $stats['progress'] }}% Compliant</span>
-        </div>
-        
-        {{-- Progress Bar --}}
-        <div class="mb-6 w-full bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner">
-            <div class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: {{ $stats['progress'] }}%"></div>
-        </div>
+        {{-- Header Stats Row --}}
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-premium rounded-2xl p-6 lg:col-span-1 flex flex-col items-center justify-center">
+                <div class="compliance-gauge mb-2">
+                    <div class="compliance-gauge-fill"
+                         :class="overallCompliancePct >= 70 ? 'gauge-green' : overallCompliancePct >= 40 ? 'gauge-yellow' : 'gauge-red'"
+                         :style="`transform: translateX(-50%) rotate(${overallCompliancePct / 100 * 180}deg)`">
+                    </div>
+                </div>
+                <span class="text-3xl font-extrabold text-slate-800" x-text="`${overallCompliancePct}%`"></span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Finding Compliance</span>
+            </div>
 
-        <div class="grid gap-5 md:grid-cols-5">
-            {{-- Total Controls --}}
-            <div class="rounded-2xl border border-white/70 bg-white p-5 shadow-sm">
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Controls</p>
-                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ $stats['total'] }}</p>
-            </div>
-            {{-- YES (Compliant) --}}
-            <div class="rounded-2xl border border-white/70 bg-white p-5 shadow-sm border-l-4 border-l-emerald-500">
-                <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Yes (Compliant)</p>
-                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ $stats['yes'] }}</p>
-            </div>
-            {{-- NO (Gaps) --}}
-            <div class="rounded-2xl border border-white/70 bg-white p-5 shadow-sm border-l-4 border-l-rose-500">
-                <p class="text-xs font-bold text-rose-600 uppercase tracking-wider">No (Gap)</p>
-                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ $stats['no'] }}</p>
-            </div>
-            {{-- N/A --}}
-            <div class="rounded-2xl border border-white/70 bg-white p-5 shadow-sm border-l-4 border-l-slate-400">
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">N/A (Not Applicable)</p>
-                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ $stats['na'] }}</p>
-            </div>
-            {{-- Pending --}}
-            <div class="rounded-2xl border border-white/70 bg-white p-5 shadow-sm border-l-4 border-l-amber-500">
-                <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Review</p>
-                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ $stats['pending'] }}</p>
-            </div>
-        </div>
-    </section>
-
-    {{-- Main Data Table Card --}}
-    <div class="glass-card rounded-2xl border border-white/60 bg-white shadow-lg overflow-hidden mb-12">
-        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between flex-wrap gap-4">
-            <div>
-                <h2 class="font-extrabold text-slate-900 text-lg">PCI DSS Control Checklist</h2>
-                <p class="mt-1 text-xs text-slate-500">Configure status, milestone target, and comments. Changes are automatically saved.</p>
-            </div>
-            {{-- Inline status tracker helper --}}
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5" x-show="saving">
-                <i class="fas fa-spinner fa-spin text-sky-500"></i> Saving changes...
-            </div>
-            <div class="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5" x-show="saved" x-cloak>
-                <i class="fas fa-check-circle"></i> Changes saved successfully!
+            <div class="glass-premium rounded-2xl p-6 lg:col-span-3">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <span class="text-2xl font-extrabold text-slate-800" x-text="overallStats.total"></span>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Total Controls</p>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-extrabold text-emerald-600" x-text="overallStats.compliant"></span>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Compliant</p>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-extrabold text-red-500" x-text="overallStats.high"></span>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">High Risk</p>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-extrabold text-slate-800" x-text="`${overallStats.progressScore}%`"></span>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">Progress</p>
+                    </div>
+                </div>
+                <div class="mt-4 w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700 ease-out"
+                         :style="`width: ${overallStats.progressScore}%`"
+                         :class="overallStats.progressScore >= 70 ? 'bg-emerald-500' : overallStats.progressScore >= 40 ? 'bg-amber-500' : 'bg-red-500'">
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/50 border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th class="px-6 py-4" style="width: 40%;">PCI DSS Requirements v4.0.1</th>
-                        <th class="px-4 py-4" style="width: 15%;">Status</th>
-                        <th class="px-4 py-4" style="width: 15%;">N/A Explanation</th>
-                        <th class="px-4 py-4" style="width: 15%;">Target Milestone</th>
-                        <th class="px-6 py-4" style="width: 15%;">Comments</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($assessments as $item)
-                        @if($item->is_section_header)
-                            {{-- Section Header Row --}}
-                            <tr class="bg-slate-800 border-y border-slate-900 text-white font-bold">
-                                <td colspan="5" class="px-6 py-4 text-sm font-extrabold select-none">
-                                    <i class="fas fa-folder-open mr-2 text-sky-400 text-xs"></i>{{ $item->requirement_text }}
-                                </td>
-                            </tr>
-                        @else
-                            {{-- Assessable Control Row --}}
-                            <tr class="hover:bg-sky-50/20 transition-colors" x-data="rowEditor({{ $item->id }}, '{{ $item->status }}', '{{ addslashes($item->na_explanation) }}', '{{ $item->milestone_date ? $item->milestone_date->format('Y-m-d') : '' }}', '{{ addslashes($item->comments) }}')">
-                                <td class="px-6 py-4 text-xs font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
-                                    {{ $item->requirement_text }}
-                                </td>
-                                <td class="px-4 py-4">
-                                    @can('update', $project)
-                                        <select x-model="status" @change="save()"
-                                                :class="statusClass(status)"
-                                                class="w-full text-xs font-bold rounded-lg border-slate-200 py-1.5 focus:border-sky-500 focus:ring-sky-500 transition shadow-sm">
-                                            <option value="Pending">Pending</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                            <option value="N/A">N/A</option>
-                                        </select>
-                                    @else
-                                        <span :class="statusClass(status)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold block text-center">
-                                            <span x-text="status"></span>
-                                        </span>
-                                    @endcan
-                                </td>
-                                <td class="px-4 py-4">
-                                    @can('update', $project)
-                                        <input type="text" x-model="na_explanation" @blur="save()"
-                                               placeholder="If N/A, explain here..."
-                                               :disabled="status !== 'N/A'"
-                                               class="w-full text-xs rounded-lg border-slate-200 py-1.5 focus:border-sky-500 focus:ring-sky-500 disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-100 transition shadow-sm">
-                                    @else
-                                        <p class="text-xs text-slate-600 whitespace-pre-wrap" x-text="na_explanation || '-'"></p>
-                                    @endcan
-                                </td>
-                                <td class="px-4 py-4">
-                                    @can('update', $project)
-                                        <input type="date" x-model="milestone_date" @change="save()"
-                                               class="w-full text-xs rounded-lg border-slate-200 py-1.5 focus:border-sky-500 focus:ring-sky-500 transition shadow-sm text-slate-700">
-                                    @else
-                                        <p class="text-xs text-slate-600" x-text="milestone_date || '-'"></p>
-                                    @endcan
-                                </td>
-                                <td class="px-6 py-4">
-                                    @can('update', $project)
-                                        <textarea x-model="comments" @blur="save()"
-                                                  rows="1"
-                                                  placeholder="Add comments..."
-                                                  class="w-full text-xs rounded-lg border-slate-200 py-1.5 focus:border-sky-500 focus:ring-sky-500 transition-all duration-200 shadow-sm focus:h-20 min-h-[34px] resize-y"></textarea>
-                                    @else
-                                        <p class="text-xs text-slate-600 whitespace-pre-wrap" x-text="comments || '-'"></p>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endif
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-16 text-center text-slate-500 bg-slate-50/50">
-                                <div class="max-w-md mx-auto">
-                                    <div class="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-4">
-                                        <i class="fas fa-clipboard-list text-2xl"></i>
-                                    </div>
-                                    <h3 class="font-extrabold text-slate-800 text-lg">No Gap Assessment Data</h3>
-                                    <p class="text-sm text-slate-400 mt-1 mb-6">Import the official PCI DSS v4.0.1 Gap Assessment spreadsheet to get started.</p>
-                                    @can('update', $project)
-                                        <button @click="importModalOpen = true" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition shadow-md">
-                                            <i class="fas fa-file-excel mr-2 text-xs"></i> Import Excel
-                                        </button>
-                                    @endcan
+        {{-- Domain Stats Bar --}}
+        <div class="glass-premium rounded-2xl p-5 mb-8 overflow-x-auto">
+            <div class="flex gap-4 min-w-max">
+                <template x-for="(stats, domain) in groupedStats" :key="domain">
+                    <button @click="activeDomain = domain"
+                            class="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all border whitespace-nowrap"
+                            :class="activeDomain === domain
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'">
+                        <span class="text-xs font-bold" x-text="domain"></span>
+                        <span class="text-[10px] font-black"
+                              :class="activeDomain === domain ? 'text-indigo-200' : 'text-slate-400'"
+                              x-text="`${stats.compliantPct}%`"></span>
+                        <span class="w-16 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                            <span class="h-full block rounded-full transition-all"
+                                  :class="stats.compliancePct >= 70 ? 'bg-emerald-500' : stats.compliancePct >= 40 ? 'bg-amber-500' : 'bg-red-500'"
+                                  :style="`width: ${stats.compliancePct}%`"></span>
+                        </span>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        {{-- Main Content --}}
+        <template x-for="(findings, domain) in groupedFindings" :key="domain">
+            <div x-show="activeDomain === domain" class="animate-fade-in-up">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-800" x-text="domain"></h2>
+                    <span class="text-xs font-semibold text-slate-400" x-text="`${findings.length} controls`"></span>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <template x-for="finding in findings" :key="finding.id">
+                        <div class="glass-card rounded-xl p-5 control-card cursor-pointer"
+                             @click="openEditor(finding)"
+                             @keydown.enter="openEditor(finding)"
+                             tabindex="0"
+                             role="button"
+                             :aria-label="`Edit ${finding.framework_control?.control_id || 'control'}`">
+                            {{-- Card Header --}}
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-wider flex-shrink-0"
+                                          x-text="finding.framework_control?.control_id || 'N/A'">
+                                    </span>
+                                    <span class="text-xs font-semibold text-slate-500 truncate"
+                                          x-text="finding.framework_control?.control_name || ''">
+                                    </span>
                                 </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <span class="risk-badge"
+                                          :class="`risk-${finding.risk_rating}`"
+                                          x-text="finding.risk_rating">
+                                    </span>
+                                    <span class="status-badge"
+                                          :class="`status-${finding.status.replace(' ', '\\ ')}`"
+                                          x-text="finding.status">
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Description --}}
+                            <p class="text-sm text-slate-600 leading-relaxed line-clamp-2 mb-3"
+                               x-text="finding.framework_control?.requirement_description || 'No description'">
+                            </p>
+
+                            {{-- Observation / Gap --}}
+                            <template x-if="finding.observation">
+                                <div class="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Observation</p>
+                                    <p class="text-xs text-slate-600 leading-relaxed line-clamp-2" x-text="finding.observation"></p>
+                                </div>
+                            </template>
+
+                            {{-- Footer: Compliance + Evidence --}}
+                            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <template x-if="finding.is_compliant">
+                                        <span class="flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                                            <i class="fas fa-check-circle"></i> Compliant
+                                        </span>
+                                    </template>
+                                    <template x-if="!finding.is_compliant">
+                                        <span class="flex items-center gap-1 text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                            <i class="fas fa-exclamation-triangle"></i> Non-Compliant
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
+                                    <i class="fas fa-paperclip"></i>
+                                    <span x-text="`${finding.evidence_count || 0} files`"></span>
+                                </div>
+                            </div>
+
+                            {{-- Gap Category --}}
+                            <template x-if="finding.gap_category">
+                                <div class="mt-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-[10px] font-semibold text-indigo-700">
+                                    <i class="fas fa-fw fa-folder text-indigo-500 mr-1"></i>
+                                    <span x-text="`Gap Category: ${finding.gap_category}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Non-Compliant Details --}}
+                            <template x-if="!finding.is_compliant && finding.non_compliant_details">
+                                <div class="mt-2 p-2 bg-rose-50 rounded-lg border border-rose-100 text-[10px] font-semibold text-rose-700">
+                                    <i class="fas fa-fw fa-exclamation-triangle text-rose-500 mr-1"></i>
+                                    <span x-text="`Non-Compliant: ${finding.non_compliant_details.substring(0, 60)}${finding.non_compliant_details.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Compliant Description --}}
+                            <template x-if="finding.is_compliant && finding.compliant_description">
+                                <div class="mt-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100 text-[10px] font-semibold text-emerald-700">
+                                    <i class="fas fa-fw fa-check-circle text-emerald-500 mr-1"></i>
+                                    <span x-text="`Compliant: ${finding.compliant_description.substring(0, 60)}${finding.compliant_description.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+
+                            {{-- Remediation Plan --}}
+                            <template x-if="finding.remediation_plan">
+                                <div class="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-100 text-[10px] font-semibold text-amber-700">
+                                    <i class="fas fa-fw fa-list-ol text-amber-500 mr-1"></i>
+                                    <span x-text="`Remediation: ${finding.remediation_plan.substring(0, 60)}${finding.remediation_plan.length > 60 ? '...' : ''}`"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        {{-- Empty State --}}
+        <template x-if="totalFindings === 0">
+            <div class="glass-premium rounded-2xl p-16 text-center">
+                <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-3xl text-indigo-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">No Assessment Data</h3>
+                <p class="text-sm text-slate-400 mb-6 max-w-md mx-auto">This project has no gap assessment findings yet. Initialize the assessment to get started.</p>
+                <button @click="initializeAssessment()
+"
+                        class="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-rocket mr-2"></i> Initialize Assessment
+                </button>
+            </div>
+        </template>
     </div>
 
-    {{-- Import Modal --}}
-    @can('update', $project)
-        <div x-show="importModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60" @keydown.escape.window="importModalOpen = false" x-cloak
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
-             
-            <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden" @click.away="importModalOpen = false"
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200"
-                 x-transition:leave-start="opacity-100 scale-100"
-                 x-transition:leave-end="opacity-0 scale-95">
-                 
-                <div class="px-6 py-5 border-b border-slate-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
-                            <i class="fas fa-file-excel text-lg"></i>
+    {{-- Editor Modal --}}
+    <div class="fixed inset-0 z-50 modal-overlay flex items-start justify-center p-4 pt-12 overflow-y-auto"
+         x-show="editorOpen"
+         x-transition.opacity
+         @keydown.escape="closeEditor()"
+         @keydown.ctrl.enter="saveFinding()
+"
+         @keydown.meta.enter="saveFinding()
+         style="display: none;">
+
+        <div class="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl border border-slate-100 my-8"
+             @click.away="closeEditor()">
+
+            {{-- Modal Header --}}
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black uppercase tracking-wider"
+                          x-text="editingFinding?.framework_control?.control_id || 'N/A'">
+                    </span>
+                    <h3 class="text-lg font-bold text-slate-800 truncate max-w-md"
+                        x-text="editingFinding?.framework_control?.control_name || 'Edit Finding'">
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="saveFinding()
+"
+                            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg">
+                        <i class="fas fa-check mr-1"></i> Save
+                    </button>
+                    <button @click="closeEditor()
+"
+                            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">
+                        <i class="fas fa-times mr-1"></i> Close
+                    </button>
+                </div>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                {{-- Requirement Description --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Requirement</label>
+                    <p class="text-sm text-slate-700 leading-relaxed p-3 bg-slate-50 rounded-xl border border-slate-100"
+                       x-text="editingFinding?.framework_control?.requirement_description || 'N/A'">
+                    </p>
+                </div>
+
+                {{-- Status & Risk Row --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Status</label>
+                        <select x-model="editForm.status"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Risk Rating</label>
+                        <select x-model="editForm.risk_rating"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <option value="None">None</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Compliance Toggle --}}
+                <div class="flex items-center gap-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Compliant</label>
+                    <button @click="editForm.is_compliant = !editForm.is_compliant"
+                            class="relative w-12 h-6 rounded-full transition-colors duration-200"
+                            :class="editForm.is_compliant ? 'bg-emerald-500' : 'bg-slate-300'">
+                        <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                              :class="editForm.is_compliant ? 'translate-x-6' : ''">
+                        </span>
+                    </button>
+                </div>
+
+                {{-- Observation (contenteditable) --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Observation / Current State</label>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                        <div class="flex items-center gap-1 px-3 py-2 bg-slate-50 border-b border-slate-200">
+                            <button @click="execCmd('bold')" class="px-2 py-1 rounded text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button @click="execCmd('italic')" class="px-2 py-1 rounded text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors" title="Italic"><i class="fas fa-italic"></i></button>
+                            <button @click="execCmd('underline')" class="px-2 py-1 rounded text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors" title="Underline"><i class="fas fa-underline"></i></button>
+                            <span class="w-px h-4 bg-slate-300 mx-1"></span>
+                            <button @click="execCmd('insertUnorderedList')" class="px-2 py-1 rounded text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                            <button @click="execCmd('insertOrderedList')" class="px-2 py-1 rounded text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors" title="Numbered List"><i class="fas fa-list-ol"></i></button>
                         </div>
-                        <div>
-                            <h2 class="text-lg font-bold text-slate-900">Import Assessment Spreadsheet</h2>
-                            <p class="text-xs text-slate-400 mt-0.5">Upload a PCI DSS gap assessment file (.xlsx, .xls, .csv)</p>
+                        <div contenteditable="true"
+                             x-ref="observationEditor"
+                             class="px-4 py-3 text-sm text-slate-700 leading-relaxed min-h-[100px] focus:outline-none"
+                             @input="editForm.observation = $event.target.innerHTML">
                         </div>
                     </div>
                 </div>
 
-                <form action="{{ route('pci-gap.import', $project) }}" method="POST" enctype="multipart/form-data" class="px-6 py-6 space-y-6">
-                    @csrf
-                    
-                    {{-- Drag and Drop Area --}}
-                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-sky-500 hover:bg-sky-50/20 transition cursor-pointer relative"
-                         x-data="{ active: false }"
-                         @dragover.prevent="active = true"
-                         @dragleave.prevent="active = false"
-                         @drop.prevent="active = false; $refs.fileInput.files = $event.dataTransfer.files; fileName = $refs.fileInput.files[0].name"
-                         :class="{ 'border-sky-500 bg-sky-50/30': active }"
-                         @click="$refs.fileInput.click()">
-                         
-                        <input type="file" name="assessment_file" x-ref="fileInput" accept=".xlsx,.xls,.csv" class="hidden" required
-                               @change="fileName = $refs.fileInput.files[0] ? $refs.fileInput.files[0].name : ''">
-                               
-                        <div class="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-3">
-                            <i class="fas fa-cloud-upload-alt text-xl"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-slate-700">Drag & Drop your file here or click to browse</p>
-                        <p class="text-xs text-slate-400 mt-1">Supports Excel or CSV files up to 10MB</p>
-                        
-                        <div class="mt-4 p-2 bg-sky-50/50 border border-sky-100 rounded-lg text-xs font-bold text-sky-700 inline-flex items-center gap-1.5" x-show="fileName">
-                            <i class="fas fa-file-excel text-emerald-600"></i>
-                            <span x-text="fileName"></span>
-                        </div>
-                    </div>
+                {{-- Gap Description --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Gap Description</label>
+                    <textarea x-model="editForm.gap_description"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Describe the gap..."></textarea>
+                </div>
 
-                    {{-- Warning Note --}}
-                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-info-circle text-amber-600 mt-0.5 text-base"></i>
-                        <div class="text-xs text-amber-800 leading-normal">
-                            <strong>Note:</strong> Importing a new gap assessment file will replace all existing gap assessment records for this project.
-                        </div>
-                    </div>
+                {{-- Impact --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Impact</label>
+                    <textarea x-model="editForm.impact"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Describe the business impact..."></textarea>
+                </div>
 
-                    <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-                        <button type="button" @click="importModalOpen = false"
-                                class="px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md">
-                            Import Data
-                        </button>
-                    </div>
-                </form>
+                {{-- Recommendation --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Recommendation</label>
+                    <textarea x-model="editForm.recommendation"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Recommend remediation actions..."></textarea>
+                </div>
+
+                {{-- Due Date --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Due Date</label>
+                    <input type="date" x-model="editForm.due_date"
+                           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                </div>
+
+                {{-- Gap Category --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Gap Category</label>
+                    <select x-model="editForm.gap_category"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Select gap category</option>
+                        <option value="Policy">Policy</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Process">Process</option>
+                        <option value="Organizational">Organizational</option>
+                        <option value="Physical">Physical</option>
+                    </select>
+                </div>
+
+                {{-- Non-Compliant Details --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Non-Compliant Details</label>
+                    <textarea x-model="editForm.non_compliant_details"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Details of non-compliance..."></textarea>
+                </div>
+
+                {{-- Compliant Description --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Compliant Description</label>
+                    <textarea x-model="editForm.compliant_description"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Description of how requirements are met..."></textarea>
+                </div>
+
+                {{-- Remediation Plan --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Remediation Plan</label>
+                    <textarea x-model="editForm.remediation_plan"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Plan to address the gap..."></textarea>
+                </div>
+
+                {{-- Evidence Provided --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Evidence Provided</label>
+                    <input type="text" x-model="editForm.evidence_provided"
+                           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                           placeholder="Evidence file names or references...">
+                </div>
+
+                {{-- Test Results --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Test Results</label>
+                    <textarea x-model="editForm.test_results"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Test results or validation data..."></textarea>
+                </div>
+
+                {{-- Meets Standard --}}
+                <div class="flex items-center gap-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Meets Standard</label>
+                    <select x-model="editForm.meets_standard"
+                            class="relative w-24 h-6 rounded-full transition-colors duration-200">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+
+                {{-- Auditor Notes --}}
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Auditor Notes</label>
+                    <textarea x-model="editForm.auditor_notes"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                              rows="3"
+                              placeholder="Auditor notes..."></textarea>
+                </div>
+            </div>
+
+            {{-- Modal Footer --}}
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                <div class="text-[10px] text-slate-400 font-semibold">
+                    <i class="fas fa-keyboard mr-1"></i>
+                    <span>Ctrl+Enter to save &middot; Esc to close</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="closeEditor()
+"
+                            class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white border border-slate-200 hover:bg-slate-100 transition-all">
+                        Cancel
+                    </button>
+                    <button @click="saveFinding()
+"
+                            class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20">
+                        <i class="fas fa-check mr-1"></i> Save Changes
+                    </button>
+                </div>
             </div>
         </div>
-    @endcan
+    </div>
+
+    {{-- Import Section --}}
+    <div class="mt-8 glass-card rounded-2xl border border-white/60 p-6 mb-12">
+        <h2 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Import from Excel
+        </h2>
+        <form action="{{ route('iso-gap.import', $project->id) }}" method="POST"
+              enctype="multipart/form-data" class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            @csrf
+            <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+                   class="block text-sm text-slate-600
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-xl file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-indigo-50 file:text-indigo-700
+                          hover:file:bg-indigo-100 cursor-pointer">
+            <button type="submit"
+                    class="px-5 py-2 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-700 transition">
+                Import
+            </button>
+        </form>
+        <p class="mt-3 text-xs text-slate-400">
+            Expected columns: <em>Serial No., Status, Observation Title, Risk Rating,
+            Current State / Observation, Gap Description, Impact / Risk, Recommendation,
+            Relevant Standard Reference</em>
+        </p>
+    </div>
 </div>
-@endsection
 
 @push('scripts')
-<script>
-function pciGapTracker() {
+<script nonce="{{ $cspNonce }}">
+function pciGapAssessmentWorkspace() {
     return {
-        importModalOpen: false,
-        fileName: '',
-        saving: false,
-        saved: false,
-        triggerGlobalFeedback() {
-            this.saved = true;
-            setTimeout(() => { this.saved = false; }, 3000);
-        }
-    };
-}
+        // State
+        assessmentExists: {{ isset($assessment) && $assessment->exists ? 'true' : 'false' }},
 
-function rowEditor(id, initialStatus, initialNaExpl, initialMilestone, initialComments) {
-    return {
-        id: id,
-        status: initialStatus,
-        na_explanation: initialNaExpl,
-        milestone_date: initialMilestone,
-        comments: initialComments,
-        
-        statusClass(val) {
-            return {
-                'Pending': 'bg-amber-50 border border-amber-200 text-amber-800 focus:border-amber-500 focus:ring-amber-500',
-                'Yes': 'bg-emerald-50 border border-emerald-200 text-emerald-800 focus:border-emerald-500 focus:ring-emerald-500',
-                'No': 'bg-rose-50 border border-rose-200 text-rose-800 focus:border-rose-500 focus:ring-rose-500',
-                'N/A': 'bg-slate-50 border border-slate-200 text-slate-600 focus:border-slate-500 focus:ring-slate-500'
-            }[val] || 'bg-slate-50 border border-slate-200 text-slate-600';
+        groupedFindings: @json($groupedFindings ?? []),
+        groupedStats: @json($groupedStats ?? []),
+        overallStats: @json($overallStats ?? []),
+        activeDomain: Object.keys(@json($groupedFindings ?? []))[0] || '',
+        flashMessage: '{{ session('success') ?: session('error') ?: '' }}',
+        flashType: '{{ session('success') ? 'success' : (session('error') ? 'error' : '') }}',
+
+        // Editor state
+        editorOpen: false,
+        editingFinding: null,
+        evidenceFiles: [],
+        uploading: false,
+        dragOver: false,
+        editForm: {
+            status: 'Open',
+            risk_rating: 'None',
+            is_compliant: false,
+            observation: '',
+            gap_description: '',
+            impact: '',
+            recommendation: '',
+            due_date: '',
+            gap_category: '',
+            non_compliant_details: '',
+            compliant_description: '',
+            remediation_plan: '',
+            evidence_provided: '',
+            test_results: '',
+            meets_standard: false,
+            auditor_notes: '',
         },
-        
-        async save() {
-            // Check status change logic (clear explanation if not N/A)
-            if (this.status !== 'N/A') {
-                this.na_explanation = '';
+
+        get totalFindings() {
+            let count = 0;
+            for (const domain in this.groupedFindings) {
+                count += this.groupedFindings[domain].length;
             }
-            
-            this.$parent.saving = true;
-            
-            try {
-                const response = await fetch(`{{ url('/pci-gap-assessments') }}/${this.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        status: this.status,
-                        na_explanation: this.na_explanation,
-                        milestone_date: this.milestone_date || null,
-                        comments: this.comments
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to update row');
+            return count;
+        },
+
+        get overallCompliancePct() {
+            return this.overallStats?.compliancePct || 0;
+        },
+
+        get overallProgress() {
+            return this.overallStats?.progressScore || 0;
+        },
+
+        initializeAssessment() {
+            const baseUrl = '{{ route("gap-assessment.initialize", ["project" => $project, "framework" => "_framework_id_"]) }}';
+            const url = baseUrl.replace('_framework_id_', this.selectedFramework || '{{ $framework?->id ?? "" }}');
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            }).then(res => {
+                if (res.redirected) window.location.href = res.url;
+                else window.location.reload();
+            }).catch(() => window.location.reload());
+        },
+
+        openEditor(finding) {
+            this.editingFinding = finding;
+            this.editForm = {
+                status: finding.status || 'Open',
+                risk_rating: finding.risk_rating || 'None',
+                is_compliant: finding.is_compliant || false,
+                observation: finding.observation || '',
+                gap_description: finding.gap_description || '',
+                impact: finding.impact || '',
+                recommendation: finding.recommendation || '',
+                due_date: finding.due_date || '',
+                gap_category: finding.gap_category || '',
+                non_compliant_details: finding.non_compliant_details || '',
+                compliant_description: finding.compliant_description || '',
+                remediation_plan: finding.remediation_plan || '',
+                evidence_provided: finding.evidence_provided || '',
+                test_results: finding.test_results || '',
+                meets_standard: finding.meets_standard || false,
+                auditor_notes: finding.auditor_notes || '',
+            };
+            this.loadEvidence(finding);
+            this.editorOpen = true;
+            this.$nextTick(() => {
+                if (this.$refs.observationEditor) {
+                    this.$refs.observationEditor.innerHTML = this.editForm.observation;
                 }
-                
-                const data = await response.json();
-                this.status = data.data.status;
-                this.na_explanation = data.data.na_explanation || '';
-                this.milestone_date = data.data.milestone_date || '';
-                this.comments = data.data.comments || '';
-                
-                this.$parent.saving = false;
-                this.$parent.triggerGlobalFeedback();
-            } catch (error) {
-                this.$parent.saving = false;
-                alert('Failed to save changes. Please try again.');
-            }
-        }
+            });
+        },
+
+        closeEditor() {
+            this.editorOpen = false;
+            this.editingFinding = null;
+            this.evidenceFiles = [];
+        },
+
+        saveFinding() {
+            if (!this.editingFinding) return;
+
+            const baseUrl = '{{ route("gap-assessment.update", ["project" => $project, "finding" => "_finding_id_"]) }}';
+            const url = baseUrl.replace('_finding_id_', this.editingFinding.id);
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(this.editForm)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update local finding data
+                    Object.assign(this.editingFinding, data.finding);
+                    this.showFlash('Finding updated successfully', 'success');
+                    this.closeEditor();
+                }
+            })
+            .catch(() => {
+                this.showFlash('Failed to save finding', 'error');
+            });
+        },
+
+        loadEvidence(finding) {
+            if (!finding?.id) return;
+            const baseUrl = '{{ route("gap-assessment.get-finding", ["project" => $project, "finding" => "_finding_id_"]) }}';
+            const url = baseUrl.replace('_finding_id_', finding.id);
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        this.evidenceFiles = data.evidence_files || [];
+                    }
+                })
+                .catch(() => {});
+        },
+
+        uploadEvidence(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            this.doUpload(file);
+        },
+
+        handleFileDrop(event) {
+            this.dragOver = false;
+            const file = event.dataTransfer?.files?.[0];
+            if (file) this.doUpload(file);
+        },
+
+        doUpload(file) {
+            if (!this.editingFinding?.id) return;
+            this.uploading = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const baseUrl = '{{ route("assessments.unified.upload-evidence", ["finding" => "_finding_id_"]) }}';
+            const url = baseUrl.replace('_finding_id_', this.editingFinding.id);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.loadEvidence(this.editingFinding);
+                    this.showFlash('Evidence uploaded', 'success');
+                }
+            })
+            .catch(() => {
+                this.showFlash('Upload failed', 'error');
+            })
+            .finally(() => {
+                this.uploading = false;
+            });
+        },
+
+        detachEvidence(evidence) {
+            if (!this.editingFinding?.id || !evidence?.id) return;
+            const url = '{{ url("assessments/findings") }}' + '/' + this.editingFinding.id + '/evidence/' + evidence.id + '/detach';
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.loadEvidence(this.editingFinding);
+                    this.showFlash('Evidence detached', 'success');
+                }
+            })
+            .catch(() => {
+                this.showFlash('Failed to detach evidence', 'error');
+            });
+        },
+
+        execCmd(command) {
+            document.execCommand(command, false, null);
+            this.$refs.observationEditor?.focus();
+        },
+
+        showFlash(message, type) {
+            this.flashMessage = message;
+            this.flashType = type || 'success';
+            setTimeout(() => this.flashMessage = null, 5000);
+        },
     };
 }
 </script>

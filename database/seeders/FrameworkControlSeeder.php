@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
+use Illuminate\Database\Seeder;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
  * FrameworkControlSeeder
@@ -26,28 +27,28 @@ class FrameworkControlSeeder extends Seeder
      */
     private array $frameworks = [
         'pci_dss_v4' => [
-            'name'        => 'PCI DSS',
-            'version'     => 'v 4.0',
+            'name' => 'PCI DSS',
+            'version' => 'v 4.0',
             'description' => 'Payment Card Industry Data Security Standard v4.0',
-            'is_active'   => false,
+            'is_active' => false,
         ],
         'iso_27001_2022' => [
-            'name'        => 'ISO 27001:2022',
-            'version'     => '2022',
+            'name' => 'ISO 27001:2022',
+            'version' => '2022',
             'description' => 'Information Security Management Systems (2022 edition)',
-            'is_active'   => false,
+            'is_active' => false,
         ],
         'bb_ict' => [
-            'name'        => 'BB ICT Guidelines',
-            'version'     => 'current',
+            'name' => 'BB ICT Guidelines',
+            'version' => 'current',
             'description' => 'Bangladesh Bank ICT Security Guidelines',
-            'is_active'   => false,
+            'is_active' => false,
         ],
         'swift_cscf_2026' => [
-            'name'        => 'SWIFT CSCF',
-            'version'     => '2026',
+            'name' => 'SWIFT CSCF',
+            'version' => '2026',
             'description' => 'SWIFT Customer Security Controls Framework 2026',
-            'is_active'   => true,
+            'is_active' => true,
         ],
     ];
 
@@ -69,14 +70,15 @@ class FrameworkControlSeeder extends Seeder
         // 2. Locate the Excel workbook
         // ----------------------------------------------------------------
         $relativePath = 'seeders/control_mapping.xlsx';
-        $absolutePath = storage_path('app/' . $relativePath);
+        $absolutePath = storage_path('app/'.$relativePath);
 
         if (! file_exists($absolutePath)) {
             $this->command->warn(
-                "Control mapping file not found at: {$absolutePath}\n" .
-                "Place the Excel file there and re-run the seeder.\n" .
-                "Frameworks have been created; controls were NOT imported."
+                "Control mapping file not found at: {$absolutePath}\n".
+                "Place the Excel file there and re-run the seeder.\n".
+                'Frameworks have been created; controls were NOT imported.'
             );
+
             return;
         }
 
@@ -84,14 +86,16 @@ class FrameworkControlSeeder extends Seeder
         // 3. Import controls for each framework
         // ----------------------------------------------------------------
         try {
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($absolutePath);
+            $spreadsheet = IOFactory::load($absolutePath);
             $sheet = $spreadsheet->getSheetByName('Control Mapping');
-            if (!$sheet) {
+            if (! $sheet) {
                 $this->command->error("Sheet 'Control Mapping' not found in {$absolutePath}");
+
                 return;
             }
         } catch (\Exception $e) {
-            $this->command->error('Could not read Excel file: ' . $e->getMessage());
+            $this->command->error('Could not read Excel file: '.$e->getMessage());
+
             return;
         }
 
@@ -117,8 +121,8 @@ class FrameworkControlSeeder extends Seeder
                 $refVal = $sheet->getCellByColumnAndRow($cols['ref_col'] + 1, $r)->getValue();
                 $descVal = $sheet->getCellByColumnAndRow($cols['desc_col'] + 1, $r)->getValue();
 
-                $refVal = trim((string)$refVal);
-                $descVal = trim((string)$descVal);
+                $refVal = trim((string) $refVal);
+                $descVal = trim((string) $descVal);
 
                 if (empty($refVal) || strtolower($refVal) === 'no relevant control match found' || strtolower($refVal) === 'n/a') {
                     continue;
@@ -134,12 +138,12 @@ class FrameworkControlSeeder extends Seeder
                     FrameworkControl::updateOrCreate(
                         [
                             'framework_id' => $frameworkModels[$slug]->id,
-                            'control_id'   => $singleRef,
+                            'control_id' => $singleRef,
                         ],
                         [
-                            'domain'                  => $cols['domain'],
+                            'domain' => $cols['domain'],
                             'requirement_description' => $descVal,
-                            'required_evidence'       => null,
+                            'required_evidence' => null,
                         ]
                     );
                     $counts[$slug]++;

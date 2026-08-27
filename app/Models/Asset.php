@@ -24,9 +24,4 @@ class Asset extends Model
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
-
-    public function risks()
-    {
-        return $this->hasMany(RiskRegister::class, 'asset_id');
-    }
 }

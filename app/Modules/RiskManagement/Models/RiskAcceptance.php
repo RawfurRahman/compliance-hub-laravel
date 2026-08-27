@@ -26,8 +26,8 @@ class RiskAcceptance extends Model
     ];
 
     protected $casts = [
-        'expiry_date'  => 'date',
-        'reviewed_at'  => 'datetime',
+        'expiry_date' => 'date',
+        'reviewed_at' => 'datetime',
         'residual_risk_score' => 'integer',
     ];
 

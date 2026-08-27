@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ $assessment->framework }} {{ $type }} Report &ndash; {{ $project->name }}</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         /* Reset & Base styles optimized for DomPDF */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {

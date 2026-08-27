@@ -4,7 +4,6 @@ namespace App\Modules\RiskManagement\Services;
 
 use App\Modules\RiskManagement\Models\VendorAssessment;
 use App\Modules\RiskManagement\Models\VendorQuestionnaireResponse;
-use Illuminate\Support\Facades\Auth;
 
 class VendorAssessmentService
 {
@@ -24,6 +23,7 @@ class VendorAssessmentService
     public function update(VendorAssessment $assessment, array $data): VendorAssessment
     {
         $assessment->update($data);
+
         return $assessment->fresh();
     }
 
@@ -65,7 +65,7 @@ class VendorAssessmentService
 
         $assessment->update([
             'overall_score' => $overallScore,
-            'risk_rating'   => $riskRating,
+            'risk_rating' => $riskRating,
         ]);
 
         return $assessment->fresh();
@@ -76,7 +76,7 @@ class VendorAssessmentService
         $assessment = $this->recalculateScore($assessment);
 
         $assessment->update([
-            'status'         => 'completed',
+            'status' => 'completed',
             'completed_date' => now(),
         ]);
 

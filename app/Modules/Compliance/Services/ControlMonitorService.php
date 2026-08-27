@@ -3,6 +3,7 @@
 namespace App\Modules\Compliance\Services;
 
 use App\Models\AssessmentFinding;
+use App\Modules\Compliance\Models\ComplianceTest;
 use App\Modules\Compliance\Models\ControlMonitor;
 use App\Modules\Compliance\Models\MonitoringRule;
 use App\Modules\Compliance\Utilities\SafeExpressionEvaluator;
@@ -35,17 +36,17 @@ class ControlMonitorService
 
     protected function updateLinkedComplianceTest(ControlMonitor $monitor, AssessmentFinding $finding, string $result): void
     {
-        $linkedTests = \App\Modules\Compliance\Models\ComplianceTest::where('control_monitor_id', $monitor->id)->get();
+        $linkedTests = ComplianceTest::where('control_monitor_id', $monitor->id)->get();
 
         foreach ($linkedTests as $test) {
             $this->updateTestBasedOnResult($test, $finding, $result);
         }
     }
 
-    protected function updateTestBasedOnResult(\App\Modules\Compliance\Models\ComplianceTest $test, AssessmentFinding $finding, string $result): void
+    protected function updateTestBasedOnResult(ComplianceTest $test, AssessmentFinding $finding, string $result): void
     {
         $now = now();
-        
+
         if ($result === 'pass') {
             // Mark test as Passing and record success
             $test->update([
@@ -53,35 +54,35 @@ class ControlMonitorService
                 'last_run_at' => $now,
                 'next_due_at' => $this->calculateNextDueDate($test),
             ]);
-            
+
             $test->failures()
-                  ->whereNull('resolved_at')
-                  ->where('failing_entity_description', 'like', 'Monitor #%')
-                  ->update(['resolved_at' => $now]);
-                      
+                ->whereNull('resolved_at')
+                ->where('failing_entity_description', 'like', 'Monitor #%')
+                ->update(['resolved_at' => $now]);
+
         } else {
             $existingNextDueAt = $test->next_due_at;
-            
+
             $test->update([
                 'status' => $existingNextDueAt && $existingNextDueAt->isPast() ? 'Overdue' : 'Needs Remediation',
                 'last_run_at' => $now,
                 'next_due_at' => $this->calculateNextDueDate($test),
             ]);
-            
+
             // Create a new failure record with resource details
             $this->createTestFailureRecord($test, $finding, $result);
         }
     }
 
-    protected function createTestFailureRecord(\App\Modules\Compliance\Models\ComplianceTest $test, AssessmentFinding $finding, string $result): void
+    protected function createTestFailureRecord(ComplianceTest $test, AssessmentFinding $finding, string $result): void
     {
         $monitor = $finding->source;
-        if (!$monitor || !($monitor instanceof ControlMonitor)) {
+        if (! $monitor || ! ($monitor instanceof ControlMonitor)) {
             return;
         }
 
         $control = $monitor->control;
-        $controlCode = $control?->control_code ?? 'Unknown';
+        $controlCode = $control->control_code ?? 'Unknown';
 
         $failingDescription = sprintf(
             'Monitor #%d failed for Control %s: %s',
@@ -91,11 +92,11 @@ class ControlMonitorService
         );
 
         $existingFailure = $test->failures()
-                               ->whereNull('resolved_at')
-                               ->where('failing_entity_description', 'like', 'Monitor #%')
-                               ->first();
+            ->whereNull('resolved_at')
+            ->where('failing_entity_description', 'like', 'Monitor #%')
+            ->first();
 
-        if (!$existingFailure) {
+        if (! $existingFailure) {
             $test->failures()->create([
                 'failing_entity_description' => $failingDescription,
                 'detected_at' => now(),
@@ -104,13 +105,8 @@ class ControlMonitorService
         }
     }
 
-    protected function calculateNextDueDate(\App\Modules\Compliance\Models\ComplianceTest $test): \DateTime
+    protected function calculateNextDueDate(ComplianceTest $test): \DateTime
     {
-        if ($test->sla_days) {
-            return now()->addDays($test->sla_days);
-        }
-        
-        // Default to 30 days if no SLA specified
         return now()->addDays(30);
     }
 
@@ -134,19 +130,21 @@ class ControlMonitorService
 
     protected function evaluateRule(MonitoringRule $rule): string
     {
-        if (!$rule->check_expression) {
+        if (! $rule->check_expression) {
             return 'pass';
         }
 
         try {
-            $evaluator = new SafeExpressionEvaluator();
+            $evaluator = new SafeExpressionEvaluator;
             $result = $evaluator->evaluate($rule->check_expression, $this->getEvaluationContext($rule));
+
             return $result ? 'pass' : 'fail';
         } catch (\InvalidArgumentException $e) {
-            logger()->warning('Invalid monitoring rule expression: ' . $e->getMessage(), [
+            logger()->warning('Invalid monitoring rule expression: '.$e->getMessage(), [
                 'rule_id' => $rule->id,
                 'expression' => $rule->check_expression,
             ]);
+
             return 'error';
         }
     }
@@ -206,7 +204,7 @@ class ControlMonitorService
 
     protected function calculateNextRun(MonitoringRule $rule): ?\DateTime
     {
-        if (!$rule->schedule_cron) {
+        if (! $rule->schedule_cron) {
             return null;
         }
 

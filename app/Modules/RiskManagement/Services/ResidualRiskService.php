@@ -91,19 +91,19 @@ class ResidualRiskService
 
         $explanation = [
             'formula_version' => $config->version,
-            'weights'         => $config->weights,
-            'factors'         => [
-                'control'          => round($control, 4),
-                'treatment'        => round($treatment, 4),
+            'weights' => $config->weights,
+            'factors' => [
+                'control' => round($control, 4),
+                'treatment' => round($treatment, 4),
                 'open_remediation' => $openRemediation,
-                'third_party'      => round($thirdParty, 4),
-                'low_evidence'     => round($lowEvidence, 4),
+                'third_party' => round($thirdParty, 4),
+                'low_evidence' => round($lowEvidence, 4),
             ],
-            'reduction'             => round($reduction, 4),
-            'inflation'             => round($inflation, 4),
-            'effective_reduction'   => round($effectiveReduction, 4),
-            'documented_only'       => $isDocumentedOnly,
-            'steps'                 => [
+            'reduction' => round($reduction, 4),
+            'inflation' => round($inflation, 4),
+            'effective_reduction' => round($effectiveReduction, 4),
+            'documented_only' => $isDocumentedOnly,
+            'steps' => [
                 'residual' => sprintf(
                     '%d * (1 - %.4f) = %d',
                     $input->inherentScore,
@@ -111,8 +111,8 @@ class ResidualRiskService
                     $residualScore
                 ),
             ],
-            'bands'                 => $config->bands,
-            'appetite_threshold'    => $appetiteThreshold,
+            'bands' => $config->bands,
+            'appetite_threshold' => $appetiteThreshold,
         ];
 
         return new ResidualRiskResult(
@@ -199,8 +199,8 @@ class ResidualRiskService
             explanation: [
                 'manual_override' => true,
                 'override_reason' => $reason,
-                'override_by'     => $recordedBy,
-                'bands'           => $config->bands,
+                'override_by' => $recordedBy,
+                'bands' => $config->bands,
             ],
             inputSnapshot: $input->toSnapshot()
         );
@@ -221,7 +221,7 @@ class ResidualRiskService
         $inherent = (int) ($risk->computed_risk_rating ?? $risk->risk_rating_avtvlh);
 
         $effectivenessScores = $risk->controlMappings()->pluck('effectiveness')->filter()->all();
-        $engine = new ScoringEngine();
+        $engine = new ScoringEngine;
         $controlEffectiveness = $engine->calculateCumulativeEffectiveness($effectivenessScores);
 
         $treatments = $risk->treatmentPlans()->get();
@@ -295,11 +295,11 @@ class ResidualRiskService
         $history = $this->historyForRisk($riskRegisterId, $limit);
 
         $points = $history->map(fn (RiskResidualScore $r) => [
-            'recorded_at'     => optional($r->created_at)->toIso8601String(),
-            'inherent_score'  => (int) $r->inherent_score,
-            'residual_score'  => (int) $r->residual_score,
-            'reduction_pct'   => (float) $r->reduction_pct,
-            'severity_band'   => $r->severity_band,
+            'recorded_at' => optional($r->created_at)->toIso8601String(),
+            'inherent_score' => (int) $r->inherent_score,
+            'residual_score' => (int) $r->residual_score,
+            'reduction_pct' => (float) $r->reduction_pct,
+            'severity_band' => $r->severity_band,
             'appetite_status' => $r->appetite_status,
             'trend_direction' => $r->trend_direction,
             'manual_override' => (bool) $r->manual_override,
@@ -309,20 +309,20 @@ class ResidualRiskService
 
         return [
             'risk_register_id' => $riskRegisterId,
-            'current'          => $latest ? [
-                'inherent_score'  => (int) $latest->inherent_score,
-                'residual_score'  => (int) $latest->residual_score,
-                'reduction_pct'   => (float) $latest->reduction_pct,
-                'severity_band'   => $latest->severity_band,
+            'current' => $latest ? [
+                'inherent_score' => (int) $latest->inherent_score,
+                'residual_score' => (int) $latest->residual_score,
+                'reduction_pct' => (float) $latest->reduction_pct,
+                'severity_band' => $latest->severity_band,
                 'appetite_status' => $latest->appetite_status,
                 'trend_direction' => $latest->trend_direction,
             ] : null,
-            'points'           => $points,
+            'points' => $points,
         ];
     }
 
     /* ------------------------------------------------------------------ */
-    /* Internal helpers                                                    */
+    /* Internal helpers */
     /* ------------------------------------------------------------------ */
 
     private function persist(
@@ -332,22 +332,22 @@ class ResidualRiskService
         ?string $overrideReason = null
     ): void {
         RiskResidualScore::create([
-            'risk_register_id'   => $result->inputSnapshot['risk_register_id'] ?? null,
-            'inherent_score'     => $result->inherentScore,
-            'residual_score'     => $result->residualScore,
-            'severity_band'      => $result->severityBand,
-            'appetite_status'    => $result->appetiteStatus,
-            'reduction_pct'      => $result->reductionPct,
+            'risk_register_id' => $result->inputSnapshot['risk_register_id'] ?? null,
+            'inherent_score' => $result->inherentScore,
+            'residual_score' => $result->residualScore,
+            'severity_band' => $result->severityBand,
+            'appetite_status' => $result->appetiteStatus,
+            'reduction_pct' => $result->reductionPct,
             'heatmap_likelihood' => $result->heatmapCoordinates['likelihood'],
-            'heatmap_impact'     => $result->heatmapCoordinates['impact'],
-            'trend_direction'    => $result->trendDirection,
-            'manual_override'    => $result->manualOverride,
-            'override_reason'    => $overrideReason,
-            'formula_version'    => $result->formulaVersion,
-            'input_snapshot'     => $result->inputSnapshot,
-            'explanation'        => $result->explanation,
-            'source'             => $source,
-            'recorded_by'        => $recordedBy,
+            'heatmap_impact' => $result->heatmapCoordinates['impact'],
+            'trend_direction' => $result->trendDirection,
+            'manual_override' => $result->manualOverride,
+            'override_reason' => $overrideReason,
+            'formula_version' => $result->formulaVersion,
+            'input_snapshot' => $result->inputSnapshot,
+            'explanation' => $result->explanation,
+            'source' => $source,
+            'recorded_by' => $recordedBy,
         ]);
     }
 
@@ -356,7 +356,7 @@ class ResidualRiskService
         ?string $previousStatus,
         ResidualRiskResult $result
     ): void {
-        if (!$risk) {
+        if (! $risk) {
             return;
         }
 
@@ -398,7 +398,7 @@ class ResidualRiskService
 
         return [
             'likelihood' => $residualLikelihood,
-            'impact'     => $input->impact,
+            'impact' => $input->impact,
         ];
     }
 

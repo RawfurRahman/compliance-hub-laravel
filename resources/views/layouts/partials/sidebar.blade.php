@@ -25,34 +25,6 @@
                     Dashboard
                 </a>
 
-                <a href="{{ route('my-security-tasks') }}" class="{{ request()->routeIs('my-security-tasks') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('my-security-tasks') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-list-check text-sm"></i>
-                    </div>
-                    My Security Tasks
-                </a>
-
-                {{-- Governance Module Section --}}
-                @can('view-dashboard')
-                <div class="px-3 mt-5 mb-3">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Governance Module</p>
-                </div>
-                <a href="{{ route('dashboard.governance') }}" class="{{ request()->routeIs('dashboard.governance') || request()->routeIs('governance.dashboard') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('dashboard.governance') || request()->routeIs('governance.dashboard') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-chart-line text-sm"></i>
-                    </div>
-                    Governance Dashboard
-                </a>
-                @if(isset($project) && $project->id)
-                <a href="{{ route('governance.policies.index', $project) }}" class="{{ request()->routeIs('governance.policies.*') && !request()->routeIs('governance.dashboard') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('governance.policies.*') && !request()->routeIs('governance.dashboard') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-file-lines text-sm"></i>
-                    </div>
-                    Policies
-                </a>
-                @endif
-                @endcan
-
                 {{-- Risk Management Section --}}
                 <div class="px-3 mt-5 mb-3">
                     <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Risk Management</p>
@@ -69,12 +41,6 @@
                         <i class="fas fa-fire text-sm"></i>
                     </div>
                     Risk Heat Map
-                </a>
-                <a href="{{ route('risk-register.enterprise', $project) }}" class="{{ request()->routeIs('risk-register.enterprise') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('risk-register.enterprise') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-building text-sm"></i>
-                    </div>
-                    Enterprise Risks
                 </a>
 
                 @else
@@ -94,7 +60,6 @@
                         'iso_27001'        => 'fa-shield-halved',
                         'swift_csp'       => 'fa-building-columns',
                         'swift_cscf_2026'  => 'fa-building-columns',
-                        'vapt'            => 'fa-bug',
                     ];
                 @endphp
 
@@ -119,21 +84,16 @@
                 @endforeach
                 @endif
 
-<a href="{{ route('evidence.hub') }}" class="{{ request()->routeIs('evidence.hub') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                {{-- Evidence Hub — its own module, not a compliance-framework sub-item --}}
+                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Evidence</p>
+                </div>
+                <a href="{{ route('evidence.hub') }}" class="{{ request()->routeIs('evidence.hub') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('evidence.hub') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-project-diagram text-sm"></i>
+                        <i class="fas fa-folder-open text-sm"></i>
                     </div>
                     Evidence Hub
                 </a>
-
-                @can('is-admin')
-                <a href="{{ route('admin.trust-centers.index') }}" class="{{ request()->routeIs('admin.trust-centers.*') ? 'nav-item-active' : 'text-slate-400 nav-item-hover' }} group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 {{ request()->routeIs('admin.trust-centers.*') ? 'bg-sky-500/15 text-sky-400' : 'bg-white/5 text-slate-500 group-hover:text-slate-300' }} transition-colors">
-                        <i class="fas fa-globe text-sm"></i>
-                    </div>
-                    Trust Center
-                </a>
-                @endcan
 
                 {{-- Admin Section --}}
                 @can('is-admin')

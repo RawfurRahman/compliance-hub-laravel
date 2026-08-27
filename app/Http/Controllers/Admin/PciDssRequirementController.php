@@ -11,6 +11,7 @@ class PciDssRequirementController extends Controller
     public function index()
     {
         $requirements = PciDssRequirement::orderBy('req_num')->paginate(50);
+
         return view('admin.requirements.index', compact('requirements'));
     }
 
@@ -22,14 +23,14 @@ class PciDssRequirementController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'req_num'         => 'required|string|max:50|unique:pci_dss_requirements,req_num',
+            'req_num' => 'required|string|max:50|unique:pci_dss_requirements,req_num',
             'req_description' => 'required|string',
         ]);
 
         PciDssRequirement::create([
-            'req_num'             => $request->req_num,
-            'req_description'     => $request->req_description,
-            'testing_procedures'  => $request->input('testing_procedures', []),
+            'req_num' => $request->req_num,
+            'req_description' => $request->req_description,
+            'testing_procedures' => $request->input('testing_procedures', []),
         ]);
 
         return redirect()->route('admin.requirements.index')->with('success', 'Requirement created successfully.');
@@ -43,14 +44,14 @@ class PciDssRequirementController extends Controller
     public function update(Request $request, PciDssRequirement $requirement)
     {
         $request->validate([
-            'req_num'         => 'required|string|max:50|unique:pci_dss_requirements,req_num,' . $requirement->id,
+            'req_num' => 'required|string|max:50|unique:pci_dss_requirements,req_num,'.$requirement->id,
             'req_description' => 'required|string',
         ]);
 
         $requirement->update([
-            'req_num'             => $request->req_num,
-            'req_description'     => $request->req_description,
-            'testing_procedures'  => $request->input('testing_procedures', []),
+            'req_num' => $request->req_num,
+            'req_description' => $request->req_description,
+            'testing_procedures' => $request->input('testing_procedures', []),
         ]);
 
         return redirect()->route('admin.requirements.index')->with('success', 'Requirement updated successfully.');
@@ -59,6 +60,7 @@ class PciDssRequirementController extends Controller
     public function destroy(PciDssRequirement $requirement)
     {
         $requirement->delete();
+
         return redirect()->route('admin.requirements.index')->with('success', 'Requirement deleted successfully.');
     }
 }

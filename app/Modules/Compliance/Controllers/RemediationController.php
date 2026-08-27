@@ -19,13 +19,15 @@ class RemediationController extends Controller
 
     public function index(Request $request, Project $project)
     {
-        $plans = $this->service->getOverdueBySLA($project->id);
+        $plans = $this->service->getOverduePlans($project->id);
+
         return view('compliance.remediations', compact('project', 'plans'));
     }
 
     public function show(Project $project, int $planId)
     {
         $plan = RiskTreatmentPlan::with('risk')->findOrFail($planId);
+
         return view('compliance.remediation-show', compact('project', 'plan'));
     }
 
@@ -34,6 +36,7 @@ class RemediationController extends Controller
         $data = $request->validate(['notes' => 'nullable|string']);
         $plan = RiskTreatmentPlan::findOrFail($planId);
         $this->service->closePlan($plan, $data['notes'] ?? null);
+
         return response()->json(['message' => 'Plan closed']);
     }
 

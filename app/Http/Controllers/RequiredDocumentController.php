@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\RequiredDocumentList;
 use App\Services\RequiredDocumentListImportService;
+use App\Services\UploadRejectionLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -25,10 +26,27 @@ class RequiredDocumentController extends Controller
         $this->authorize('update', $project);
         $this->ensureCanManage();
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'file' => ['required', 'file', 'mimes:docx,xlsx,xls,csv', 'max:20480'],
-        ]);
+        $formats = implode(', ', config('uploads.imports.extensions'));
+
+        $validated = UploadRejectionLogger::validate(
+            $request,
+            [
+                'name' => ['required', 'string', 'max:255'],
+                'file' => [
+                    'required',
+                    'file',
+                    'mimes:'.implode(',', config('uploads.imports.extensions')),
+                    'mimetypes:'.implode(',', config('uploads.imports.mimetypes')),
+                    'max:'.(int) config('uploads.imports.max_size_kb'),
+                ],
+            ],
+            'data-import.rejected',
+            [
+                'file.mimes' => "The file must be one of the accepted import formats: {$formats}.",
+                'file.mimetypes' => "The file content does not match the accepted import formats. Allowed: {$formats}.",
+                'file.max' => 'The file may not be larger than '.((int) config('uploads.imports.max_size_kb') / 1024).' MB.',
+            ],
+        );
 
         try {
             $list = $importer->import($request->file('file'), $project->id, $request->user()->id, $validated['name']);

@@ -1,12 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Modules\Compliance\Controllers\ControlTestController;
-use App\Modules\Compliance\Controllers\ComplianceFindingController;
-use App\Modules\Compliance\Controllers\RemediationController;
-use App\Modules\Compliance\Controllers\ComplianceSnapshotController;
 use App\Modules\Compliance\Controllers\AuditFindingController;
+use App\Modules\Compliance\Controllers\ComplianceFindingController;
+use App\Modules\Compliance\Controllers\ComplianceSnapshotController;
+use App\Modules\Compliance\Controllers\ControlTestController;
 use App\Modules\Compliance\Controllers\MappingImportController;
+use App\Modules\Compliance\Controllers\RemediationController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->prefix('api')->group(function () {
 

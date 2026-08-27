@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 /* ======================================================
    RISK HEAT MAP — Exact match of uploaded dual-panel image
    ====================================================== */

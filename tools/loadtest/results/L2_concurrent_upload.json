@@ -1,0 +1,16 @@
+{
+  "scenario": "L2_concurrent_upload",
+  "timestamp": "2026-08-21T10:50:09.685Z",
+  "metrics": {
+    "http_reqs": 5,
+    "http_req_failed": 0.6,
+    "http_req_duration_avg": 262.33056,
+    "http_req_duration_p95": 324.70806,
+    "http_req_duration_max": 333.5605,
+    "errors_rate": 1,
+    "upload_count": 3,
+    "upload_errors": 3,
+    "iterations": 3,
+    "vus_max": 1
+  }
+}

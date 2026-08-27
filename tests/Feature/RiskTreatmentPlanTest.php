@@ -15,7 +15,9 @@ class RiskTreatmentPlanTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
+
     protected RiskRegister $risk;
 
     protected function setUp(): void
@@ -59,7 +61,7 @@ class RiskTreatmentPlanTest extends TestCase
     public function test_can_create_treatment_plan(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskTreatmentPlanService();
+        $service = new RiskTreatmentPlanService;
 
         $plan = $service->create([
             'risk_register_id' => $this->risk->id,
@@ -82,7 +84,7 @@ class RiskTreatmentPlanTest extends TestCase
     public function test_can_update_plan_progress(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskTreatmentPlanService();
+        $service = new RiskTreatmentPlanService;
 
         $plan = $service->create([
             'risk_register_id' => $this->risk->id,
@@ -137,7 +139,7 @@ class RiskTreatmentPlanTest extends TestCase
     public function test_can_mark_plan_completed(): void
     {
         $this->actingAs($this->user);
-        $service = new RiskTreatmentPlanService();
+        $service = new RiskTreatmentPlanService;
 
         $plan = $service->create([
             'risk_register_id' => $this->risk->id,
@@ -155,7 +157,7 @@ class RiskTreatmentPlanTest extends TestCase
 
     public function test_treatment_plan_fillable_fields(): void
     {
-        $plan = new RiskTreatmentPlan();
+        $plan = new RiskTreatmentPlan;
 
         $this->assertTrue($plan->isFillable('title'));
         $this->assertTrue($plan->isFillable('treatment_type'));

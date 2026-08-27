@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\Framework;
-use App\Models\ProjectAssessment;
+use App\Http\Requests\StoreEvidenceRequest;
 use App\Models\AssessmentFinding;
 use App\Models\Evidence;
+use App\Models\EvidenceFile;
+use App\Models\Framework;
+use App\Models\Project;
+use App\Models\ProjectAssessment;
 use App\Services\AssessmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -32,7 +34,7 @@ class UnifiedAssessmentController extends Controller
             ->firstOrFail();
 
         $type = ucfirst(strtolower($type));
-        if (!in_array($type, ['Gap', 'Final'])) {
+        if (! in_array($type, ['Gap', 'Final'])) {
             abort(404);
         }
 
@@ -45,7 +47,7 @@ class UnifiedAssessmentController extends Controller
 
         // Enforce phase-dependency: Final Assessment (Phase 2) requires a 100% compliant Gap Assessment (Phase 1)
         if ($type === 'Final') {
-            if (!$gapCompleted) {
+            if (! $gapCompleted) {
                 return redirect()
                     ->route('assessments.unified.show', [$project, $framework->slug, 'gap'])
                     ->with('error', 'Cannot start or access the Final Assessment (Phase 2) until the Gap Assessment (Phase 1) is 100% compliant.');
@@ -58,15 +60,15 @@ class UnifiedAssessmentController extends Controller
             ->with(['findings.frameworkControl', 'findings.evidence'])
             ->first();
 
-        if (!$assessment) {
+        if (! $assessment) {
             // Return view with no assessment so setup screen is displayed
             return view('assessments.unified-dashboard', [
-                'project'      => $project,
-                'framework'    => $framework,
-                'type'         => $type,
-                'assessment'   => null,
-                'stats'        => $this->emptyStats(),
-                'ganttJson'    => '[]',
+                'project' => $project,
+                'framework' => $framework,
+                'type' => $type,
+                'assessment' => null,
+                'stats' => $this->emptyStats(),
+                'ganttJson' => '[]',
                 'gapCompleted' => $gapCompleted,
             ]);
         }
@@ -78,14 +80,14 @@ class UnifiedAssessmentController extends Controller
         $projectEvidence = Evidence::where('project_id', $project->id)->latest()->get();
 
         return view('assessments.unified-dashboard', [
-            'project'         => $project,
-            'framework'       => $framework,
-            'type'            => $type,
-            'assessment'      => $assessment,
-            'stats'           => $stats,
-            'ganttJson'       => $ganttJson,
+            'project' => $project,
+            'framework' => $framework,
+            'type' => $type,
+            'assessment' => $assessment,
+            'stats' => $stats,
+            'ganttJson' => $ganttJson,
             'projectEvidence' => $projectEvidence,
-            'gapCompleted'    => $gapCompleted,
+            'gapCompleted' => $gapCompleted,
         ]);
     }
 
@@ -99,7 +101,7 @@ class UnifiedAssessmentController extends Controller
 
         $request->validate([
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
         // Enforce phase-dependency: Final Assessment (Phase 2) requires a 100% compliant Gap Assessment (Phase 1)
@@ -109,19 +111,19 @@ class UnifiedAssessmentController extends Controller
                 ->where('type', 'Gap')
                 ->first();
 
-            if (!$gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
+            if (! $gapAssessment || $gapAssessment->stats()['compliancePct'] < 100) {
                 return redirect()->back()->with('error', 'Cannot start Final Assessment (Phase 2) until the Gap Assessment (Phase 1) is 100% compliant.');
             }
         }
 
         // Find or create ProjectAssessment
         $assessment = ProjectAssessment::firstOrCreate([
-            'project_id'   => $project->id,
+            'project_id' => $project->id,
             'framework_id' => $framework->id,
-            'type'         => $type,
+            'type' => $type,
         ], [
-            'start_date'     => $request->start_date,
-            'end_date'       => $request->end_date,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
             'overall_status' => 'In Progress',
         ]);
 
@@ -139,13 +141,13 @@ class UnifiedAssessmentController extends Controller
     public function updateFinding(Request $request, AssessmentFinding $finding)
     {
         $request->validate([
-            'status'          => 'sometimes|in:Open,In Progress,Closed',
-            'risk_rating'     => 'sometimes|in:High,Medium,Low,None',
-            'is_compliant'    => 'sometimes|boolean',
-            'observation'     => 'nullable|string',
+            'status' => 'sometimes|in:Open,In Progress,Closed',
+            'risk_rating' => 'sometimes|in:High,Medium,Low,None',
+            'is_compliant' => 'sometimes|boolean',
+            'observation' => 'nullable|string',
             'gap_description' => 'nullable|string',
-            'impact'          => 'nullable|string',
-            'recommendation'  => 'nullable|string',
+            'impact' => 'nullable|string',
+            'recommendation' => 'nullable|string',
         ]);
 
         $data = $request->only([
@@ -155,7 +157,7 @@ class UnifiedAssessmentController extends Controller
             'observation',
             'gap_description',
             'impact',
-            'recommendation'
+            'recommendation',
         ]);
 
         if ($request->has('is_compliant')) {
@@ -168,7 +170,7 @@ class UnifiedAssessmentController extends Controller
             return response()->json([
                 'success' => true,
                 'finding' => $finding->fresh(['frameworkControl', 'evidence']),
-                'stats'   => $finding->projectAssessment->stats()
+                'stats' => $finding->projectAssessment->stats(),
             ]);
         }
 
@@ -178,26 +180,21 @@ class UnifiedAssessmentController extends Controller
     /**
      * Upload a new evidence file and attach to a finding.
      */
-    public function uploadEvidence(Request $request, AssessmentFinding $finding)
+    public function uploadEvidence(StoreEvidenceRequest $request, AssessmentFinding $finding)
     {
-        $request->validate([
-            'file'        => 'required|file|max:20480', // 20MB Max
-            'description' => 'nullable|string|max:500',
-        ]);
-
         $project = $finding->projectAssessment->project;
         $file = $request->file('file');
-        
+
         // Store the file in public storage
         $path = $file->store("evidence/{$project->id}", 'public');
 
         $evidence = Evidence::create([
-            'project_id'     => $project->id,
+            'project_id' => $project->id,
             'requirement_id' => $finding->frameworkControl->id, // reference framework control id
-            'name'           => $file->getClientOriginalName(),
-            'path'           => $path,
-            'url'            => Storage::url($path),
-            'description'    => $request->description,
+            'name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'url' => Storage::url($path),
+            'description' => $request->description,
         ]);
 
         // Attach to finding
@@ -205,7 +202,7 @@ class UnifiedAssessmentController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'success'  => true,
+                'success' => true,
                 'evidence' => $evidence,
             ]);
         }
@@ -223,14 +220,14 @@ class UnifiedAssessmentController extends Controller
         ]);
 
         // Avoid duplicate pivot entries
-        if (!$finding->evidence()->where('evidence_id', $request->evidence_id)->exists()) {
+        if (! $finding->evidence()->where('evidence_id', $request->evidence_id)->exists()) {
             $finding->evidence()->attach($request->evidence_id);
         }
 
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'evidence' => $finding->evidence()->get()
+                'evidence' => $finding->evidence()->get(),
             ]);
         }
 
@@ -259,14 +256,14 @@ class UnifiedAssessmentController extends Controller
     public function report(ProjectAssessment $assessment)
     {
         $assessment->load(['findings.frameworkControl', 'findings.evidence', 'project', 'framework']);
-        
+
         $project = $assessment->project;
         $framework = $assessment->framework;
         $stats = $assessment->stats();
         $findings = $assessment->findings;
 
         // Load accepted evidence files indexed by framework_control_id for report display
-        $acceptedEvidence = \App\Models\EvidenceFile::where('project_id', $project->id)
+        $acceptedEvidence = EvidenceFile::where('project_id', $project->id)
             ->where('hitl_status', 'accepted')
             ->where('ai_analysis_status', 'approved')
             ->whereNotNull('framework_control_id')
@@ -293,16 +290,16 @@ class UnifiedAssessmentController extends Controller
     private function emptyStats(): array
     {
         return [
-            'total'         => 0,
-            'compliant'     => 0,
-            'nonCompliant'  => 0,
-            'high'          => 0,
-            'medium'        => 0,
-            'low'           => 0,
-            'none'          => 0,
-            'open'          => 0,
-            'inProgress'    => 0,
-            'closed'        => 0,
+            'total' => 0,
+            'compliant' => 0,
+            'nonCompliant' => 0,
+            'high' => 0,
+            'medium' => 0,
+            'low' => 0,
+            'none' => 0,
+            'open' => 0,
+            'inProgress' => 0,
+            'closed' => 0,
             'progressScore' => 0,
             'compliancePct' => 0,
         ];

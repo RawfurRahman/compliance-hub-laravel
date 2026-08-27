@@ -47,20 +47,22 @@ class ControlMappingDashboardController extends Controller
     public function confirm(Request $request, RiskControlMapping $mapping)
     {
         $this->mappingService->confirmMapping($mapping->id);
+
         return back()->with('success', 'Mapping confirmed.');
     }
 
     public function reject(Request $request, RiskControlMapping $mapping)
     {
         $this->mappingService->rejectMapping($mapping->id);
+
         return back()->with('success', 'Mapping rejected.');
     }
 
     public function export()
     {
         return Excel::download(
-            new ControlMappingSheetExport(),
-            'control-mapping-' . now()->format('Y-m-d') . '.xlsx'
+            new ControlMappingSheetExport,
+            'control-mapping-'.now()->format('Y-m-d').'.xlsx'
         );
     }
 }

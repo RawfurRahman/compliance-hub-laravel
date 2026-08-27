@@ -4,8 +4,9 @@ namespace App\Modules\Compliance\Services;
 
 use App\Modules\Compliance\Events\ComplianceSnapshotTaken;
 use App\Modules\Compliance\Models\ComplianceSnapshot;
-use Illuminate\Support\Facades\DB;
+use App\Modules\RiskManagement\Models\RiskTreatmentPlan;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ComplianceSnapshotService
 {
@@ -16,10 +17,10 @@ class ComplianceSnapshotService
 
         $driver = DB::connection()->getDriverName();
         $diffExpr = $driver === 'sqlite'
-            ? "AVG(julianday(completion_date) - julianday(target_date))"
-            : "AVG(DATEDIFF(completion_date, target_date))";
+            ? 'AVG(julianday(completion_date) - julianday(target_date))'
+            : 'AVG(DATEDIFF(completion_date, target_date))';
 
-        $remediationTimes = \App\Modules\RiskManagement\Models\RiskTreatmentPlan::whereHas('risk', fn ($q) => $q->where('project_id', $projectId))
+        $remediationTimes = RiskTreatmentPlan::whereHas('risk', fn ($q) => $q->where('project_id', $projectId))
             ->whereNotNull('completion_date')
             ->selectRaw("{$diffExpr} as avg_days")
             ->value('avg_days');

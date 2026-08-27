@@ -43,9 +43,9 @@ class ActivityLog extends Model
         // Automatically capture role when creating a log entry
         static::creating(function ($log) {
             if (auth()->check() && auth()->user()) {
-                $log->role = auth()->user()->hasRole('Super Admin') 
-                    ? 'Super Admin' 
-                    : auth()->user()->roles()->pluck('name')->first() 
+                $log->role = auth()->user()->hasRole('Super Admin')
+                    ? 'Super Admin'
+                    : auth()->user()->roles()->pluck('name')->first()
                     ?? 'Guest';
             }
         });

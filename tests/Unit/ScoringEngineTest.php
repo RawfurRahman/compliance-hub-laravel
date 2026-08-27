@@ -2,13 +2,13 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
 use App\Models\Project;
 use App\Models\User;
 use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Modules\RiskManagement\Services\ScoringEngine;
 use App\Modules\RiskManagement\Services\RiskService;
+use App\Modules\RiskManagement\Services\ScoringEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class ScoringEngineTest extends TestCase
 {
@@ -19,7 +19,7 @@ class ScoringEngineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine = new ScoringEngine();
+        $this->engine = new ScoringEngine;
     }
 
     /**
@@ -81,26 +81,6 @@ class ScoringEngineTest extends TestCase
     }
 
     /**
-     * Test Residual Inputs reduction.
-     */
-    public function test_residual_inputs_reduction()
-    {
-        // TV = 9, Likelihood = 4, Effectiveness = 50%
-        // Residual TV: ceil(9 * 0.5) = 5
-        // Residual LH: ceil(4 * 0.5) = 2
-        $inputs = $this->engine->calculateResidualInputs(9, 4, 50.0);
-        $this->assertEquals(5, $inputs['residual_tv']);
-        $this->assertEquals(2, $inputs['residual_lh']);
-
-        // TV = 9, Likelihood = 4, Effectiveness = 100%
-        // Residual TV: max(1, ceil(9 * 0)) = 1
-        // Residual LH: max(1, ceil(4 * 0)) = 1
-        $inputs2 = $this->engine->calculateResidualInputs(9, 4, 100.0);
-        $this->assertEquals(1, $inputs2['residual_tv']);
-        $this->assertEquals(1, $inputs2['residual_lh']);
-    }
-
-    /**
      * Test Score to Level mapping matching Legend.
      * Thresholds: Critical >=128, High 84–127, Medium 54–83, Low <=53
      */
@@ -157,7 +137,7 @@ class ScoringEngineTest extends TestCase
             'impact_availability' => 4,
         ]);
 
-        $service = new RiskService();
+        $service = new RiskService;
 
         // 1. Initially no mapped controls
         $service->recalculateRisk($risk);
@@ -165,11 +145,12 @@ class ScoringEngineTest extends TestCase
         $risk->refresh();
         $this->assertEquals(9, $risk->computed_tv);
         $this->assertEquals(144, $risk->computed_risk_rating);
-        // Without control mappings, it defaults to manual workbook residual inputs:
-        // Computed residual tv = 5
-        // Computed residual lh = 2
-        // Computed residual rating = 5 * 2 = 10
-        $this->assertEquals(10, $risk->computed_residual_rating);
+        // Without control mappings the residual is delegated to the single
+        // authoritative implementation (ResidualRiskService). No controls,
+        // no treatment, no waiver => residual equals inherent (144). The
+        // manual workbook inputs (residual_tv=5, residual_lh=2) are kept as
+        // inputs only; computed_residual_rating no longer equals their product.
+        $this->assertEquals(144, $risk->computed_residual_rating);
 
         // Verify history contains records
         $this->assertDatabaseHas('risk_scores_history', [
@@ -182,7 +163,7 @@ class ScoringEngineTest extends TestCase
             'control_effectiveness' => 0.00,
             'residual_tv' => 5,
             'residual_lh' => 2,
-            'residual_rating' => 10,
+            'residual_rating' => 144,
         ]);
 
         // 2. Map two controls (50% and 30% effectiveness)
@@ -198,19 +179,19 @@ class ScoringEngineTest extends TestCase
         $service->recalculateRisk($risk);
         $risk->refresh();
 
-        // Cumulative effectiveness = 65%
-        // Remaining factor = 1.0 - 0.65 = 0.35
-        // Residual TV = ceil(9 * 0.35) = 4
-        // Residual LH = ceil(4 * 0.35) = 2
-        // Residual Rating = 4 * 2 = 8
-        $this->assertEquals(8, $risk->computed_residual_rating);
+        // Cumulative effectiveness = 65%.
+        // ResidualRiskService: control = 0.65, reduction = 0.65 * 0.50 = 0.325.
+        // Low evidence confidence (empty evidence_ids => 60%) inflates by
+        // (1 - 0.60) * 0.15 = 0.06, so effective reduction = 0.265.
+        // Residual = round(144 * (1 - 0.265)) = round(105.84) = 106.
+        $this->assertEquals(106, $risk->computed_residual_rating);
 
         $this->assertDatabaseHas('risk_scores_history', [
             'risk_register_id' => $risk->id,
             'control_effectiveness' => 65.00,
-            'residual_tv' => 4,
+            'residual_tv' => 5,
             'residual_lh' => 2,
-            'residual_rating' => 8,
+            'residual_rating' => 106,
         ]);
     }
 }

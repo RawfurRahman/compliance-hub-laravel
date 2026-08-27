@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="">
+
+    <title>ComplianceHub</title>
+    <meta name="description" content="Enterprise compliance management platform for PCI DSS, ISO 27001, and more.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Design System -->
+    <link href="http://compliance-hub.test/css/main.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #fdfdfd; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        [x-cloak] { display: none !important; }
+        .glass-premium { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); 
+        }
+        .active-ring { ring: 2px solid #6366f1; border-color: #6366f1 !important; box-shadow: 0 0 20px rgba(99,102,241,0.15) !important; }
+    </style>
+
+    <!-- Tailwind CDN + Alpine.js (vendored locally to avoid CDN dependency) -->
+    <script src="http://compliance-hub.test/js/tailwind.min.js"></script>
+    <script src="http://compliance-hub.test/js/alpine.min.js" defer></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="font-sans antialiased" style="background:#f0f4f8;">
+    <div x-data="{ mobileMenuOpen: false, showModal: false }" class="flex h-screen">
+
+        <!-- Sidebar -->
+        <div class="hidden md:flex md:flex-shrink-0">
+    <div class="flex flex-col w-64" style="background: linear-gradient(180deg, #0f172a 0%, #0c1324 50%, #0a1020 100%);">
+
+        
+        <div class="flex items-center h-16 flex-shrink-0 px-5 border-b border-white/5">
+            <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/20">
+                <i class="fas fa-shield-alt text-white text-sm"></i>
+            </div>
+            <span class="ml-3 font-bold text-lg tracking-tight text-white">Compliance<span class="text-sky-400">Hub</span></span>
+        </div>
+
+        
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            <nav class="flex-1 px-3 py-5 space-y-1">
+
+                
+                <div class="px-3 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Main</p>
+                </div>
+
+                <a href="http://compliance-hub.test/dashboard" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-gauge-high text-sm"></i>
+                    </div>
+                    Dashboard
+                </a>
+
+                
+                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Risk Management</p>
+                </div>
+                                <a href="http://compliance-hub.test/projects/7/risk-register" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-triangle-exclamation text-sm"></i>
+                    </div>
+                    Risk Register
+                </a>
+                <a href="http://compliance-hub.test/projects/7/risk-register/heatmap" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-fire text-sm"></i>
+                    </div>
+                    Risk Heat Map
+                </a>
+
+                
+                
+                
+                                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Compliance Module</p>
+                </div>
+                                                        <a href="http://compliance-hub.test/projects?module=pci_dss" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-credit-card text-sm"></i>
+                        </div>
+                        <span>PCI DSS</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">v4.0.1</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=vapt" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-bug text-sm"></i>
+                        </div>
+                        <span>VAPT</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=soc2" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-clipboard-check text-sm"></i>
+                        </div>
+                        <span>SOC 2</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">Type II</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=iso_27001" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-shield-halved text-sm"></i>
+                        </div>
+                        <span>ISO 27001</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">2022</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=bb_ict" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-clipboard-check text-sm"></i>
+                        </div>
+                        <span>BB ICT Guidelines</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">current</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=swift_cscf_2026" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-building-columns text-sm"></i>
+                        </div>
+                        <span>SWIFT CSCF</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">2026</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=sabsa" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-clipboard-check text-sm"></i>
+                        </div>
+                        <span>SABSA</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">current</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=hitrust" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-clipboard-check text-sm"></i>
+                        </div>
+                        <span>HITRUST CSCF</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">11.8.0</span>
+                                            </a>
+                                                        <a href="http://compliance-hub.test/projects?module=cobit" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                            <i class="fas fa-clipboard-check text-sm"></i>
+                        </div>
+                        <span>COBIT CSCF</span>
+                                                    <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-500 font-bold uppercase">11.8.0</span>
+                                            </a>
+                                
+<a href="http://compliance-hub.test/evidence-hub" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-project-diagram text-sm"></i>
+                    </div>
+                    Evidence Hub
+                </a>
+
+                
+                                <div class="px-3 mt-5 mb-3">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Administration</p>
+                </div>
+
+                <a href="http://compliance-hub.test/users" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-users-gear text-sm"></i>
+                    </div>
+                    User Management
+                </a>
+
+                <a href="http://compliance-hub.test/admin/frameworks" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-cubes text-sm"></i>
+                    </div>
+                    Framework Library
+                </a>
+
+                <a href="http://compliance-hub.test/admin/requirements" class="text-slate-400 nav-item-hover group flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white/5 text-slate-500 group-hover:text-slate-300 transition-colors">
+                        <i class="fas fa-list-check text-sm"></i>
+                    </div>
+                    PCI Requirements
+                </a>
+                
+                
+                
+            </nav>
+
+            
+            <div class="px-3 pb-4">
+                <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            AD
+                        </div>
+
+                        <div class="ml-3 min-w-0">
+                            <p class="text-xs font-semibold text-slate-200 truncate">admin</p>
+                            <p class="text-[10px] text-slate-500 truncate">Super Admin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="glass-header flex items-center justify-between h-16 px-6 sticky top-0">
+
+    
+    <div class="flex md:hidden">
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-slate-400 hover:text-slate-600 focus:outline-none transition-colors">
+            <i class="fas fa-bars text-lg"></i>
+        </button>
+    </div>
+
+    
+    <div class="flex-1 max-w-lg ml-4 md:ml-0">
+        <div class="relative group">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none transition-colors group-focus-within:text-sky-500">
+                <i class="fas fa-search text-sm text-slate-400"></i>
+            </div>
+            <input class="block w-full py-2.5 pl-10 pr-4 text-sm bg-slate-50/80 border border-slate-200/60 rounded-xl focus:bg-white focus:border-sky-300 focus:ring-4 focus:ring-sky-400/10 focus:outline-none transition-all duration-200 placeholder-slate-400" placeholder="Search projects, frameworks, users...">
+        </div>
+    </div>
+
+    
+    <div class="flex items-center gap-2 sm:gap-3 ml-4">
+
+        
+        <button @click="showModal = true" class="hidden sm:inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider text-white btn-premium rounded-xl focus:outline-none gap-1.5">
+            <i class="fas fa-plus text-[10px]"></i>
+            <span>New Project</span>
+        </button>
+
+        
+        <button class="relative w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:border-sky-200 hover:bg-sky-50/50 transition-all duration-200 focus:outline-none">
+            <i class="fas fa-bell text-sm"></i>
+        </button>
+
+        
+        <div class="relative ml-1" x-data="{ open: false }">
+            <button @click="open = !open" class="avatar-ring flex items-center gap-2 focus:outline-none p-0.5" title="admin">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                    AD
+                </div>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="dropdown-menu absolute right-0 w-56 mt-2 origin-top-right z-50" role="menu" x-cloak>
+
+                
+                <div class="px-4 py-3 border-b border-slate-100">
+                    <p class="text-sm font-semibold text-slate-800">admin</p>
+                    <p class="text-xs text-slate-400 truncate">admin.compliance@gmail.com</p>
+                </div>
+
+                <div class="py-1">
+                    <a href="#" class="dropdown-item" role="menuitem">
+                        <i class="fas fa-user-circle"></i> Your Profile
+                    </a>
+                    <a href="#" class="dropdown-item" role="menuitem">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+
+                <div class="border-t border-slate-100 py-1">
+                    <form method="POST" action="http://compliance-hub.test/logout">
+                        <input type="hidden" name="_token" value="" autocomplete="off">                        <a href="http://compliance-hub.test/logout"
+                           onclick="event.preventDefault(); this.closest('form').submit();"
+                           class="dropdown-item text-rose-500 hover:text-rose-600" role="menuitem">
+                            <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto">
+                <div class="container mx-auto px-6 py-8 max-w-7xl">
+
+                    
+                    
+                    
+                    
+                    <div class="p-8 min-h-screen" x-data="premiumEvidenceWorkspace()" x-init="onBoot()">
+    
+    
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-10 gap-6">
+        <div class="flex items-center space-x-6">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-2xl">
+                <i class="fas fa-microchip text-2xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workspace</span>
+                    <i class="fas fa-chevron-right text-[8px] text-slate-300"></i>
+                    <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Integrity Ingest</span>
+                </div>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight">PCI DSS Project of XYZ Bank</h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+                             <a href="http://compliance-hub.test/evidence/7/export-zip" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-all flex items-center shadow-sm">
+                    <i class="fas fa-file-export mr-2 text-amber-500"></i> Export Compliance ZIP
+                </a>
+                        <button @click="showUploadModal = true" class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition-all">
+                <i class="fas fa-plus mr-2"></i> Provision Asset
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        
+        <div class="lg:col-span-9 space-y-8">
+            
+            
+            <div class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md border border-slate-200/60 rounded-2xl p-4 flex flex-wrap gap-2 shadow-sm">
+                <template x-for="dom in domains" :key="dom">
+                    <a :href="'#domain-' + slugify(dom)" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm flex items-center">
+                        <span x-text="dom"></span>
+                        <span class="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[8px]" x-text="getReqsByDomain(dom).length"></span>
+                    </a>
+                </template>
+            </div>
+
+            
+            <template x-for="dom in domains" :key="dom">
+                <div :id="'domain-' + slugify(dom)" class="scroll-mt-28">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 border-b border-slate-200 pb-3 flex items-center gap-2">
+                        <i class="fas fa-layer-group text-indigo-500"></i>
+                        <span x-text="dom"></span>
+                    </h3>
+                    
+                    <template x-for="req in getReqsByDomain(dom)" :key="req.id">
+                        <div :id="'req-card-' + req.id" class="glass-premium rounded-[28px] p-8 border border-white shadow-lg relative overflow-hidden bg-white/60 mb-6 hover:shadow-xl transition-all">
+                            
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+                                <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                                    <span class="text-2xl font-black text-slate-900 tracking-tight" x-text="req.req_num"></span>
+                                    <span x-show="req.name" class="text-2xl font-bold text-slate-700 tracking-tight" x-text="req.name"></span>
+                                    <template x-if="req.is_applicable == 0">
+                                        <span class="text-[8px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded uppercase">N/A</span>
+                                    </template>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                                                                                                    <div class="flex items-center space-x-1 px-1.5 py-0.5 bg-white rounded-full border border-slate-100 shadow-sm mr-2">
+                                            <button @click="toggleScope(req.id, true)" :class="req.is_applicable == 1 ? 'text-emerald-700 bg-emerald-50' : 'text-slate-300'" class="text-[8px] font-black px-3 py-1 rounded-full transition-all">IN-SCOPE</button>
+                                            <button @click="toggleScope(req.id, false)" :class="req.is_applicable == 0 ? 'text-rose-700 bg-rose-50' : 'text-slate-300'" class="text-[8px] font-black px-3 py-1 rounded-full transition-all">N/A</button>
+                                        </div>
+                                                                                                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-2">
+                                        <i class="fas fa-database mr-1"></i> <span x-text="(evidence[req.id] || []).length"></span> provisioned
+                                    </span>
+                                    <button @click="activeReqId = req.id; showUploadModal = true" class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-indigo-600 border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100 transition-all flex items-center">
+                                        <i class="fas fa-plus mr-1"></i> Provision
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            
+                            <p class="text-slate-600 font-semibold leading-relaxed mb-6" x-text="req.description"></p>
+                            
+                            
+                            <div class="rounded-2xl border border-slate-100 bg-white shadow-inner overflow-hidden">
+                                <table class="min-w-full divide-y divide-slate-100">
+                                    <thead class="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left">Identity / Asset</th>
+                                            <th class="px-5 py-3 text-left">AI Integrity Ingest (Synthesis)</th>
+                                            <th class="px-5 py-3 text-left">HITL Communication</th>
+                                            <th class="px-5 py-3 text-left">Control State</th>
+                                            <th class="px-5 py-3 text-right">Audit Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <template x-for="file in (evidence[req.id] || [])" :key="file.id">
+                                            <tr class="hover:bg-slate-50/40 transition-colors group">
+                                                
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mr-3 shadow-sm flex-shrink-0">
+                                                            <i class="fas fa-file-shield text-sm"></i>
+                                                        </div>
+                                                        <div class="min-w-0">
+                                                            <div class="text-[12px] font-bold text-slate-800 truncate" x-text="truncateFilename(file.original_filename)"></div>
+                                                            <div class="text-[8px] font-black text-slate-400 uppercase mt-0.5">
+                                                                <span x-text="new Date(file.created_at).toLocaleDateString()"></span>
+                                                                <span class="mx-1">|</span>
+                                                                <span x-text="file.mime_type || 'Asset'"></span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="ml-4 inline-flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-wider rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                                            <i class="fas fa-exclamation-circle text-indigo-400"></i>
+                                                            <span x-text="file.gap_category ? 'Gap: ' + file.gap_category : ''"></span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                
+                                                <td class="px-5 py-4 align-top max-w-xs">
+                                                    <div class="space-y-2">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <span class="text-[8px] font-black uppercase tracking-widest" :class="file.scan_status === 'clean' ? 'text-emerald-600' : 'text-amber-600'">
+                                                                <i class="fas" :class="file.scan_status === 'clean' ? 'fa-shield-check' : 'fa-radar'"></i>
+                                                                <span x-text="file.scan_status || 'Scanning...'"></span>
+                                                            </span>
+                                                            <span x-show="file.ai_analysis_status === 'awaiting_review'" class="text-[8px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded">AI READY</span>
+                                                        </div>
+                                                        
+                                                        <div x-show="file.ai_observations" class="relative group/obs">
+                                                            <p class="text-[10px] font-semibold text-slate-600 italic line-clamp-2" x-text="file.ai_observations"></p>
+                                                            <div class="hidden group-hover/obs:block absolute z-20 top-full left-0 mt-2 p-4 bg-slate-900 text-white rounded-xl text-[10px] w-64 shadow-2xl">
+                                                                <div class="font-black mb-2 text-indigo-300 uppercase tracking-widest border-b border-white/10 pb-1">Full Synthesis</div>
+                                                                <div x-text="file.ai_observations"></div>
+                                                                <div class="mt-3 font-black text-emerald-400 uppercase tracking-widest border-b border-white/10 pb-1">Recommendations</div>
+                                                                <div x-text="file.ai_recommendations"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="space-y-1.5">
+                                                        <template x-if="file.feedbacks && file.feedbacks.length > 0">
+                                                            <div class="space-y-1">
+                                                                <p class="text-[9px] font-bold text-indigo-600 bg-indigo-50/50 p-2 rounded-lg border border-indigo-100/50 leading-relaxed max-w-[180px] truncate" x-text="file.feedbacks[file.feedbacks.length-1].message"></p>
+                                                                <button @click="openFeedback(file)" class="text-[8px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest flex items-center">
+                                                                    <i class="fas fa-comments-alt mr-1"></i> <span x-text="file.feedbacks.length"></span> Messages...
+                                                                </button>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="!file.feedbacks || file.feedbacks.length === 0">
+                                                            <button @click="openFeedback(file)" class="text-[8px] font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest border border-dashed border-slate-200 px-2 py-1 rounded-lg">
+                                                                + Add Feedback
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </td>
+
+                                                
+                                                <td class="px-5 py-4 align-top">
+                                                    <div class="flex flex-col">
+                                                        <span :class="getBadgeClass(file.hitl_status)" class="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest shadow-sm max-w-max">
+                                                            <i class="fas fa-dot-circle mr-1 opacity-50"></i>
+                                                            <span x-text="file.hitl_status || 'Waiting'"></span>
+                                                        </span>
+                                                        <div class="w-24 h-1 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                                                            <div class="h-full bg-indigo-600 transition-all duration-1000" :style="{ width: getProgress(file) + '%' }"></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                
+                                                <td class="px-5 py-4 align-top text-right">
+                                                                                                            <div class="flex flex-col items-end gap-1.5">
+                                                            <div class="flex items-center gap-1">
+                                                                <button 
+                                                                    @click="directAudit(file, 'accept')" 
+                                                                    class="p-1.5 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Accept Evidence"
+                                                                >
+                                                                    <i class="fas fa-check-circle text-xs"></i>
+                                                                </button>
+                                                                <button 
+                                                                    @click="openReview(file)" 
+                                                                    class="p-1.5 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Return for Correction"
+                                                                >
+                                                                    <i class="fas fa-undo-alt text-xs"></i>
+                                                                </button>
+                                                            </div>
+                                                            <button @click="openReview(file)" class="text-[8px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                                                Deep Audit View
+                                                            </button>
+                                                        </div>
+                                                                                                                                                        </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+<template x-if="(evidence[req.id] || []).length === 0">
+                                    <div class="p-8 text-center text-slate-300 bg-slate-50/20">
+                                        <i class="fas fa-inbox text-xl mb-2"></i>
+                                        <p class="text-[9px] font-black uppercase tracking-widest">Vault Empty for this requirement</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+
+        <div class="lg:col-span-3 mt-8">
+            <div class="glass-premium rounded-[32px] p-6 border border-white shadow-xl bg-white/40">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2 text-indigo-500"></i> Gap Assessment
+                </h3>
+                <template x-if="reviewFile">
+                    <div>
+                        <template x-if="reviewFile.analysis_report_data && reviewFile.analysis_report_data.is_compliant === false">
+                        <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200/50">
+                            <p class="text-[9px] font-bold text-red-700 uppercase tracking-widest">Non-Compliant Evidence</p>
+                            <p class="text-slate-600 mt-1" x-text="reviewFile.analysis_report_data.non_compliant_details ?? 'No details provided'"></p>
+                        </div>
+                        </template>
+
+                        <template x-if="!reviewFile.analysis_report_data || reviewFile.analysis_report_data.is_compliant !== false">
+                        <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200/50">
+                            <p class="text-[9px] font-bold text-green-700 uppercase tracking-widest">Compliant Evidence</p>
+                            <p class="text-slate-600 mt-1" x-text="reviewFile.analysis_report_data?.compliant_description ?? ''"></p>
+                        </div>
+                        </template>
+
+                                                <div class="mb-4">
+                            <button @click="passToGapAssessment($event)" :disabled="!reviewFile" class="w-full py-2.5 px-6 rounded-3xl font-black text-[10px] uppercase tracking-widest bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition-all">
+                                <i class="fas fa-arrow-right mr-2"></i> Pass to Gap Assessment
+                            </button>
+                        </div>
+                                            </div>
+                </template>
+                <p x-show="!reviewFile" class="text-[9px] font-semibold text-slate-400">Select an asset to view its gap assessment.</p>
+            </div>
+        </div>
+
+        
+        <div x-show="reviewFile && reviewFile.analysis_report_data && (reviewFile.analysis_report_data.gap_category || reviewFile.analysis_report_data.non_compliant_details || reviewFile.analysis_report_data.compliant_description || reviewFile.analysis_report_data.remediation_plan || reviewFile.analysis_report_data.evidence_provided || reviewFile.analysis_report_data.test_results || reviewFile.analysis_report_data.meets_standard || reviewFile.analysis_report_data.auditor_notes)" class="lg:col-span-3 mt-6 pt-6 border-t border-slate-100 bg-slate-50/30">
+            <h4 class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-4">Gap Assessment (from Tracker)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.gap_category">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Gap Category</p><p class="text-slate-600" x-text="reviewFile.analysis_report_data.gap_category"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.non_compliant_details">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Non-Compliant Details</p><p class="text-slate-600 line-clamp-3" x-text="reviewFile.analysis_report_data.non_compliant_details"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.compliant_description">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Compliant Description</p><p class="text-slate-600 line-clamp-3" x-text="reviewFile.analysis_report_data.compliant_description"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.remediation_plan">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Remediation Plan</p><p class="text-slate-600 line-clamp-2" x-text="reviewFile.analysis_report_data.remediation_plan"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.evidence_provided">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Evidence Provided</p><p class="text-slate-600 line-clamp-2" x-text="reviewFile.analysis_report_data.evidence_provided"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.test_results">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Test Results</p><p class="text-slate-600 line-clamp-2" x-text="reviewFile.analysis_report_data.test_results"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.meets_standard">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Meets Standard</p><p class="text-slate-600" x-text="reviewFile.analysis_report_data.meets_standard === true ? 'Yes' : (reviewFile.analysis_report_data.meets_standard === false ? 'No' : 'Not assessed')"></p></div>
+                </template>
+                <template x-if="reviewFile && reviewFile.analysis_report_data?.auditor_notes">
+                <div><p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Auditor Notes</p><p class="text-slate-600 line-clamp-2" x-text="reviewFile.analysis_report_data.auditor_notes"></p></div>
+                </template>
+            </div>
+        </div>
+
+        
+        <div class="lg:col-span-3 sticky top-28">
+            <div class="glass-premium rounded-[32px] p-6 border border-white shadow-xl bg-white/40">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center">
+                    <i class="fas fa-bolt mr-2 text-amber-500"></i> Pulse Feed
+                </h3>
+                <div class="space-y-6">
+                    <template x-for="act in activities" :key="act.time + act.user">
+                        <div class="flex gap-4 group">
+                            <div class="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-all flex-shrink-0">
+                                <i :class="'fas ' + act.icon" class="text-[10px] text-slate-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[11px] font-bold text-slate-800 leading-tight">
+                                    <span class="text-indigo-700" x-text="act.user"></span>
+                                    <span x-show="act.type==='upload'"> provisioned asset for <span x-text="act.req"></span></span>
+                                    <span x-show="act.type==='comment'"> updated review</span>
+                                </p>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase mt-1 block" x-text="act.time"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div x-show="showUploadModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white rounded-[40px] shadow-2xl w-full max-w-xl border border-white" @click.away="showUploadModal = false">
+            <div class="px-12 py-10 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Provision Evidence</h2>
+                <button @click="showUploadModal = false" class="text-slate-300 hover:text-indigo-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form action="http://compliance-hub.test/evidence/7/upload" method="POST" enctype="multipart/form-data" class="p-12 text-center">
+                <input type="hidden" name="_token" value="" autocomplete="off">                <input type="hidden" name="requirement_id" :value="activeReqId">
+                <div class="p-20 border-2 border-dashed border-slate-200 rounded-[48px] bg-slate-50/30 group hover:border-indigo-600 transition-all relative">
+                    <i class="fas fa-file-arrow-up text-6xl text-slate-200 mb-8 group-hover:text-indigo-600 transition-all"></i>
+                    <input type="file" name="file" required class="absolute inset-0 opacity-0 cursor-pointer">
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest">Select compliance record</p>
+                </div>
+                <div class="mt-12 flex justify-end gap-5">
+                    <button type="button" @click="showUploadModal = false" class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Cancel</button>
+                    <button type="submit" class="px-12 py-4 bg-indigo-600 text-white rounded-3xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-600/30 hover:bg-indigo-700">Synthesize</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+    <div x-show="showReviewPanel" class="fixed inset-0 z-50 overflow-hidden" x-cloak>
+        <div class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity" @click="showReviewPanel = false"></div>
+        <div class="fixed inset-y-0 right-0 max-w-full flex">
+            <div class="w-screen max-w-5xl bg-white rounded-l-[64px] shadow-2xl border-l border-slate-100 overflow-y-auto transform transition-all duration-500"
+                 x-transition:enter="translate-x-full" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+                <template x-if="reviewFile">
+                    <div class="p-24 space-y-20">
+                        <div class="flex items-center justify-between border-b border-slate-50 pb-16">
+                            <div class="flex items-center gap-10">
+                                <div class="w-24 h-24 rounded-[32px] bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-4xl shadow-sm">
+                                    <i class="fas fa-file-contract"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-6xl font-black text-slate-900 tracking-tighter" x-text="reviewFile.original_filename"></h3>
+                                    <p class="text-[12px] font-black text-indigo-600 uppercase tracking-widest mt-3">Registry ID: #<span x-text="reviewFile.id"></span></p>
+                                </div>
+                            </div>
+                            <button @click="showReviewPanel = false" class="w-20 h-20 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shadow-sm"><i class="fas fa-times text-3xl"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-24">
+                            <div class="lg:col-span-12 space-y-12">
+                                <div class="grid grid-cols-2 gap-12">
+                                    <div class="p-12 bg-indigo-50/50 rounded-[56px] border border-indigo-100 relative overflow-hidden">
+                                        <h4 class="text-[11px] font-black text-indigo-700 uppercase tracking-widest mb-8"><i class="fas fa-robot mr-2"></i> AI Perspectives</h4>
+                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-text="reviewFile.ai_observations || 'Mining document observations...'"></div>
+                                    </div>
+                                    <div class="p-12 bg-emerald-50/50 rounded-[56px] border border-emerald-100 relative overflow-hidden">
+                                        <h4 class="text-[11px] font-black text-emerald-700 uppercase tracking-widest mb-8"><i class="fas fa-lightbulb-on mr-2"></i> Integrity Recommendations</h4>
+                                        <div class="text-sm text-slate-800 leading-relaxed font-semibold italic" x-text="reviewFile.ai_recommendations || 'No critical gaps documented.'"></div>
+                                    </div>
+                                </div>
+
+                                
+                                <div x-show="reviewFile.gaps && reviewFile.gaps.length > 0"
+                                     x-data="{ showGaps: false }"
+                                     class="p-6 bg-amber-50 border border-amber-200 rounded-2xl">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-bold text-amber-800">AI found potential gaps in this evidence</p>
+                                            <button @click="showGaps = !showGaps"
+                                                    class="text-xs font-semibold text-amber-700 underline hover:text-amber-800 mt-1">
+                                                <span x-text="showGaps ? 'Hide results' : 'See results'"></span>
+                                            </button>
+                                            <div x-show="showGaps" x-transition class="mt-3 space-y-2">
+                                                <template x-for="g in reviewFile.gaps" :key="g.gap">
+                                                    <div class="flex items-start gap-2 text-sm">
+                                                        <span :class="'px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ' + (g.severity === 'high' ? 'bg-red-100 text-red-700' : g.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-yellow-100 text-yellow-700')" x-text="g.severity"></span>
+                                                        <span class="text-slate-700" x-text="g.gap"></span>
+                                                    </div>
+                                                </template>
+                                                    <p class="text-[10px] text-slate-400 italic mt-2">AI-generated, please verify</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <template x-if="reviewFile.ai_gaps_consolidated_at">
+                                        <div class="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                                            <i class="fas fa-check-circle"></i> Consolidated to assessment findings
+                                        </div>
+                                    </template>
+                                </div>
+
+                                
+                                <div class="p-16 glass-premium rounded-[64px] border border-slate-100 bg-slate-50/30">
+                                    <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-12 text-center">Auditor Adjudication</h4>
+                                    <div class="flex gap-6 max-w-3xl mx-auto">
+                                        <button @click="submitAudit('accept')" class="flex-1 py-8 bg-indigo-600 text-white rounded-3xl font-black text-[15px] uppercase tracking-widest shadow-2xl shadow-indigo-600/40 hover:bg-indigo-700 transition-all flex items-center justify-center">
+                                            <i class="fas fa-check-circle mr-3"></i> Accept Integrity Asset
+                                        </button>
+                                        <button @click="submitAudit('return')" class="flex-1 py-8 bg-white text-rose-600 border-2 border-rose-100 rounded-3xl font-black text-[15px] uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center">
+                                            <i class="fas fa-undo mr-3"></i> Request Revision
+                                        </button>
+                                    </div>
+                                    <div class="mt-20 max-w-3xl mx-auto">
+                                         <textarea x-model="auditNotes" class="w-full p-10 bg-white border-2 border-slate-50 rounded-[48px] text-[16px] font-semibold focus:outline-none focus:ring-8 focus:ring-indigo-600/5 min-h-[300px]" placeholder="Explain the rationale for this adjudication..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+
+    <div x-show="showFeedbackModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white rounded-[48px] shadow-2xl w-full max-w-2xl border border-white flex flex-col h-[700px]" @click.away="showFeedbackModal = false">
+            <div class="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-[48px]">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight">Audit Communication</h2>
+                    <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1" x-text="reviewFile ? reviewFile.original_filename : ''"></p>
+                </div>
+                <button @click="showFeedbackModal = false" class="text-slate-300 hover:text-indigo-600 transition-colors"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar bg-slate-50/30">
+                <template x-if="reviewFile && reviewFile.feedbacks">
+                    <template x-for="msg in reviewFile.feedbacks" :key="msg.id">
+                        <div :class="msg.user_id == 1 ? 'items-end' : 'items-start'" class="flex flex-col space-y-2">
+                             <div :class="msg.user_id == 1 ? 'bg-indigo-600 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-white text-slate-800 rounded-r-2xl rounded-tl-2xl border border-slate-100'" class="px-6 py-4 max-w-[85%] shadow-sm">
+                                <p class="text-sm font-semibold leading-relaxed" x-text="msg.message"></p>
+                             </div>
+                              <span class="text-[9px] font-black text-slate-400 uppercase pr-2" x-text="msg.user ? msg.user.username : 'Unknown'"></span>
+                        </div>
+                    </template>
+                </template>
+                <div x-show="!reviewFile || !reviewFile.feedbacks || reviewFile.feedbacks.length === 0" class="h-full flex flex-center items-center justify-center text-slate-300 italic text-sm">
+                    Initiate integrity feedback loop...
+                </div>
+            </div>
+
+            <div class="p-8 bg-white border-t border-slate-100 rounded-b-[48px]">
+                <div class="relative">
+                    <textarea 
+                        x-model="auditNotes" 
+                        class="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-3xl text-sm font-semibold focus:outline-none focus:ring-8 focus:ring-indigo-600/5 min-h-[100px] resize-none" 
+                        placeholder="Type your feedback message here..."
+                    ></textarea>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <button @click="submitAudit('reply')" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
+                                Send Message
+                            </button>
+                            <template x-if="reviewFile && reviewFile.hitl_status !== 'accepted'">
+                                <button @click="submitAudit('return')" class="px-6 py-3 bg-white text-rose-600 border border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all">
+                                    Flag for Revision
+                                </button>
+                            </template>
+                        </div>
+                        <template x-if="reviewFile && reviewFile.hitl_status !== 'accepted'">
+                            <button @click="submitAudit('accept')" class="px-6 py-3 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all">
+                                <i class="fas fa-check-circle mr-1"></i> Accept Asset
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div x-show="showGapReportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl border border-white" @click.away="showGapReportModal = false">
+            <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Gap Assessment Report</h2>
+                <button @click="showGapReportModal = false" class="text-slate-300 hover:text-indigo-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <template x-if="reviewFile && reviewFile.analysis_report_data && reviewFile.analysis_report_data.is_compliant === false">
+            <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200/50">
+                <h3 class="font-semibold text-red-700 mb-2">Non-Compliant Details</h3>
+                <p class="text-slate-600" x-text="reviewFile.analysis_report_data.non_compliant_details ?? 'No details provided'"></p>
+            </div>
+            </template>
+
+            <template x-if="!reviewFile || !reviewFile.analysis_report_data || reviewFile.analysis_report_data.is_compliant !== false">
+            <div class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200/50">
+                <h3 class="font-semibold text-green-700 mb-2">Compliant Description</h3>
+                <p class="text-slate-600" x-text="reviewFile?.analysis_report_data?.compliant_description ?? ''"></p>
+            </div>
+            </template>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <h4 class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Remediation Plan</h4>
+                    <p class="text-slate-600 line-clamp-3" x-text="reviewFile.remediation_plan ?? ''"></p>
+                </div>
+                <div>
+                    <h4 class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Evidence Provided</h4>
+                    <p class="text-slate-600 line-clamp-3" x-text="reviewFile.evidence_provided ?? ''"></p>
+                </div>
+                <div>
+                    <h4 class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Test Results</h4>
+                    <p class="text-slate-600 line-clamp-3" x-text="reviewFile.test_results ?? ''"></p>
+                </div>
+                <div>
+                    <h4 class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Meets Standard</h4>
+                    <p class="text-slate-600" x-text="reviewFile.meets_standard ?? 'Not assessed'"></p>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Auditor Notes</h4>
+                <p class="text-slate-600 line-clamp-4" x-text="reviewFile.auditor_notes ?? ''"></p>
+            </div>
+
+            <div class="pt-8 border-t border-slate-100">
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-black text-slate-400 uppercase">Generated: 2026-08-14 08:31</span>
+                    <button @click="downloadReport()" class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 border border-indigo-100 bg-indigo-50/30 hover:bg-white transition-all">
+                        Download Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+<script id="integrity-hub-data" type="application/json">
+    {
+        "requirements": [{"id":1,"req_num":"1.1.1","description":"All security policies and operational procedures that are identified in Requirement 1 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 1","name":"","is_applicable":1},{"id":2,"req_num":"1.1.2","description":"Roles and responsibilities for performing activities in Requirement 1 are documented, assigned, and understood.","domain":"Requirement 1","name":"","is_applicable":1},{"id":3,"req_num":"1.2.1","description":"Configuration standards for NSC rulesets are: Defined, Implemented, Maintained.","domain":"Requirement 1","name":"","is_applicable":1},{"id":4,"req_num":"1.2.2","description":"All changes to network connections and to configurations of NSCs are approved and managed in accordance with the change control process defined at Requirement 6.5.1.","domain":"Requirement 1","name":"","is_applicable":1},{"id":5,"req_num":"1.2.3","description":"An accurate network diagram(s) is maintained that shows all connections between the CDE and other networks, including any wireless networks.","domain":"Requirement 1","name":"","is_applicable":1},{"id":6,"req_num":"1.2.4","description":"An accurate data-flow diagram(s) is maintained that meets the following: Shows all account data flows across systems and networks. Updated as needed upon changes to the environment.","domain":"Requirement 1","name":"","is_applicable":1},{"id":7,"req_num":"1.2.5","description":"All services, protocols, and ports allowed are identified, approved, and have a defined business need.","domain":"Requirement 1","name":"","is_applicable":1},{"id":8,"req_num":"1.2.6","description":"Security features are defined and implemented for all services, protocols, and ports that are in use and considered to be insecure, such that the risk is mitigated.","domain":"Requirement 1","name":"","is_applicable":1},{"id":9,"req_num":"1.2.7","description":"Configurations of NSCs are reviewed at least once every six months to confirm they are relevant and effective.","domain":"Requirement 1","name":"","is_applicable":1},{"id":10,"req_num":"1.2.8","description":"Configuration files for NSCs are: Secured from unauthorized access. Kept consistent with active network configurations.","domain":"Requirement 1","name":"","is_applicable":1},{"id":11,"req_num":"1.3.1","description":"Inbound traffic to the CDE is restricted as follows: To only traffic that is necessary. All other traffic is specifically denied.","domain":"Requirement 1","name":"","is_applicable":1},{"id":12,"req_num":"1.3.2","description":"Outbound traffic from the CDE is restricted as follows: To only traffic that is necessary. All other traffic is specifically denied.","domain":"Requirement 1","name":"","is_applicable":1},{"id":13,"req_num":"1.3.3","description":"NSCs are installed between all wireless networks and the CDE, regardless of whether the wireless network is a CDE, such that: All wireless traffic from wireless networks into the CDE is denied by default. Only wireless traffic with an authorized business purpose is allowed into the CDE.","domain":"Requirement 1","name":"","is_applicable":1},{"id":14,"req_num":"1.4.1","description":"NSCs are implemented between trusted and untrusted networks.","domain":"Requirement 1","name":"","is_applicable":1},{"id":15,"req_num":"1.4.2","description":"Inbound traffic from untrusted networks to trusted networks is restricted to: Communications with system components that are authorized to provide publicly accessible services, protocols, and ports. Stateful responses to communications initiated by system components in a trusted network. All other traffic is denied.","domain":"Requirement 1","name":"","is_applicable":1},{"id":16,"req_num":"1.4.3","description":"Anti-spoofing measures are implemented to detect and block forged source IP addresses from entering the trusted network.","domain":"Requirement 1","name":"","is_applicable":1},{"id":17,"req_num":"1.4.4","description":"System components that store cardholder data are not directly accessible from untrusted networks.","domain":"Requirement 1","name":"","is_applicable":1},{"id":18,"req_num":"1.4.5","description":"The disclosure of internal IP addresses and routing information is limited to only authorized parties.","domain":"Requirement 1","name":"","is_applicable":1},{"id":19,"req_num":"1.5.1","description":"Security controls are implemented on any computing devices, including company- and employee-owned devices, that connect to both untrusted networks (including the Internet) and the CDE as follows: Specific configuration settings are defined to prevent threats being introduced into the entity's network. Security controls are actively running. Security controls are not alterable by users of the computing devices unless specifically documented and authorized by management on a case-by-case basis for a limited period.","domain":"Requirement 1","name":"","is_applicable":1},{"id":20,"req_num":"2.1.1","description":"All security policies and operational procedures that are identified in Requirement 2 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 2","name":"","is_applicable":1},{"id":21,"req_num":"2.1.2","description":"Roles and responsibilities for performing activities in Requirement 2 are documented, assigned, and understood.","domain":"Requirement 2","name":"","is_applicable":1},{"id":22,"req_num":"2.2.1","description":"Configuration standards are developed, implemented, and maintained for all system components.","domain":"Requirement 2","name":"","is_applicable":1},{"id":23,"req_num":"2.2.2","description":"Vendor default accounts are managed as follows: If the vendor default account(s) will be used, the default password is changed per Requirement 8.3.6. If the vendor default account(s) will not be used, the account is removed or disabled.","domain":"Requirement 2","name":"","is_applicable":1},{"id":24,"req_num":"2.2.3","description":"Primary functions requiring different security levels are managed as follows: Only one primary function exists on a system component, OR Primary functions with differing security levels that exist on the same system component are isolated from each other, OR Primary functions with differing security levels on the same system component are all secured to the level required by the function with the highest security need.","domain":"Requirement 2","name":"","is_applicable":1},{"id":25,"req_num":"2.2.4","description":"Only necessary services, protocols, daemons, and functions are enabled, and all unnecessary functionality is removed or disabled.","domain":"Requirement 2","name":"","is_applicable":1},{"id":26,"req_num":"2.2.5","description":"If any insecure services, protocols, or daemons are present: Business justification is documented. Additional security features are documented and implemented that reduce the risk of using insecure services, protocols, or daemons.","domain":"Requirement 2","name":"","is_applicable":1},{"id":27,"req_num":"2.2.6","description":"System security parameters are configured to prevent misuse.","domain":"Requirement 2","name":"","is_applicable":1},{"id":28,"req_num":"2.2.7","description":"All non-console administrative access is encrypted using strong cryptography.","domain":"Requirement 2","name":"","is_applicable":1},{"id":29,"req_num":"2.3.1","description":"For wireless environments connected to the CDE or transmitting account data, all wireless vendor defaults are changed at installation or are confirmed to be secure, including but not limited to: Default wireless encryption keys. Passwords on wireless access points. SNMP defaults. Any other security-related wireless vendor defaults.","domain":"Requirement 2","name":"","is_applicable":1},{"id":30,"req_num":"2.3.2","description":"For wireless environments connected to the CDE or transmitting account data, wireless encryption keys are changed as follows: Whenever personnel with knowledge of the key leave the company or the role for which the knowledge was necessary. Whenever a key is suspected of or known to be compromised.","domain":"Requirement 2","name":"","is_applicable":1},{"id":31,"req_num":"3.1.1","description":"All security policies and operational procedures that are identified in Requirement 3 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 3","name":"","is_applicable":1},{"id":32,"req_num":"3.1.2","description":"Roles and responsibilities for performing activities in Requirement 3 are documented, assigned, and understood.","domain":"Requirement 3","name":"","is_applicable":1},{"id":33,"req_num":"3.2.1","description":"Account data storage is kept to a minimum through implementation of data retention and disposal policies, procedures, and processes that include at least the following: Coverage for all locations of stored account data. Coverage for any sensitive authentication data (SAD) stored prior to completion of authorization. Limiting data storage amount and retention time to that which is required for legal or regulatory, and\/or business requirements. Specific retention requirements for stored account data that defines length of retention period and includes a documented business justification. Processes for secure deletion or rendering account data unrecoverable when no longer needed per the retention policy. A process for verifying, at least once every three months, that stored account data exceeding the defined retention period has been securely deleted or rendered unrecoverable.","domain":"Requirement 3","name":"","is_applicable":1},{"id":34,"req_num":"3.3.1","description":"SAD is not stored after authorization, even if encrypted. All sensitive authentication data received is rendered unrecoverable upon completion of the authorization process.","domain":"Requirement 3","name":"","is_applicable":1},{"id":35,"req_num":"3.3.1.1","description":"The full contents of any track are not stored upon completion of the authorization process.","domain":"Requirement 3","name":"","is_applicable":1},{"id":36,"req_num":"3.3.1.2","description":"The card verification code is not stored upon completion of the authorization process.","domain":"Requirement 3","name":"","is_applicable":1},{"id":37,"req_num":"3.3.1.3","description":"The personal identification number (PIN) and the PIN block are not stored upon completion of the authorization process.","domain":"Requirement 3","name":"","is_applicable":1},{"id":38,"req_num":"3.3.2","description":"SAD that is stored electronically prior to completion of authorization is encrypted using strong cryptography.","domain":"Requirement 3","name":"","is_applicable":1},{"id":39,"req_num":"3.3.3","description":"Additional requirement for issuers and companies that support issuing services and store sensitive authentication data: Any storage of sensitive authentication data is: Limited to that which is needed for a legitimate issuing business need and is secured. Encrypted using strong cryptography.","domain":"Requirement 3","name":"","is_applicable":1},{"id":40,"req_num":"3.4.1","description":"PAN is masked when displayed (the BIN and last four digits are the maximum number of digits to be displayed), such that only personnel with a legitimate business need can see more than the BIN and last four digits of the PAN.","domain":"Requirement 3","name":"","is_applicable":1},{"id":41,"req_num":"3.4.2","description":"When using remote-access technologies, technical controls prevent copy and\/or relocation of PAN for all personnel, except for those with documented, explicit authorization and a legitimate, defined business need.","domain":"Requirement 3","name":"","is_applicable":1},{"id":42,"req_num":"3.5.1","description":"PAN is rendered unreadable anywhere it is stored by using any of the following approaches: One-way hashes based on strong cryptography of the entire PAN. Truncation (hashing cannot be used to replace the truncated segment of PAN). If hashed and truncated versions of the same PAN, or different truncation formats of the same PAN, are present in an environment, additional controls are in place such that the different versions cannot be correlated to reconstruct the original PAN. Index tokens. Strong cryptography with associated key-management processes and procedures.","domain":"Requirement 3","name":"","is_applicable":1},{"id":43,"req_num":"3.5.1.1","description":"Hashes used to render PAN unreadable (per the first bullet of Requirement 3.5.1) are keyed cryptographic hashes of the entire PAN, with associated key-management processes and procedures in accordance with Requirements 3.6 and 3.7.","domain":"Requirement 3","name":"","is_applicable":1},{"id":44,"req_num":"3.5.1.2","description":"If disk-level or partition-level encryption (rather than file-, column-, or field-level database encryption) is used to render PAN unreadable, it is implemented only as follows: On removable electronic media OR If used for non-removable electronic media, PAN is also rendered unreadable via another mechanism that meets Requirement 3.5.1.","domain":"Requirement 3","name":"","is_applicable":1},{"id":45,"req_num":"3.5.1.3","description":"If disk-level or partition-level encryption is used (rather than file-, column-, or field-level database encryption) to render PAN unreadable, it is managed as follows: Logical access is managed separately and independently of native operating system authentication and access control mechanisms. Decryption keys are not associated with user accounts. Authentication factors (passwords, passphrases, or cryptographic keys) that allow access to unencrypted data are stored securely.","domain":"Requirement 3","name":"","is_applicable":1},{"id":46,"req_num":"3.6.1","description":"Procedures are defined and implemented to protect cryptographic keys used to protect stored account data against disclosure and misuse that include: Access to keys is restricted to the fewest number of custodians necessary. Key-encrypting keys are at least as strong as the data-encrypting keys they protect. Key-encrypting keys are stored separately from data-encrypting keys. Keys are stored securely in the fewest possible locations and forms.","domain":"Requirement 3","name":"","is_applicable":1},{"id":47,"req_num":"3.6.1.1","description":"Additional requirement for service providers only: A documented description of the cryptographic architecture is maintained that includes: Details of all algorithms, protocols, and keys used for the protection of stored account data, including key strength and expiry date. Preventing the use of the same cryptographic keys in production and test environments. Description of the key usage for each key. Inventory of any hardware security modules (HSMs), key management systems (KMS), and other secure cryptographic devices (SCDs) used for key management, including type and location of devices, to support meeting Requirement 12.3.4.","domain":"Requirement 3","name":"","is_applicable":1},{"id":48,"req_num":"3.6.1.2","description":"Secret and private keys used to protect stored account data are stored in one (or more) of the following forms at all times: Encrypted with a key-encrypting key that is at least as strong as the data-encrypting key, and that is stored separately from the data-encrypting key. Within a secure cryptographic device (SCD), such as a hardware security module (HSM) or PTS-approved point-of-interaction device. As at least two full-length key components or key shares, in accordance with an industry-accepted method.","domain":"Requirement 3","name":"","is_applicable":1},{"id":49,"req_num":"3.6.1.3","description":"Access to cleartext cryptographic key components is restricted to the fewest number of custodians necessary.","domain":"Requirement 3","name":"","is_applicable":1},{"id":50,"req_num":"3.6.1.4","description":"Cryptographic keys are stored in the fewest possible locations.","domain":"Requirement 3","name":"","is_applicable":1},{"id":51,"req_num":"3.7.1","description":"Key-management policies and procedures are implemented to include generation of strong cryptographic keys used to protect stored account data.","domain":"Requirement 3","name":"","is_applicable":1},{"id":52,"req_num":"3.7.2","description":"Key-management policies and procedures are implemented to include secure distribution of cryptographic keys used to protect stored account data.","domain":"Requirement 3","name":"","is_applicable":1},{"id":53,"req_num":"3.7.3","description":"Key-management policies and procedures are implemented to include secure storage of cryptographic keys used to protect stored account data.","domain":"Requirement 3","name":"","is_applicable":1},{"id":54,"req_num":"3.7.4","description":"Key management policies and procedures are implemented for cryptographic key changes for keys that have reached the end of their cryptoperiod, as defined by the associated application vendor or key owner, and based on industry best practices and guidelines, including the following: A defined cryptoperiod for each key type in use. A process for key changes at the end of the defined cryptoperiod.","domain":"Requirement 3","name":"","is_applicable":1},{"id":55,"req_num":"3.7.5","description":"Key management policies procedures are implemented to include the retirement, replacement, or destruction of keys used to protect stored account data, as deemed necessary when: The key has reached the end of its defined cryptoperiod. The integrity of the key has been weakened, including when personnel with knowledge of a cleartext key component leaves the company, or the role for which the key component was known. The key is suspected of or known to be compromised. Retired or replaced keys are not used for encryption operations.","domain":"Requirement 3","name":"","is_applicable":1},{"id":56,"req_num":"3.7.6","description":"Where manual cleartext cryptographic key-management operations are performed by personnel, key-management policies and procedures are implemented, including managing these operations using split knowledge and dual control.","domain":"Requirement 3","name":"","is_applicable":1},{"id":57,"req_num":"3.7.7","description":"Key management policies and procedures are implemented to include the prevention of unauthorized substitution of cryptographic keys.","domain":"Requirement 3","name":"","is_applicable":1},{"id":58,"req_num":"3.7.8","description":"Key management policies and procedures are implemented to include that cryptographic key custodians formally acknowledge (in writing or electronically) that they understand and accept their key-custodian responsibilities.","domain":"Requirement 3","name":"","is_applicable":1},{"id":59,"req_num":"3.7.9","description":"Additional requirement for service providers only: Where a service provider shares cryptographic keys with its customers for transmission or storage of account data, guidance on secure transmission, storage and updating of such keys is documented and distributed to the service provider\u2019s customers.","domain":"Requirement 3","name":"","is_applicable":1},{"id":60,"req_num":"4.1.1","description":"All security policies and operational procedures that are identified in Requirement 4 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 4","name":"","is_applicable":1},{"id":61,"req_num":"4.1.2","description":"Roles and responsibilities for performing activities in Requirement 4 are documented, assigned, and understood.","domain":"Requirement 4","name":"","is_applicable":1},{"id":62,"req_num":"4.2.1","description":"Strong cryptography and security protocols are implemented as follows to safeguard PAN during transmission over open, public networks: Only trusted keys and certificates are accepted. Certificates used to safeguard PAN during transmission over open, public networks are confirmed as valid and are not expired or revoked. The protocol in use supports only secure versions or configurations and does not support fallback to, or use of insecure versions, algorithms, key sizes, or implementations. The encryption strength is appropriate for the encryption methodology in use.","domain":"Requirement 4","name":"","is_applicable":1},{"id":63,"req_num":"4.2.1.1","description":"An inventory of the entity\u2019s trusted keys and certificates used to protect PAN during transmission is maintained.","domain":"Requirement 4","name":"","is_applicable":1},{"id":64,"req_num":"4.2.1.2","description":"Wireless networks transmitting PAN or connected to the CDE use industry best practices to implement strong cryptography for authentication and transmission.","domain":"Requirement 4","name":"","is_applicable":1},{"id":65,"req_num":"4.2.2","description":"PAN is secured with strong cryptography whenever it is sent via end-user messaging technologies.","domain":"Requirement 4","name":"","is_applicable":1},{"id":66,"req_num":"5.1.1","description":"All security policies and operational procedures that are identified in Requirement 5 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 5","name":"","is_applicable":1},{"id":67,"req_num":"5.1.2","description":"Roles and responsibilities for performing activities in Requirement 5 are documented, assigned, and understood.","domain":"Requirement 5","name":"","is_applicable":1},{"id":68,"req_num":"5.2.1","description":"An anti-malware solution(s) is deployed on all system components, except for those system components identified in periodic evaluations per Requirement 5.2.3 that concludes the system components are not at risk from malware.","domain":"Requirement 5","name":"","is_applicable":1},{"id":69,"req_num":"5.2.2","description":"The deployed anti-malware solution(s): Detects all known types of malware. Removes, blocks, or contains all known types of malware.","domain":"Requirement 5","name":"","is_applicable":1},{"id":70,"req_num":"5.2.3","description":"Any system components that are not at risk for malware are evaluated periodically to include the following: A documented list of all system components not at risk for malware. Identification and evaluation of evolving malware threats for those system components. Confirmation whether such system components continue to not require anti-malware protection.","domain":"Requirement 5","name":"","is_applicable":1},{"id":71,"req_num":"5.2.3.1","description":"The frequency of periodic evaluations of system components identified as not at risk for malware is defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1.","domain":"Requirement 5","name":"","is_applicable":1},{"id":72,"req_num":"5.3.1","description":"The anti-malware solution(s) is kept current via automatic updates.","domain":"Requirement 5","name":"","is_applicable":1},{"id":73,"req_num":"5.3.2","description":"The anti-malware solution(s): Performs periodic scans and active or real-time scans. OR Performs continuous behavioral analysis of systems or processes.","domain":"Requirement 5","name":"","is_applicable":1},{"id":74,"req_num":"5.3.2.1","description":"If periodic malware scans are performed to meet Requirement 5.3.2, the frequency of scans is defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1.","domain":"Requirement 5","name":"","is_applicable":1},{"id":75,"req_num":"5.3.3","description":"For removable electronic media, the anti-malware solution(s): Performs automatic scans of when the media is inserted, connected, or logically mounted, OR Performs continuous behavioral analysis of systems or processes when the media is inserted, connected, or logically mounted.","domain":"Requirement 5","name":"","is_applicable":1},{"id":76,"req_num":"5.3.4","description":"Audit logs for the anti-malware solution(s) are enabled and retained in accordance with Requirement 10.5.1.","domain":"Requirement 5","name":"","is_applicable":1},{"id":77,"req_num":"5.3.5","description":"Anti-malware mechanisms cannot be disabled or altered by users, unless specifically documented, and authorized by management on a case-by-case basis for a limited time period.","domain":"Requirement 5","name":"","is_applicable":1},{"id":78,"req_num":"5.4.1","description":"Processes and automated mechanisms are in place to detect and protect personnel against phishing attacks.","domain":"Requirement 5","name":"","is_applicable":1},{"id":79,"req_num":"6.1.1","description":"All security policies and operational procedures that are identified in Requirement 6 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 6","name":"","is_applicable":1},{"id":80,"req_num":"6.1.2","description":"Roles and responsibilities for performing activities in Requirement 6 are documented, assigned, and understood.","domain":"Requirement 6","name":"","is_applicable":1},{"id":81,"req_num":"6.2.1","description":"Bespoke and custom software are developed securely, as follows: Based on industry standards and\/or best practices for secure development. In accordance with PCI DSS (for example, secure authentication and logging). Incorporating consideration of information security issues during each stage of the software development lifecycle.","domain":"Requirement 6","name":"","is_applicable":1},{"id":82,"req_num":"6.2.2","description":"Software development personnel working on bespoke and custom software are trained at least once every 12 months as follows: On software security relevant to their job function and development languages. Including secure software design and secure coding techniques. Including, if security testing tools are used, how to use the tools for detecting vulnerabilities in software.","domain":"Requirement 6","name":"","is_applicable":1},{"id":83,"req_num":"6.2.3","description":"Bespoke and custom software is reviewed prior to being released into production or to customers, to identify and correct potential coding vulnerabilities, as follows: Code reviews ensure code is developed according to secure coding guidelines. Code reviews look for both existing and emerging software vulnerabilities. Appropriate corrections are implemented prior to release.","domain":"Requirement 6","name":"","is_applicable":1},{"id":84,"req_num":"6.2.3.1","description":"If manual code reviews are performed for bespoke and custom software prior to release to production, code changes are: Reviewed by individuals other than the originating code author, and who are knowledgeable about code-review techniques and secure coding practices. Reviewed and approved by management prior to release.","domain":"Requirement 6","name":"","is_applicable":1},{"id":85,"req_num":"6.2.4","description":"Software engineering techniques or other methods are defined and in use by software development personnel to prevent or mitigate common software attacks and related vulnerabilities in bespoke and custom software, including but not limited to the following: Injection attacks, including SQL, LDAP, XPath, or other command, parameter, object, fault, or injection-type flaws. Attacks on data and data structures, including attempts to manipulate buffers, pointers, input data, or shared data. Attacks on cryptography usage, including attempts to exploit weak, insecure, or inappropriate cryptographic implementations, algorithms, cipher suites, or modes of operation. Attacks on business logic, including attempts to abuse or bypass application features and functionalities through the manipulation of APIs, communication protocols and channels, client-side functionality, or other system\/application functions and resources. This includes cross-site scripting (XSS) and cross-site request forgery (CSRF). Attacks on access control mechanisms, including attempts to bypass or abuse identification, authentication, or authorization mechanisms, or attempts to exploit weaknesses in the implementation of such mechanisms. Attacks via any \"high-risk\" vulnerabilities identified in the vulnerability identification process, as defined in Requirement 6.3.1.","domain":"Requirement 6","name":"","is_applicable":1},{"id":86,"req_num":"6.3.1","description":"Security vulnerabilities are identified and managed as follows: New security vulnerabilities are identified using industry-recognized sources for security vulnerability information, including alerts from international and national computer emergency response teams (CERTs). Vulnerabilities are assigned a risk ranking based on industry best practices and consideration of potential impact. Risk rankings identify, at a minimum, all vulnerabilities considered to be a high-risk or critical to the environment. Vulnerabilities for bespoke and custom, and third-party software (for example operating systems and databases) are covered.","domain":"Requirement 6","name":"","is_applicable":1},{"id":87,"req_num":"6.3.2","description":"An inventory of bespoke and custom software, and third-party software components incorporated into bespoke and custom software is maintained to facilitate vulnerability and patch management.","domain":"Requirement 6","name":"","is_applicable":1},{"id":88,"req_num":"6.3.3","description":"All system components are protected from known vulnerabilities by installing applicable security patches\/updates as follows: Patches\/updates for critical vulnerabilities (identified according to the risk ranking process at Requirement 6.3.1) are installed within one month of release. All other applicable security patches\/updates are installed within an appropriate time frame as determined by the entity\u2019s assessment of the criticality of the risk to the environment as identified according to the risk ranking process at Requirement 6.3.1.","domain":"Requirement 6","name":"","is_applicable":1},{"id":89,"req_num":"6.4.1","description":"For public-facing web applications, new threats and vulnerabilities are addressed on an ongoing basis and these applications are protected against known attacks as follows: Reviewing public-facing web applications via manual or automated application vulnerability security assessment tools or methods as follows: At least once every 12 months and after significant changes. By an entity that specializes in application security. Including, at a minimum, all common software attacks in Requirement 6.2.4. All vulnerabilities are ranked in accordance with requirement 6.3.1. All vulnerabilities are corrected. The application is re-evaluated after the corrections OR Installing an automated technical solution(s) that continually detects and prevents web-based attacks as follows: Installed in front of public-facing web applications to detect and prevent web-based attacks. Actively running and up to date as applicable. Generating audit logs. Configured to either block web-based attacks or generate an alert that is immediately investigated.","domain":"Requirement 6","name":"","is_applicable":1},{"id":90,"req_num":"6.4.2","description":"For public-facing web applications, an automated technical solution is deployed that continually detects and prevents web-based attacks, with at least the following: Is installed in front of public-facing web applications and is configured to detect and prevent web-based attacks. Actively running and up to date as applicable. Generating audit logs. Configured to either block web-based attacks or generate an alert that is immediately investigated.","domain":"Requirement 6","name":"","is_applicable":1},{"id":91,"req_num":"6.4.3","description":"All payment page scripts that are loaded and executed in the consumer's browser are managed as follows: A method is implemented to confirm that each script is authorized. A method is implemented to assure the integrity of each script. An inventory of all scripts is maintained with written business or technical justification as to why each is necessary.","domain":"Requirement 6","name":"","is_applicable":1},{"id":92,"req_num":"6.5.1","description":"Changes to all system components in the production environment are made according to established procedures that include: Reason for, and description of, the change. Documentation of security impact. Documented change approval by authorized parties. Testing to verify that the change does not adversely impact system security. For bespoke and custom software changes, all updates are tested for compliance with Requirement 6.2.4 before being deployed into production. Procedures to address failures and return to a secure state.","domain":"Requirement 6","name":"","is_applicable":1},{"id":93,"req_num":"6.5.2","description":"Upon completion of a significant change, all applicable PCI DSS requirements are confirmed to be in place on all new or changed systems and networks, and documentation is updated as applicable.","domain":"Requirement 6","name":"","is_applicable":1},{"id":94,"req_num":"6.5.3","description":"Pre-production environments are separated from production environments and the separation is enforced with access controls.","domain":"Requirement 6","name":"","is_applicable":1},{"id":95,"req_num":"6.5.4","description":"Roles and functions are separated between production and pre-production environments to provide accountability such that only reviewed and approved changes are deployed.","domain":"Requirement 6","name":"","is_applicable":1},{"id":96,"req_num":"6.5.5","description":"Live PANs are not used in pre-production environments, except where those environments are included in the CDE and protected in accordance with all applicable PCI DSS requirements.","domain":"Requirement 6","name":"","is_applicable":1},{"id":97,"req_num":"6.5.6","description":"Test data and test accounts are removed from system components before the system goes into production.","domain":"Requirement 6","name":"","is_applicable":1},{"id":98,"req_num":"7.1.1","description":"All security policies and operational procedures that are identified in Requirement 7 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 7","name":"","is_applicable":1},{"id":99,"req_num":"7.1.2","description":"Roles and responsibilities for performing activities in Requirement 7 are documented, assigned, and understood.","domain":"Requirement 7","name":"","is_applicable":1},{"id":100,"req_num":"7.2.1","description":"An access control model is defined and includes granting access as follows: Appropriate access depending on the entity's business and access needs. Access to system components and data resources that is based on users' job classification and functions. The least privileges required (for example, user, administrator) to perform a job function.","domain":"Requirement 7","name":"","is_applicable":1},{"id":101,"req_num":"7.2.2","description":"Access is assigned to users, including privileged users, based on: Job classification and function. Least privileges necessary to perform job responsibilities.","domain":"Requirement 7","name":"","is_applicable":1},{"id":102,"req_num":"7.2.3","description":"Required privileges are approved by authorized personnel.","domain":"Requirement 7","name":"","is_applicable":1},{"id":103,"req_num":"7.2.4","description":"All user accounts and related access privileges, including third-party\/vendor accounts, are reviewed as follows: At least once every six months. To ensure user accounts and access remain appropriate based on job function. Any inappropriate access is addressed. Management acknowledges that access remains appropriate.","domain":"Requirement 7","name":"","is_applicable":1},{"id":104,"req_num":"7.2.5","description":"All application and system accounts and related access privileges are assigned and managed as follows: Based on the least privileges necessary for the operability of the system or application. Access is limited to the systems, applications, or processes that specifically require their use.","domain":"Requirement 7","name":"","is_applicable":1},{"id":105,"req_num":"7.2.5.1","description":"All access by application and system accounts and related access privileges are reviewed as follows: Periodically (at the frequency defined in the entity's targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1). The application\/system access remains appropriate for the function being performed. Any inappropriate access is addressed. Management acknowledges that access remains appropriate.","domain":"Requirement 7","name":"","is_applicable":1},{"id":106,"req_num":"7.2.6","description":"All user access to query repositories of stored cardholder data is restricted as follows: Via applications or other programmatic methods, with access and allowed actions based on user roles and least privileges. Only the responsible administrator(s) can directly access or query repositories of stored CHD.","domain":"Requirement 7","name":"","is_applicable":1},{"id":107,"req_num":"7.3.1","description":"An access control system(s) is in place that restricts access based on a user\u2019s need to know and covers all system components.","domain":"Requirement 7","name":"","is_applicable":1},{"id":108,"req_num":"7.3.2","description":"The access control system(s) is configured to enforce permissions assigned to individuals, applications, and systems based on job classification and function.","domain":"Requirement 7","name":"","is_applicable":1},{"id":109,"req_num":"7.3.3","description":"The access control system(s) is set to \u201cdeny all\u201d by default.","domain":"Requirement 7","name":"","is_applicable":1},{"id":110,"req_num":"8.1.1","description":"All security policies and operational procedures that are identified in Requirement 8 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 8","name":"","is_applicable":1},{"id":111,"req_num":"8.1.2","description":"Roles and responsibilities for performing activities in Requirement 8 are documented, assigned, and understood.","domain":"Requirement 8","name":"","is_applicable":1},{"id":112,"req_num":"8.2.1","description":"All users are assigned a unique ID before access to system components or cardholder data is allowed.","domain":"Requirement 8","name":"","is_applicable":1},{"id":113,"req_num":"8.2.2","description":"Group, shared, or generic IDs, or other shared authentication credentials are only used when necessary on an exception basis, and are managed as follows: ID use is prevented unless needed for an exceptional circumstance. Use is limited to the time needed for the exceptional circumstance. Business justification for use is documented. Use is explicitly approved by management. Individual user identity is confirmed before access to an account is granted. Every action taken is attributable to an individual user.","domain":"Requirement 8","name":"","is_applicable":1},{"id":114,"req_num":"8.2.3","description":"Additional requirement for service providers only: Service providers with remote access to customer premises use unique authentication factors for each customer premises.","domain":"Requirement 8","name":"","is_applicable":1},{"id":115,"req_num":"8.2.4","description":"Addition, deletion, and modification of user IDs, authentication factors, and other identifier objects are managed as follows: Authorized with the appropriate approval. Implemented with only the privileges specified on the documented approval.","domain":"Requirement 8","name":"","is_applicable":1},{"id":116,"req_num":"8.2.5","description":"Access for terminated users is immediately revoked.","domain":"Requirement 8","name":"","is_applicable":1},{"id":117,"req_num":"8.2.6","description":"Inactive user accounts are removed or disabled within 90 days of inactivity.","domain":"Requirement 8","name":"","is_applicable":1},{"id":118,"req_num":"8.2.7","description":"Accounts used by third parties to access, support, or maintain system components via remote access are managed as follows: Enabled only during the time period needed and disabled when not in use. Use is monitored for unexpected activity.","domain":"Requirement 8","name":"","is_applicable":1},{"id":119,"req_num":"8.2.8","description":"If a user session has been idle for more than 15 minutes, the user is required to re-authenticate to re-activate the terminal or session.","domain":"Requirement 8","name":"","is_applicable":1},{"id":120,"req_num":"8.3.1","description":"All user access to system components for users and administrators is authenticated via at least one of the following authentication factors: Something you know, such as a password or passphrase. Something you have, such as a token device or smart card. Something you are, such as a biometric element.","domain":"Requirement 8","name":"","is_applicable":1},{"id":121,"req_num":"8.3.2","description":"Strong cryptography is used to render all authentication factors unreadable during transmission and storage on all system components.","domain":"Requirement 8","name":"","is_applicable":1},{"id":122,"req_num":"8.3.3","description":"User identity is verified before modifying any authentication factor.","domain":"Requirement 8","name":"","is_applicable":1},{"id":123,"req_num":"8.3.4","description":"Invalid authentication attempts are limited by: Locking out the user ID after not more than 10 attempts. Setting the lockout duration to a minimum of 30 minutes or until the user\u2019s identity is confirmed.","domain":"Requirement 8","name":"","is_applicable":1},{"id":124,"req_num":"8.3.5","description":"If passwords\/passphrases are used as authentication factors to meet Requirement 8.3.1, they are set and reset for each user as follows: Set to a unique value for first-time use and upon reset. Forced to be changed immediately after the first use.","domain":"Requirement 8","name":"","is_applicable":1},{"id":125,"req_num":"8.3.6","description":"If passwords\/passphrases are used as authentication factors to meet Requirement 8.3.1, they meet the following minimum level of complexity: A minimum length of 12 characters (or IF the system does not support 12 characters, a minimum length of eight characters). Contain both numeric and alphabetic characters.","domain":"Requirement 8","name":"","is_applicable":1},{"id":126,"req_num":"8.3.7","description":"Individuals are not allowed to submit a new password\/passphrase that is the same as any of the last four passwords\/passphrases used.","domain":"Requirement 8","name":"","is_applicable":1},{"id":127,"req_num":"8.3.8","description":"Authentication policies and procedures are documented and communicated to all users including: Guidance on selecting strong authentication factors. Guidance for how users should protect their authentication factors. Instructions not to reuse previously used passwords\/passphrases. Instructions to change passwords\/passphrases if there is any suspicion or knowledge that the password\/passphrases have been compromised and how to report the incident.","domain":"Requirement 8","name":"","is_applicable":1},{"id":128,"req_num":"8.3.9","description":"If passwords\/passphrases are used as the only authentication factor for user access (i.e., in any single-factor authentication implementation) then either: Passwords\/passphrases are changed at least once every 90 days, OR The security posture of accounts is dynamically analyzed, and real-time access to resources is automatically determined accordingly.","domain":"Requirement 8","name":"","is_applicable":1},{"id":129,"req_num":"8.3.10","description":"Additional requirement for service providers only: If passwords\/passphrases are used as the only authentication factor for customer user access to cardholder data (i.e., in any single-factor authentication implementation), then guidance is provided to customer users including: Guidance for customers to change their user passwords\/passphrases periodically. Guidance as to when, and under what circumstances, passwords\/passphrases are to be changed.","domain":"Requirement 8","name":"","is_applicable":1},{"id":130,"req_num":"8.3.10.1","description":"Additional requirement for service providers only: If passwords\/passphrases are used as the only authentication factor for customer user access (i.e., in any single-factor authentication implementation) then either: Passwords\/passphrases are changed at least once every 90 days, OR The security posture of accounts is dynamically analyzed, and real-time access to resources is automatically determined accordingly.","domain":"Requirement 8","name":"","is_applicable":1},{"id":131,"req_num":"8.3.11","description":"Where authentication factors such as physical or logical security tokens, smart cards, or certificates are used: Factors are assigned to an individual user and not shared among multiple users. Physical and\/or logical controls ensure only the intended user can use that factor to gain access.","domain":"Requirement 8","name":"","is_applicable":1},{"id":132,"req_num":"8.4.1","description":"MFA is implemented for all non-console access into the CDE for personnel with administrative access.","domain":"Requirement 8","name":"","is_applicable":1},{"id":133,"req_num":"8.4.2","description":"MFA is implemented for all non-console access into the CDE.","domain":"Requirement 8","name":"","is_applicable":1},{"id":134,"req_num":"8.4.3","description":"MFA is implemented for all remote access originating from outside the entity\u2019s network that could access or impact the CDE.","domain":"Requirement 8","name":"","is_applicable":1},{"id":135,"req_num":"8.5.1","description":"MFA systems are implemented as follows: The MFA system is not susceptible to replay attacks. MFA systems cannot be bypassed by any users, including administrative users unless specifically documented, and authorized by management on an exception basis, for a limited time period. At least two different types of authentication factors are used. Success of all authentication factors is required before access is granted.","domain":"Requirement 8","name":"","is_applicable":1},{"id":136,"req_num":"8.6.1","description":"If accounts used by systems or applications can be used for interactive login, they are managed as follows: Interactive use is prevented unless needed for an exceptional circumstance. Interactive use is limited to the time needed for the exceptional circumstance. Business justification for interactive use is documented. Interactive use is explicitly approved by management. Individual user identity is confirmed before access to account is granted. Every action taken is attributable to an individual user.","domain":"Requirement 8","name":"","is_applicable":1},{"id":137,"req_num":"8.6.2","description":"Passwords\/passphrases for any application and system accounts that can be used for interactive login are not hard coded in scripts, configuration\/property files, or bespoke and custom source code.","domain":"Requirement 8","name":"","is_applicable":1},{"id":138,"req_num":"8.6.3","description":"Passwords\/passphrases for any application and system accounts are protected against misuse as follows: Passwords\/passphrases are changed periodically (at the frequency defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1) and upon suspicion or confirmation of compromise. Passwords\/passphrases are constructed with sufficient complexity appropriate for how frequently the entity changes the passwords\/passphrases.","domain":"Requirement 8","name":"","is_applicable":1},{"id":139,"req_num":"9.1.1","description":"All security policies and operational procedures that are identified in Requirement 9 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 9","name":"","is_applicable":1},{"id":140,"req_num":"9.1.2","description":"Roles and responsibilities for performing activities in Requirement 9 are documented, assigned, and understood.","domain":"Requirement 9","name":"","is_applicable":1},{"id":141,"req_num":"9.2.1","description":"Appropriate facility entry controls are in place to restrict physical access to systems in the CDE.","domain":"Requirement 9","name":"","is_applicable":1},{"id":142,"req_num":"9.2.1.1","description":"Individual physical access to sensitive areas within the CDE is monitored with either video cameras or physical access control mechanisms (or both) as follows: Entry and exit points to\/from sensitive areas within the CDE are monitored. Monitoring devices or mechanisms are protected from tampering or disabling. Collected data is reviewed and correlated with other entries. Collected data is stored for at least three months, unless otherwise restricted by law.","domain":"Requirement 9","name":"","is_applicable":1},{"id":143,"req_num":"9.2.2","description":"Physical and\/or logical controls are implemented to restrict use of publicly accessible network jacks within the facility.","domain":"Requirement 9","name":"","is_applicable":1},{"id":144,"req_num":"9.2.3","description":"Physical access to wireless access points, gateways, networking\/communications hardware, and telecommunication lines within the facility is restricted.","domain":"Requirement 9","name":"","is_applicable":1},{"id":145,"req_num":"9.2.4","description":"Access to consoles in sensitive areas is restricted via locking when not in use.","domain":"Requirement 9","name":"","is_applicable":1},{"id":146,"req_num":"9.3.1","description":"Procedures are implemented for authorizing and managing physical access of personnel to the CDE, including: Identifying personnel. Managing changes to an individual's physical access requirements. Revoking or terminating personnel identification. Limiting access to the identification process or system to authorized personnel.","domain":"Requirement 9","name":"","is_applicable":1},{"id":147,"req_num":"9.3.1.1","description":"Physical access to sensitive areas within the CDE for personnel is controlled as follows: Access is authorized and based on individual job function. Access is revoked immediately upon termination. All physical access mechanisms, such as keys, access cards, etc., are returned or disabled upon termination.","domain":"Requirement 9","name":"","is_applicable":1},{"id":148,"req_num":"9.3.2","description":"Procedures are implemented for authorizing and managing visitor access to the CDE, including: Visitors are authorized before entering. Visitors are escorted at all times. Visitors are clearly identified and given a badge or other identification that expires. Visitor badges or other identification visibly distinguishes visitors from personnel.","domain":"Requirement 9","name":"","is_applicable":1},{"id":149,"req_num":"9.3.3","description":"Visitor badges or identification are surrendered or deactivated before visitors leave the facility or at the date of expiration.","domain":"Requirement 9","name":"","is_applicable":1},{"id":150,"req_num":"9.3.4","description":"Visitor logs are used to maintain a physical record of visitor activity both within the facility and within sensitive areas, including: The visitor\u2019s name and the organization represented. The date and time of the visit. The name of the personnel authorizing physical access. Retaining the log for at least three months, unless otherwise restricted by law.","domain":"Requirement 9","name":"","is_applicable":1},{"id":151,"req_num":"9.4.1","description":"All media with cardholder data is physically secured.","domain":"Requirement 9","name":"","is_applicable":1},{"id":152,"req_num":"9.4.1.1","description":"Offline media backups with cardholder data are stored in a secure location.","domain":"Requirement 9","name":"","is_applicable":1},{"id":153,"req_num":"9.4.1.2","description":"The security of the offline media backup location(s) with cardholder data is reviewed at least once every 12 months.","domain":"Requirement 9","name":"","is_applicable":1},{"id":154,"req_num":"9.4.2","description":"All media with cardholder data is classified in accordance with the sensitivity of the data.","domain":"Requirement 9","name":"","is_applicable":1},{"id":155,"req_num":"9.4.3","description":"Media with cardholder data sent outside the facility is secured as follows: Media sent outside the facility is logged. Media is sent by secured courier or other delivery method that can be accurately tracked. Offsite tracking logs include details about media location.","domain":"Requirement 9","name":"","is_applicable":1},{"id":156,"req_num":"9.4.4","description":"Management approves all media with cardholder data that is moved outside the facility (including when media is distributed to individuals).","domain":"Requirement 9","name":"","is_applicable":1},{"id":157,"req_num":"9.4.5","description":"Inventory logs of all electronic media with cardholder data are maintained.","domain":"Requirement 9","name":"","is_applicable":1},{"id":158,"req_num":"9.4.5.1","description":"Inventories of electronic media with cardholder data are conducted at least once every 12 months.","domain":"Requirement 9","name":"","is_applicable":1},{"id":159,"req_num":"9.4.6","description":"Hard-copy materials with cardholder data are destroyed when no longer needed for business or legal reasons, as follows: Materials are cross-cut shredded, incinerated, or pulped so that cardholder data cannot be reconstructed. Materials are stored in secure storage containers prior to destruction.","domain":"Requirement 9","name":"","is_applicable":1},{"id":160,"req_num":"9.4.7","description":"Electronic media with cardholder data is destroyed when no longer needed for business or legal reasons via one of the following: The electronic media is destroyed. The cardholder data is rendered unrecoverable so that it cannot be reconstructed.","domain":"Requirement 9","name":"","is_applicable":1},{"id":161,"req_num":"9.5.1","description":"POI devices that capture payment card data via direct physical interaction with the payment card form factor are protected from tampering and unauthorized substitution, including the following: Maintaining a list of POI devices. Periodically inspecting POI devices to look for tampering or unauthorized substitution. Training personnel to be aware of suspicious behavior and to report tampering or unauthorized substitution of devices.","domain":"Requirement 9","name":"","is_applicable":1},{"id":162,"req_num":"9.5.1.1","description":"An up-to-date list of POI devices is maintained, including: Make and model of the device. Location of device. Device serial number or other methods of unique identification.","domain":"Requirement 9","name":"","is_applicable":1},{"id":163,"req_num":"9.5.1.2","description":"POI device surfaces are periodically inspected to detect tampering and unauthorized substitution.","domain":"Requirement 9","name":"","is_applicable":1},{"id":164,"req_num":"9.5.1.2.1","description":"The frequency of periodic POI device inspections and the type of inspections performed is defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1.","domain":"Requirement 9","name":"","is_applicable":1},{"id":165,"req_num":"9.5.1.3","description":"Training is provided for personnel in POI environments to be aware of attempted tampering or replacement of POI devices, and includes: Verifying the identity of any third-party persons claiming to be repair or maintenance personnel, before granting them access to modify or troubleshoot devices. Procedures to ensure devices are not installed, replaced, or returned without verification. Being aware of suspicious behavior around devices. Reporting suspicious behavior and indications of device tampering or substitution to appropriate personnel.","domain":"Requirement 9","name":"","is_applicable":1},{"id":166,"req_num":"10.1.1","description":"All security policies and operational procedures that are identified in Requirement 10 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 10","name":"","is_applicable":1},{"id":167,"req_num":"10.1.2","description":"Roles and responsibilities for performing activities in Requirement 10 are documented, assigned, and understood.","domain":"Requirement 10","name":"","is_applicable":1},{"id":168,"req_num":"10.2.1","description":"Audit logs are enabled and active for all system components and cardholder data.","domain":"Requirement 10","name":"","is_applicable":1},{"id":169,"req_num":"10.2.1.1","description":"Audit logs capture all individual user access to cardholder data.","domain":"Requirement 10","name":"","is_applicable":1},{"id":170,"req_num":"10.2.1.2","description":"Audit logs capture all actions taken by any individual with administrative access, including any interactive use of application or system accounts.","domain":"Requirement 10","name":"","is_applicable":1},{"id":171,"req_num":"10.2.1.3","description":"Audit logs capture all access to audit logs.","domain":"Requirement 10","name":"","is_applicable":1},{"id":172,"req_num":"10.2.1.4","description":"Audit logs capture all invalid logical access attempts.","domain":"Requirement 10","name":"","is_applicable":1},{"id":173,"req_num":"10.2.1.5","description":"Audit logs capture all changes to identification and authentication credentials including, but not limited to: Creation of new accounts. Elevation of privileges. All changes, additions, or deletions to accounts with administrative access.","domain":"Requirement 10","name":"","is_applicable":1},{"id":174,"req_num":"10.2.1.6","description":"Audit logs capture the following: All initialization of new audit logs, and All starting, stopping, or pausing of the existing audit logs.","domain":"Requirement 10","name":"","is_applicable":1},{"id":175,"req_num":"10.2.1.7","description":"Audit logs capture all creation and deletion of system-level objects.","domain":"Requirement 10","name":"","is_applicable":1},{"id":176,"req_num":"10.2.2","description":"Audit logs record the following details for each auditable event: User identification. Type of event. Date and time. Success and failure indication. Origination of event. Identity or name of affected data, system component, resource, or service (for example, name and protocol).","domain":"Requirement 10","name":"","is_applicable":1},{"id":177,"req_num":"10.3.1","description":"Read access to audit logs files is limited to those with a job-related need.","domain":"Requirement 10","name":"","is_applicable":1},{"id":178,"req_num":"10.3.2","description":"Audit log files are protected to prevent modifications by individuals.","domain":"Requirement 10","name":"","is_applicable":1},{"id":179,"req_num":"10.3.3","description":"Audit log files, including those for external-facing technologies, are promptly backed up to a secure, central, internal log server(s) or other media that is difficult to modify.","domain":"Requirement 10","name":"","is_applicable":1},{"id":180,"req_num":"10.3.4","description":"File integrity monitoring or change-detection mechanisms is used on audit logs to ensure that existing log data cannot be changed without generating alerts.","domain":"Requirement 10","name":"","is_applicable":1},{"id":181,"req_num":"10.4.1","description":"The following audit logs are reviewed at least once daily: All security events. Logs of all system components that store, process, or transmit CHD and\/or SAD. Logs of all critical system components. Logs of all servers and system components that perform security functions (for example, network security controls, intrusion-detection systems\/intrusion prevention systems (IDS\/IPS), authentication servers).","domain":"Requirement 10","name":"","is_applicable":1},{"id":182,"req_num":"10.4.1.1","description":"Automated mechanisms are used to perform audit log reviews.","domain":"Requirement 10","name":"","is_applicable":1},{"id":183,"req_num":"10.4.2","description":"Logs of all other system components (those not specified in Requirement 10.4.1) are reviewed periodically.","domain":"Requirement 10","name":"","is_applicable":1},{"id":184,"req_num":"10.4.2.1","description":"The frequency of periodic log reviews for all other system components (not defined in Requirement 10.4.1) is defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1","domain":"Requirement 10","name":"","is_applicable":1},{"id":185,"req_num":"10.4.3","description":"Exceptions and anomalies identified during the review process are addressed.","domain":"Requirement 10","name":"","is_applicable":1},{"id":186,"req_num":"10.5.1","description":"Retain audit log history for at least 12 months, with at least the most recent three months immediately available for analysis.","domain":"Requirement 10","name":"","is_applicable":1},{"id":187,"req_num":"10.6.1","description":"System clocks and time are synchronized using time-synchronization technology.","domain":"Requirement 10","name":"","is_applicable":1},{"id":188,"req_num":"10.6.2","description":"Systems are configured to the correct and consistent time as follows: One or more designated time servers are in use. Only the designated central time server(s) receives time from external sources. Time received from external sources is based on International Atomic Time or Coordinated Universal Time (UTC). The designated time server(s) accept time updates only from specific industry-accepted external sources. Where there is more than one designated time server, the time servers peer with one another to keep accurate time. Internal systems receive time information only from designated central time server(s).","domain":"Requirement 10","name":"","is_applicable":1},{"id":189,"req_num":"10.6.3","description":"Time synchronization settings and data are protected as follows: Access to time data is restricted to only personnel with a business need. Any changes to time settings on critical systems are logged, monitored, and reviewed.","domain":"Requirement 10","name":"","is_applicable":1},{"id":190,"req_num":"10.7.1","description":"Additional requirement for service providers only: Failures of critical security control systems are detected, alerted, and addressed promptly, including but not limited to failure of the following critical security control systems: Network security controls. IDS\/IPS. FIM. Anti-malware solutions. Physical access controls. Logical access controls. Audit logging mechanisms. Segmentation controls (if used).","domain":"Requirement 10","name":"","is_applicable":1},{"id":191,"req_num":"10.7.2","description":"Failures of critical security control systems are detected, alerted, and addressed promptly, including but not limited to failure of the following critical security control systems: Network security controls. IDS\/IPS. Change-detection mechanisms. Anti-malware solutions. Physical access controls. Logical access controls. Audit logging mechanisms. Segmentation controls (if used). Audit log review mechanisms. Automated security testing tools (if used).","domain":"Requirement 10","name":"","is_applicable":1},{"id":192,"req_num":"10.7.3","description":"Failures of any critical security control systems are responded to promptly, including but not limited to: Restoring security functions. Identifying and documenting the duration (date and time from start to end) of the security failure. Identifying and documenting the cause(s) of failure and documenting required remediation. Identifying and addressing any security issues that arose during the failure. Determining whether further actions are required as a result of the security failure. Implementing controls to prevent the cause of failure from reoccurring. Resuming monitoring of security controls.","domain":"Requirement 10","name":"","is_applicable":1},{"id":193,"req_num":"11.1.1","description":"All security policies and operational procedures that are identified in Requirement 11 are: Documented, Kept up to date, In use, Known to all affected parties.","domain":"Requirement 11","name":"","is_applicable":1},{"id":194,"req_num":"11.1.2","description":"Roles and responsibilities for performing activities in Requirement 11 are documented, assigned, and understood.","domain":"Requirement 11","name":"","is_applicable":1},{"id":195,"req_num":"11.2.1","description":"Authorized and unauthorized wireless access points are managed as follows: The presence of wireless (Wi-Fi) access points is tested for, All authorized and unauthorized wireless access points are detected and identified, Testing, detection, and identification occurs at least once every three months. If automated monitoring is used, personnel are notified via generated alerts.","domain":"Requirement 11","name":"","is_applicable":1},{"id":196,"req_num":"11.2.2","description":"An inventory of authorized wireless access points is maintained, including a documented business justification.","domain":"Requirement 11","name":"","is_applicable":1},{"id":197,"req_num":"11.3.1","description":"Internal vulnerability scans are performed as follows: At least once every three months. Vulnerabilities that are either high-risk or critical (according to the entity's vulnerability risk rankings defined at Requirement 6.3.1) are resolved. Rescans are performed that confirm all high-risk and critical vulnerabilities (as noted above) have been resolved. Scan tool is kept up to date with latest vulnerability information. Scans are performed by qualified personnel and organizational independence of the tester exists.","domain":"Requirement 11","name":"","is_applicable":1},{"id":198,"req_num":"11.3.1.1","description":"All other applicable vulnerabilities (those not ranked as high-risk vulnerabilities or critical vulnerabilities according to the entity\u2019s vulnerability risk rankings defined at Requirement 6.3.1) are managed as follows: Addressed based on the risk defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1. Rescans are conducted as needed.","domain":"Requirement 11","name":"","is_applicable":1},{"id":199,"req_num":"11.3.1.2","description":"Internal vulnerability scans are performed via authenticated scanning as follows: Systems that are unable to accept credentials for authenticated scanning are documented. Sufficient privileges are used for those systems that accept credentials for scanning. If accounts used for authenticated scanning can be used for interactive login, they are managed in accordance with Requirement 8.2.2.","domain":"Requirement 11","name":"","is_applicable":1},{"id":200,"req_num":"11.3.1.3","description":"Internal vulnerability scans are performed after any significant change as follows: Vulnerabilities that are either high-risk or critical (according to the entity's vulnerability risk rankings defined at Requirement 6.3.1) are resolved. Rescans are conducted as needed. Scans are performed by qualified personnel and organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":201,"req_num":"11.3.2","description":"External vulnerability scans are performed as follows: At least once every three months. By PCI SSC Approved Scanning Vendor (ASV). Vulnerabilities are resolved and ASV Program Guide requirements for a passing scan are met. Rescans are performed as needed to confirm that vulnerabilities are resolved per the ASV Program Guide requirements for a passing scan.","domain":"Requirement 11","name":"","is_applicable":1},{"id":202,"req_num":"11.3.2.1","description":"External vulnerability scans are performed after any significant change as follows: Vulnerabilities that are scored 4.0 or higher by the CVSS are resolved. Rescans are conducted as needed. Scans are performed by qualified personnel and organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":203,"req_num":"11.4.1","description":"A penetration testing methodology is defined, documented, and implemented by the entity and includes: Industry-accepted penetration testing approaches. Coverage for the entire CDE perimeter and critical systems. Testing from both inside and outside the network. Testing to validate any segmentation and scope-reduction controls. Application-layer penetration testing to identify, at a minimum, the vulnerabilities listed in Requirement 6.2.4. Network-layer penetration tests that encompass all components that support network functions as well as operating systems. Review and consideration of threats and vulnerabilities experienced in the last 12 months. Documented approach to assessing and addressing the risk posed by exploitable vulnerabilities and security weaknesses found during penetration testing. Retention of penetration testing results and remediation activities results for at least 12 months.","domain":"Requirement 11","name":"","is_applicable":1},{"id":204,"req_num":"11.4.2","description":"Internal penetration testing is performed: Per the entity's defined methodology. At least once every 12 months. After any significant infrastructure or application upgrade or change. By a qualified internal resource or qualified external third-party. Organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":205,"req_num":"11.4.3","description":"External penetration testing is performed: Per the entity's defined methodology. At least once every 12 months. After any significant infrastructure or application upgrade or change. By a qualified internal resource or qualified external third party. Organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":206,"req_num":"11.4.4","description":"Exploitable vulnerabilities and security weaknesses found during penetration testing are corrected as follows: In accordance with the entity's assessment of the risk posed by the security issue as defined in Requirement 6.3.1. Penetration testing is repeated to verify the corrections.","domain":"Requirement 11","name":"","is_applicable":1},{"id":207,"req_num":"11.4.5","description":"If segmentation is used to isolate the CDE from other networks, penetration tests are performed on segmentation controls as follows: At least once every 12 months and after any changes to segmentation controls\/methods. Covering all segmentation controls\/methods in use. According to the entity's defined penetration testing methodology. Confirming that the segmentation controls\/methods are operational and effective, and isolate the CDE from all out-of-scope systems. Confirming effectiveness of any use of isolation to separate systems with differing security levels (see Requirement 2.2.3). Performed by a qualified internal resource or qualified external third party. Organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":208,"req_num":"11.4.6","description":"Additional requirement for service providers only: If segmentation is used to isolate the CDE from other networks, penetration tests are performed on segmentation controls as follows: At least once every six months and after any changes to segmentation controls\/methods. Covering all segmentation controls\/methods in use. According to the entity's defined penetration testing methodology. Confirming that the segmentation controls\/methods are operational and effective, and isolate the CDE from all out-of-scope systems. Confirming effectiveness of any use of isolation to separate systems with differing security levels (see Requirement 2.2.3). Performed by a qualified internal resource or qualified external third party. Organizational independence of the tester exists (not required to be a QSA or ASV).","domain":"Requirement 11","name":"","is_applicable":1},{"id":209,"req_num":"11.4.7","description":"Additional requirement for multi-tenant service providers only: Multi-tenant service providers support their customers for external penetration testing per Requirement 11.4.3 and 11.4.4.","domain":"Requirement 11","name":"","is_applicable":1},{"id":210,"req_num":"11.5.1","description":"Intrusion-detection and\/or intrusion-prevention techniques are used to detect and\/or prevent intrusions into the network as follows: All traffic is monitored at the perimeter of the CDE. All traffic is monitored at critical points in the CDE. Personnel are alerted to suspected compromises. All intrusion-detection and prevention engines, baselines, and signatures are kept up to date.","domain":"Requirement 11","name":"","is_applicable":1},{"id":211,"req_num":"11.5.1.1","description":"Additional requirement for service providers only: Intrusion-detection and\/or intrusion-prevention techniques detect, alert on\/prevent, and address covert malware communication channels.","domain":"Requirement 11","name":"","is_applicable":1},{"id":212,"req_num":"11.5.2","description":"A change-detection mechanism (for example, file integrity monitoring tools) is deployed as follows: To alert personnel to unauthorized modification (including changes, additions, and deletions) of critical files. To perform critical file comparisons at least once weekly.","domain":"Requirement 11","name":"","is_applicable":1},{"id":213,"req_num":"11.6.1","description":"A change- and tamper-detection mechanism is deployed as follows: To alert personnel to unauthorized modification (including indicators of compromise, changes, additions, and deletions) to the security-impacting HTTP headers and the script contents of payment pages as received by the consumer browser. The mechanism is configured to evaluate the received HTTP headers and payment pages. The mechanism functions are performed as follows: At least once weekly OR Periodically (at the frequency defined in the entity's targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1).","domain":"Requirement 11","name":"","is_applicable":1},{"id":214,"req_num":"12.1.1","description":"An overall information security policy is: Established. Published. Maintained. Disseminated to all relevant personnel, as well as to relevant vendors and business partners.","domain":"Requirement 12","name":"","is_applicable":1},{"id":215,"req_num":"12.1.2","description":"The information security policy is: Reviewed at least once every 12 months. Updated as needed to reflect changes to business objectives or risks to the environment.","domain":"Requirement 12","name":"","is_applicable":1},{"id":216,"req_num":"12.1.3","description":"The security policy clearly defines information security roles and responsibilities for all personnel, and all personnel are aware of and acknowledge their information security responsibilities.","domain":"Requirement 12","name":"","is_applicable":1},{"id":217,"req_num":"12.1.4","description":"Responsibility for information security is formally assigned to a Chief Information Security Officer or other information security knowledgeable member of executive management.","domain":"Requirement 12","name":"","is_applicable":1},{"id":218,"req_num":"12.2.1","description":"Acceptable use policies for end-user technologies are documented and implemented, including: Explicit approval by authorized parties. Acceptable uses of the technology. List of products approved by the company for employee use, including hardware and software.","domain":"Requirement 12","name":"","is_applicable":1},{"id":219,"req_num":"12.3.1","description":"For each PCI DSS requirement that specifies completion of a targeted risk analysis, the analysis is documented and includes: Identification of the assets being protected. Identification of the threat(s) that the requirement is protecting against. Identification of factors that contribute to the likelihood and\/or impact of a threat being realized. Resulting analysis that determines, and includes justification for, how the frequency or processes defined by the entity to meet the requirement minimize the likelihood and\/or impact of the threat being realized. Review of each targeted risk analysis at least once every 12 months to determine whether the results are still valid or if an updated risk analysis is needed. Performance of updated risk analyses when needed, as determined by the annual review.","domain":"Requirement 12","name":"","is_applicable":1},{"id":220,"req_num":"12.3.2","description":"A targeted risk analysis is performed for each PCI DSS requirement that the entity meets with the customized approach, to include: Documented evidence detailing each element specified in Appendix D: Customized Approach (including, at a minimum, a controls matrix and risk analysis). Approval of documented evidence by senior management. Performance of the targeted analysis of risk at least once every 12 months.","domain":"Requirement 12","name":"","is_applicable":1},{"id":221,"req_num":"12.3.3","description":"Cryptographic cipher suites and protocols in use are documented and reviewed at least once every 12 months, including at least the following: An up-to-date inventory of all cryptographic cipher suites and protocols in use, including purpose and where used. Active monitoring of industry trends regarding continued viability of all cryptographic cipher suites and protocols in use. Documentation of a plan to respond to anticipated changes in cryptographic vulnerabilities.","domain":"Requirement 12","name":"","is_applicable":1},{"id":222,"req_num":"12.3.4","description":"Hardware and software technologies in use are reviewed at least once every 12 months, including at least the following: Analysis that the technologies continue to receive security fixes from vendors promptly. Analysis that the technologies continue to support (and do not preclude) the entity\u2019s PCI DSS compliance. Documentation of any industry announcements or trends related to a technology, such as when a vendor has announced \u201cend of life\u201d plans for a technology. Documentation of a plan, approved by senior management, to remediate outdated technologies, including those for which vendors have announced \u201cend of life\u201d plans.","domain":"Requirement 12","name":"","is_applicable":1},{"id":223,"req_num":"12.4.1","description":"Additional requirement for service providers only: Responsibility is established by executive management for the protection of cardholder data and a PCI DSS compliance program to include: Overall accountability for maintaining PCI DSS compliance. Defining a charter for a PCI DSS compliance program and communication to executive management.","domain":"Requirement 12","name":"","is_applicable":1},{"id":224,"req_num":"12.4.2","description":"Additional requirement for service providers only: Reviews are performed at least once every three months to confirm that personnel are performing their tasks in accordance with all security policies and operational procedures. Reviews are performed by personnel other than those responsible for performing the given task and include, but are not limited to, the following tasks: Daily log reviews. Configuration reviews for network security controls. Applying configuration standards to new systems. Responding to security alerts. Change-management processes.","domain":"Requirement 12","name":"","is_applicable":1},{"id":225,"req_num":"12.4.2.1","description":"Additional requirement for service providers only: Reviews conducted in accordance with Requirement 12.4.2 are documented to include: Results of the reviews. Documented remediation actions taken for any tasks that were found to not be performed at Requirement 12.4.2. Review and sign-off of results by personnel assigned responsibility for the PCI DSS compliance program.","domain":"Requirement 12","name":"","is_applicable":1},{"id":226,"req_num":"12.5.1","description":"An inventory of system components that are in scope for PCI DSS, including a description of function\/use, is maintained and kept current.","domain":"Requirement 12","name":"","is_applicable":1},{"id":227,"req_num":"12.5.2","description":"PCI DSS scope is documented and confirmed by the entity at least once every 12 months and upon significant change to the in-scope environment. At a minimum, the scoping validation includes: Identifying all data flows for the various payment stages (for example, authorization, capture settlement, chargebacks, and refunds) and acceptance channels (for example, card-present, card-not-present, and e-commerce). Updating all data-flow diagrams per Requirement 1.2.4. Identifying all locations where account data is stored, processed, and transmitted, including but not limited to: 1) any locations outside of the currently defined CDE, 2) applications that process CHD, 3) transmissions between systems and networks, and 4) file backups. Identifying all system components in the CDE, connected to the CDE, or that could impact security of the CDE. Identifying all segmentation controls in use and the environment(s) from which the CDE is segmented, including justification for environments being out of scope. Identifying all connections from third-party entities with access to the CDE. Confirming that all identified data flows, account data, system components, segmentation controls, and connections from third parties with access to the CDE are included in scope.","domain":"Requirement 12","name":"","is_applicable":1},{"id":228,"req_num":"12.5.2.1","description":"Additional requirement for service providers only: PCI DSS scope is documented and confirmed by the entity at least once every six months and upon significant change to the in-scope environment. At a minimum, the scoping validation includes all the elements specified in Requirement 12.5.2.","domain":"Requirement 12","name":"","is_applicable":1},{"id":229,"req_num":"12.5.3","description":"Additional requirement for service providers only: Significant changes to organizational structure result in a documented (internal) review of the impact to PCI DSS scope and applicability of controls, with results communicated to executive management.","domain":"Requirement 12","name":"","is_applicable":1},{"id":230,"req_num":"12.6.1","description":"A formal security awareness program is implemented to make all personnel aware of the entity\u2019s information security policy and procedures, and their role in protecting the cardholder data.","domain":"Requirement 12","name":"","is_applicable":1},{"id":231,"req_num":"12.6.2","description":"The security awareness program is: Reviewed at least once every 12 months, and Updated as needed to address any new threats and vulnerabilities that may impact the security of the entity's cardholder data and\/or sensitive authentication data, or the information provided to personnel about their role in protecting cardholder data.","domain":"Requirement 12","name":"","is_applicable":1},{"id":232,"req_num":"12.6.3","description":"Personnel receive security awareness training as follows: Upon hire and at least once every 12 months. Multiple methods of communication are used. Personnel acknowledge at least once every 12 months that they have read and understood the information security policy and procedures.","domain":"Requirement 12","name":"","is_applicable":1},{"id":233,"req_num":"12.6.3.1","description":"Security awareness training includes awareness of threats and vulnerabilities that could impact the security of cardholder data and\/or sensitive authentication data, including but not limited to: Phishing and related attacks. Social engineering.","domain":"Requirement 12","name":"","is_applicable":1},{"id":234,"req_num":"12.6.3.2","description":"Security awareness training includes awareness about the acceptable use of end-user technologies in accordance with Requirement 12.2.1.","domain":"Requirement 12","name":"","is_applicable":1},{"id":235,"req_num":"12.7.1","description":"Potential personnel who will have access to the CDE are screened, within the constraints of local laws, prior to hire to minimize the risk of attacks from internal sources.","domain":"Requirement 12","name":"","is_applicable":1},{"id":236,"req_num":"12.8.1","description":"A list of all third-party service providers (TPSPs) with which account data is shared or that could affect the security of account data is maintained, including a description for each of the services provided.","domain":"Requirement 12","name":"","is_applicable":1},{"id":237,"req_num":"12.8.2","description":"Written agreements with TPSPs are maintained as follows: Written agreements are maintained with all TPSPs with which account data is shared or that could affect the security of the CDE. Written agreements include acknowledgments from TPSPs that TPSPs are responsible for the security of account data the TPSPs possess or otherwise store, process, or transmit on behalf of the entity, or to the extent that the TPSP could impact the security of the entity's cardholder data and\/or sensitive authentication data.","domain":"Requirement 12","name":"","is_applicable":1},{"id":238,"req_num":"12.8.3","description":"An established process is implemented for engaging TPSPs, including proper due diligence prior to engagement.","domain":"Requirement 12","name":"","is_applicable":1},{"id":239,"req_num":"12.8.4","description":"A program is implemented to monitor TPSPs\u2019 PCI DSS compliance status at least once every 12 months.","domain":"Requirement 12","name":"","is_applicable":1},{"id":240,"req_num":"12.8.5","description":"Information is maintained about which PCI DSS requirements are managed by each TPSP, which are managed by the entity, and any that are shared between the TPSP and the entity.","domain":"Requirement 12","name":"","is_applicable":1},{"id":241,"req_num":"12.9.1","description":"Additional requirement for service providers only: TPSPs provide written agreements to customers that include acknowledgements that TPSPs are responsible for the security of account data the TPSP possesses or otherwise stores, processes, or transmits on behalf of the customer, or to the extent that the TPSP could impact the security of the customer\u2019s cardholder data and\/or sensitive authentication data.","domain":"Requirement 12","name":"","is_applicable":1},{"id":242,"req_num":"12.9.2","description":"Additional requirement for service providers only: TPSPs support their customers' requests for information to meet Requirements 12.8.4 and 12.8.5 by providing the following upon customer request: PCI DSS compliance status information (Requirement 12.8.4). Information about which PCI DSS requirements are the responsibility of the TPSP and which are the responsibility of the customer, including any shared responsibilities (Requirement 12.8.5), for any service the TPSP provides that meets a PCI DSS requirement(s) on behalf of customers or that can impact security of customers\u2019 cardholder data and\/or sensitive authentication data.","domain":"Requirement 12","name":"","is_applicable":1},{"id":243,"req_num":"12.10.1","description":"An incident response plan exists and is ready to be activated in the event of a suspected or confirmed security incident. The plan includes, but is not limited to: Roles, responsibilities, and communication and contact strategies in the event of a suspected or confirmed security incident, including notification of payment brands and acquirers, at a minimum. Incident response procedures with specific containment and mitigation activities for different types of incidents. Business recovery and continuity procedures. Data backup processes. Analysis of legal requirements for reporting compromises. Coverage and responses of all critical system components. Reference or inclusion of incident response procedures from the payment brands.","domain":"Requirement 12","name":"","is_applicable":1},{"id":244,"req_num":"12.10.2","description":"At least once every 12 months, the security incident response plan is: Reviewed and the content is updated as needed. Tested, including all elements listed in Requirement 12.10.1.","domain":"Requirement 12","name":"","is_applicable":1},{"id":245,"req_num":"12.10.3","description":"Specific personnel are designated to be available on a 24\/7 basis to respond to suspected or confirmed security incidents.","domain":"Requirement 12","name":"","is_applicable":1},{"id":246,"req_num":"12.10.4","description":"Personnel responsible for responding to suspected and confirmed security incidents are appropriately and periodically trained on their incident response responsibilities.","domain":"Requirement 12","name":"","is_applicable":1},{"id":247,"req_num":"12.10.4.1","description":"The frequency of periodic training for incident response personnel is defined in the entity\u2019s targeted risk analysis, which is performed according to all elements specified in Requirement 12.3.1.","domain":"Requirement 12","name":"","is_applicable":1},{"id":248,"req_num":"12.10.5","description":"The security incident response plan includes monitoring and responding to alerts from security monitoring systems, including but not limited to: Intrusion-detection and intrusion-prevention systems. Network security controls. Change-detection mechanisms for critical files. The change-and tamper-detection mechanism for payment pages. This bullet is a best practice until 31 March 2025, after which it will be required as part of Requirement 12.10.5 and must be fully considered during a PCI DSS assessment. Detection of unauthorized wireless access points.","domain":"Requirement 12","name":"","is_applicable":1},{"id":249,"req_num":"12.10.6","description":"The security incident response plan is modified and evolved according to lessons learned and to incorporate industry developments.","domain":"Requirement 12","name":"","is_applicable":1},{"id":250,"req_num":"12.10.7","description":"Incident response procedures are in place, to be initiated upon the detection of stored PAN anywhere it is not expected, and include: Determining what to do if PAN is discovered outside the CDE, including its retrieval, secure deletion, and\/or migration into the currently defined CDE, as applicable. Identifying whether sensitive authentication data is stored with PAN. Determining where the account data came from and how it ended up where it was not expected. Remediating data leaks or process gaps that resulted in the account data being where it was not expected.","domain":"Requirement 12","name":"","is_applicable":1},{"id":251,"req_num":"A1.1.1","description":"Logical separation is implemented as follows: The provider cannot access its customers' environments without authorization. Customers cannot access the provider's environment without authorization.","domain":"Requirement A1","name":"","is_applicable":1},{"id":252,"req_num":"A1.1.2","description":"Controls are implemented such that each customer only has permission to access its own cardholder data and CDE.","domain":"Requirement A1","name":"","is_applicable":1},{"id":253,"req_num":"A1.1.3","description":"Controls are implemented such that each customer can only access resources allocated to them.","domain":"Requirement A1","name":"","is_applicable":1},{"id":254,"req_num":"A1.1.4","description":"The effectiveness of logical separation controls used to separate customer environments is confirmed at least once every six months via penetration testing.","domain":"Requirement A1","name":"","is_applicable":1},{"id":255,"req_num":"A1.2.1","description":"Audit log capability is enabled for each customer's environment that is consistent with PCI DSS Requirement 10, including: Logs are enabled for common third-party applications. Logs are active by default. Logs are available for review only by the owning customer. Log locations are clearly communicated to the owning customer. Log data and availability is consistent with PCI DSS Requirement 10.","domain":"Requirement A1","name":"","is_applicable":1},{"id":256,"req_num":"A1.2.2","description":"Processes or mechanisms are implemented to support and\/or facilitate prompt forensic investigations in the event of a suspected or confirmed security incident for any customer.","domain":"Requirement A1","name":"","is_applicable":1},{"id":257,"req_num":"A1.2.3","description":"Processes or mechanisms are implemented for reporting and addressing suspected or confirmed security incidents and vulnerabilities, including: Customers can securely report security incidents and vulnerabilities to the provider. The provider addresses and remediates suspected or confirmed security incidents and vulnerabilities according to Requirement 6.3.1.","domain":"Requirement A1","name":"","is_applicable":1},{"id":258,"req_num":"A2.1.1","description":"Where POS POI terminals at the merchant or payment acceptance location use SSL and\/or early TLS, the entity confirms the devices are not susceptible to any known exploits for those protocols.","domain":"Requirement A2","name":"","is_applicable":1},{"id":259,"req_num":"A2.1.2","description":"Additional requirement for service providers only: All service providers with existing connection points to POS POI terminals that use SSL and\/or early TLS as defined in A2.1 have a formal Risk Mitigation and Migration Plan in place that includes: Description of usage, including what data is being transmitted, types and number of systems that use and\/or support SSL\/early TLS, and type of environment. Risk-assessment results and risk-reduction controls in place. Description of processes to monitor for new vulnerabilities associated with SSL\/early TLS. Description of change control processes that are implemented to ensure SSL\/early TLS is not implemented into new environments. Overview of migration project plan to replace SSL\/early TLS at a future date.","domain":"Requirement A2","name":"","is_applicable":1},{"id":260,"req_num":"A2.1.3","description":"Additional requirement for service providers only: All service providers provide a secure service offering.","domain":"Requirement A2","name":"","is_applicable":1}],
+        "evidence": {"6":[{"id":12,"project_id":7,"pci_dss_requirement_id":6,"user_id":1,"file_path":"evidence\/7\/C1b3vIQjQPT3vUe7Uxu6ROKoihrqX01BR2omK6Kq.png","original_filename":"Dataflow Diagram.png","mime_type":"image\/png","status":"pending_review","created_at":"2026-07-11T11:48:56.000000Z","updated_at":"2026-07-21T08:02:24.000000Z","scan_status":"clean","scan_details":null,"ai_observations":"1. The diagram illustrates the logical flow of evidence processing through five main stages.\n2. It identifies primary and supporting data stores involved in the process.\n3. A legend is provided, clarifying different flow types.","ai_recommendations":"1. Augment the diagram to explicitly show the flow of user account data, including authentication, authorization, and user profile information, across all relevant systems and data stores.\n2. Enhance the diagram to include network boundaries, specific system names (e.g., application servers, databases, network devices), and network security zones to fully represent data flows 'across systems and networks'.\n3. Implement a version control system for the data-flow diagram(s) and maintain a change log to demonstrate adherence to the 'updated as needed' requirement.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"The diagram does not explicitly show the flow of account data (e.g., user authentication, authorization, profile information) across all systems and networks involved.","severity":"high"},{"gap":"The diagram lacks detail regarding network topology, specific system names, and network boundaries, failing to fully illustrate data flows 'across systems and networks'.","severity":"high"},{"gap":"Evidence is not provided to demonstrate that the data-flow diagram is updated as needed upon changes to the environment.","severity":"medium"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"5":[{"id":14,"project_id":7,"pci_dss_requirement_id":5,"user_id":1,"file_path":"evidence\/7\/qi0ig6P4S8yDCuwy0Li9YE4mAqNfgw6khBZt47Aq.png","original_filename":"diagram.png","mime_type":"image\/png","status":"pending_review","created_at":"2026-07-21T06:39:00.000000Z","updated_at":"2026-07-21T09:21:37.000000Z","scan_status":"clean","scan_details":null,"ai_observations":"1. The diagram clearly identifies the CDE and other network zones.\n2. Connections between the CDE and other internal zones (Application, Database, Management) are depicted.\n3. Connections between the CDE in the Primary Data Center and Disaster Recovery Site are shown.\n4. The diagram notes that CDE systems have no direct access to Internet or DMZ.","ai_recommendations":"1. Confirm the existence or non-existence of wireless networks that connect to or interact with the CDE.\n2. If wireless networks exist, update the diagram to include all relevant connections and segmentation.\n3. If no such wireless networks exist, add an explicit statement to the diagram confirming their absence in relation to the CDE.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"The diagram does not depict or explicitly address the presence or absence of wireless networks that connect to the CDE or other networks interacting with the CDE.","severity":"high"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"7":[{"id":15,"project_id":7,"pci_dss_requirement_id":7,"user_id":1,"file_path":"evidence\/7\/1gBZYOrWMOQFyfh4y7h0vnIjbxt2hpcOeOEHqdPd.jpg","original_filename":"ISO 27001 Control_01.jpg","mime_type":"image\/jpeg","status":"pending_review","created_at":"2026-08-01T06:55:52.000000Z","updated_at":"2026-08-01T08:11:30.000000Z","scan_status":"clean","scan_details":null,"ai_observations":"1. Evidence consists solely of organizational policies (5.x) without technical configuration.\n2. The document does not list any specific services, protocols, or ports.","ai_recommendations":"1. Document the business need for every permitted service and port number.\n2. Review network access control lists to ensure they match approved requirements.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"No evidence of identified or approved services\/protocols is provided in this file.","severity":"high"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"3":[{"id":17,"project_id":7,"pci_dss_requirement_id":3,"user_id":1,"file_path":"evidence\/7\/lyXb6CzSAdWYOaljhsKGk5dN792u3A6Kg7FrvZpB.png","original_filename":"Screenshot 2026-06-13 at 2.25.41\u202fPM (1).png","mime_type":"image\/png","status":"pending_review","created_at":"2026-08-02T08:16:55.000000Z","updated_at":"2026-08-07T20:07:13.000000Z","scan_status":"clean","scan_details":{"Status":"OK","Description":""},"ai_observations":"1. NSC rulesets are not defined in the provided evidence file.\n2. There is no clear indication of implementation or maintenance.","ai_recommendations":"1. Define NSC rulesets according to configuration standards.\n2. Implement and maintain NSC rulesets as per configuration standards.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"NSC rulesets are not defined in the provided evidence file","severity":"high"},{"gap":"There is no clear indication of implementation or maintenance","severity":"medium"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"10":[{"id":18,"project_id":7,"pci_dss_requirement_id":10,"user_id":1,"file_path":"evidence\/7\/tXLSsDgmN12NEUxwxe9zY0uxZjkWNRwADyC0PMxC.png","original_filename":"diagram.png","mime_type":"image\/png","status":"pending_review","created_at":"2026-08-07T18:45:54.000000Z","updated_at":"2026-08-07T20:03:42.000000Z","scan_status":"clean","scan_details":{"Status":"OK","Description":""},"ai_observations":"1. The diagram does not show any explicit security measures in place to secure the NSC configuration files from unauthorized access.\n2. There is no indication that the NSC configuration files are kept consistent with active network configurations.","ai_recommendations":"1. Implement access controls and permissions for the NSC configuration files to restrict unauthorized access.\n2. Regularly review and update the NSC configuration files to ensure they remain consistent with active network configurations.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"Lack of explicit security measures in place to secure the NSC configuration files from unauthorized access.","severity":"high"},{"gap":"No indication that the NSC configuration files are kept consistent with active network configurations.","severity":"medium"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"18":[{"id":19,"project_id":7,"pci_dss_requirement_id":18,"user_id":1,"file_path":"evidence\/7\/ryt5jOzGbojx7r6e68nCnKOSPFYPr3oEufuEzNim.jpg","original_filename":"ISO 27001 Control_19.jpg","mime_type":"image\/jpeg","status":"pending_review","created_at":"2026-08-07T18:46:52.000000Z","updated_at":"2026-08-07T20:05:17.000000Z","scan_status":"clean","scan_details":{"Status":"OK","Description":""},"ai_observations":"1. The image contains a list of items that may include internal IP addresses and routing information.\n2. There is no clear indication in the image that access to this information is limited only to authorized parties.","ai_recommendations":"1. Implement strict access controls for the list of items to ensure that only authorized personnel can view them.\n2. Regularly review and update access permissions to ensure they are only granted to those who require it.","ai_analysis_status":"awaiting_review","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"pending_review","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":[{"gap":"The image does not provide any evidence of access controls or restrictions on viewing the list of items.","severity":"high"}],"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}],"14":[{"id":20,"project_id":7,"pci_dss_requirement_id":14,"user_id":1,"file_path":"evidence\/7\/5RgrMH0x5iZwyhJcq7UNtYj1XkmLSc1Cmg2i24w5.png","original_filename":"Gemini_Generated_Image_fo069bfo069bfo06 (1).png","mime_type":"image\/png","status":"pending_review","created_at":"2026-08-08T05:16:07.000000Z","updated_at":"2026-08-13T17:35:14.000000Z","scan_status":"clean","scan_details":{"Status":"OK","Description":null},"ai_observations":"The image provided does not show a clear implementation of Network Segmentation Controls (NSCs) between trusted and untrusted networks. It appears to be a screenshot of a dashboard or interface, possibly related to network security or monitoring, but it does not provide enough information to determine if NSCs are in place. The image shows various graphs, charts, and data points, but there is no visible indication of network segmentation or controls. To assess compliance with the requirement, additional context or evidence would be needed.","ai_recommendations":"To fully comply with the requirement, it is recommended to review the network architecture and security policies to ensure that NSCs are implemented between trusted and untrusted networks. This may involve examining firewall rules, access control lists (ACLs), virtual LANs (VLANs), or other segmentation mechanisms. Additionally, a thorough review of network traffic logs and monitoring tools should be conducted to verify that NSCs are functioning as intended.","ai_analysis_status":"failed","ai_analysis_approved_by":null,"ai_analysis_approved_at":null,"hitl_status":"accepted","customer_response":null,"framework_control_id":null,"trust_center_id":null,"is_publicly_listed":0,"ai_gaps":null,"ai_gaps_consolidated_at":null,"analysis_report_data":null,"tracker_status":"pending","gap_assessment_sent_at":null,"final_report_flagged_at":null,"risk_register_created_at":null,"report_section_data":null,"scan_ms":null,"analysis_ms":null,"total_ms":null,"user":{"id":1,"email":"admin.compliance@gmail.com","email_verified_at":null,"created_at":"2026-06-23T09:53:24.000000Z","updated_at":"2026-08-14T08:26:26.000000Z","otp_expires_at":null,"username":"admin","is_verified":1,"parent_id":null},"approved_by":null}]},
+        "domains": ["Requirement 1","Requirement 2","Requirement 3","Requirement 4","Requirement 5","Requirement 6","Requirement 7","Requirement 8","Requirement 9","Requirement 10","Requirement 11","Requirement 12","Requirement A1","Requirement A2"]
+    }
+</script>
+
+<script>
+    function premiumEvidenceWorkspace() {
+        const _STORE = JSON.parse(document.getElementById('integrity-hub-data').textContent);
+        
+        return {
+            projectId: 7,
+            requirements: Object.values(_STORE.requirements || {}),
+            evidence: _STORE.evidence || {},
+            domains: Object.values(_STORE.domains || {}),
+            activeReqId: null,
+            activities: [],
+            showUploadModal: false,
+            showReviewPanel: false,
+            showFeedbackModal: false,
+            showGapReportModal: false,
+            reviewFile: null,
+            auditNotes: '',
+            gapAssessmentReport: null,
+
+            onBoot() {
+                // Determine first active requirement
+                if (this.requirements && this.requirements.length > 0) {
+                    this.activeReqId = this.requirements[0].id;
+                }
+                this.fetchPulse();
+                setInterval(() => this.fetchPulse(), 12000);
+                setInterval(() => this.pollLoop(), 5000);
+            },
+
+            async fetchPulse() {
+                try {
+                    const r = await fetch(`/evidence/${this.projectId}/activities`);
+                    if (r.ok) this.activities = await r.json();
+                } catch (e) {}
+            },
+
+            getAcceptedCount(id) { 
+                return (this.evidence[id] || []).filter(f => f.hitl_status === 'accepted').length; 
+            },
+
+            getBadgeClass(s) {
+                if (s === 'accepted') return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                if (s === 'action_required') return 'bg-rose-100 text-rose-700 border border-rose-200';
+                return 'bg-amber-100 text-amber-700 border border-amber-200';
+            },
+
+            getProgress(f) {
+                if (f.hitl_status === 'accepted') return 100;
+                if (f.ai_analysis_status === 'awaiting_review') return 80;
+                if (f.ai_analysis_status === 'processing') return 60;
+                if (f.scan_status === 'clean') return 40;
+                return 20;
+            },
+
+            async toggleScope(id, state) {
+                try {
+                    const r = await fetch(`/evidence/${this.projectId}/${id}/toggle-scope`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '' },
+                        body: JSON.stringify({ is_applicable: state ? 1 : 0 })
+                    });
+                    if (r.ok) {
+                        const target = this.requirements.find(req => req.id === id);
+                        if (target) target.is_applicable = state ? 1 : 0;
+                    }
+                } catch (e) {}
+            },
+
+            openReview(f) {
+                this.reviewFile = f;
+                this.auditNotes = '';
+                this.showReviewPanel = true;
+            },
+
+            openFeedback(f) {
+                this.reviewFile = f;
+                this.auditNotes = '';
+                this.showFeedbackModal = true;
+            },
+
+            async directAudit(f, action) {
+                if (!confirm(`Are you sure you want to ${action} this asset?`)) return;
+                try {
+                    const r = await fetch(`/evidence/${f.id}/feedback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '' },
+                        body: JSON.stringify({ action, message: 'Direct Audit Action' })
+                    });
+                    if (r.ok) window.location.reload();
+                } catch (e) {}
+            },
+
+            async passToGapAssessment(e) {
+                e.preventDefault();
+                const btn = e.target;
+                const originalText = btn.innerHTML;
+                
+                try {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+                    
+                    const r = await fetch(`/evidence/${this.reviewFile.id}/pass-to-gap-assessment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '' },
+                        body: JSON.stringify({
+                            non_compliant_details: this.non_compliant_details,
+                            compliant_description: this.compliant_description,
+                            remediation_plan: this.remediation_plan,
+                            evidence_provided: this.evidence_provided,
+                            test_results: this.test_results,
+                            meets_standard: this.meets_standard,
+                            auditor_notes: this.auditNotes
+                        })
+                    });
+                    
+                    if (r.ok) {
+                        const data = await r.json();
+                        // Update evidence fields
+                        if (data.evidence) {
+                            Object.assign(this.reviewFile, data.evidence);
+                        }
+                        // Show assessment data
+                        this.showGapAssessmentReport(data);
+                    }
+                } catch (error) {
+                    alert('Error passing to gap assessment');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            },
+
+            async showGapAssessmentReport(data) {
+                // Display the gap assessment report in a modal or section
+                if (data.report) {
+                    // Update UI with report data
+                    this.gapAssessmentReport = data.report;
+                    this.showGapReportModal = true;
+                }
+            },
+
+            downloadReport() {
+                const reportData = {
+                    evidenceId: this.reviewFile.id,
+                    non_compliant_details: this.reviewFile.non_compliant_details,
+                    compliant_description: this.reviewFile.compliant_description,
+                    remediation_plan: this.reviewFile.remediation_plan,
+                    evidence_provided: this.reviewFile.evidence_provided,
+                    test_results: this.reviewFile.test_results,
+                    meets_standard: this.reviewFile.meets_standard,
+                    auditor_notes: this.reviewFile.auditor_notes,
+                    generated_at: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `gap-assessment-report-${this.reviewFile.id}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            async submitAudit(action) {
+                if ((action === 'return' || action === 'reply') && !this.auditNotes) { 
+                    alert('Communication content required.'); 
+                    return; 
+                }
+                try {
+                    const r = await fetch(`/evidence/${this.reviewFile.id}/feedback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '' },
+                        body: JSON.stringify({ action, message: this.auditNotes || 'Automated Synthesis Adjudication' })
+                    });
+                    if (r.ok) {
+                        if (action === 'reply' && this.showFeedbackModal) {
+                            // Refresh just the file data instead of reload if possible, 
+                            // but reload is safer for now.
+                            window.location.reload();
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                } catch (e) {}
+            },
+
+            async pollLoop() {
+                // Poll any file on the page that is actively scanning or processing
+                const allFiles = Object.values(this.evidence).flat();
+                for (let f of allFiles) {
+                    if (f.hitl_status === 'accepted' || f.scan_status === 'infected' || f.scan_status === 'failed') continue;
+                    if (f.scan_status === 'pending' || f.ai_analysis_status === 'pending' || f.ai_analysis_status === 'processing') {
+                        try {
+                            const r = await fetch(`/evidence/${f.id}/status`);
+                            if (r.ok) Object.assign(f, await r.json());
+                        } catch (e) {}
+                    }
+                }
+            },
+
+            slugify(text) {
+                return text.toString().toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w\-]+/g, '')
+                    .replace(/\-\-+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
+            },
+
+            getReqsByDomain(dom) {
+                return Object.values(this.requirements).filter(r => r.domain === dom);
+            },
+
+            truncateFilename(n) { if (!n) return ''; return n.length > 25 ? n.substring(0, 12) + '...' + n.slice(-10) : n; }
+        }
+    }
+</script>
+                </div>
+            </main>
+        </div>
+
+        <!-- New Project Modal -->
+        <div x-show="showModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="showModal = false" x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+
+            <div class="modal-card w-full max-w-md" @click.away="showModal = false"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95">
+
+                <div class="px-6 py-5 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
+                            <i class="fas fa-folder-plus"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Create New Project</h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Configure and assign a new compliance project</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form action="http://compliance-hub.test/projects" method="POST" class="px-6 py-5 space-y-5">
+                    <input type="hidden" name="_token" value="" autocomplete="off">
+                    
+                    <div>
+                        <label for="proj_name" class="form-label">Project Name</label>
+                        <input type="text" name="name" id="proj_name" required
+                               placeholder="e.g. Acme Corp PCI Audit 2025"
+                               class="form-input">
+                    </div>
+
+                    
+                    <div>
+                        <label for="module_type" class="form-label">Module / Framework</label>
+                                                <select name="module_type" id="module_type" required class="form-input">
+                            <option value="" disabled selected>-- Select Framework --</option>
+                                                            <option value="pci_dss">PCI DSS v4.0.1</option>
+                                                            <option value="vapt">VAPT</option>
+                                                            <option value="soc2">SOC 2 Type II</option>
+                                                            <option value="iso_27001">ISO 27001 2022</option>
+                                                            <option value="bb_ict">BB ICT Guidelines current</option>
+                                                            <option value="swift_cscf_2026">SWIFT CSCF 2026</option>
+                                                            <option value="sabsa">SABSA current</option>
+                                                            <option value="hitrust">HITRUST CSCF 11.8.0</option>
+                                                            <option value="cobit">COBIT CSCF 11.8.0</option>
+                                                    </select>
+                    </div>
+
+                    
+                                        
+                    <div>
+                        <label for="auditors" class="form-label">
+                            Assign Auditors <span class="font-normal text-slate-400 text-xs">(Ctrl/Cmd to multi-select)</span>
+                        </label>
+                        <select name="auditors[]" id="auditors" multiple class="form-input" size="4">
+                                                            <option value="2">auditor &lt;auditor@compliancehub.com&gt;</option>
+                                                            <option value="4">AlexJohn &lt;alexjohn@compliancehub.com&gt;</option>
+                                                    </select>
+                    </div>
+
+                    <div>
+                        <label for="customers" class="form-label">
+                            Assign Customers <span class="font-normal text-slate-400 text-xs">(Ctrl/Cmd to multi-select)</span>
+                        </label>
+                        <select name="customers[]" id="customers" multiple class="form-input" size="4">
+                                                            <option value="3">customer &lt;customer@compliancehub.com&gt;</option>
+                                                    </select>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                        <button type="button" @click="showModal = false"
+                                class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-indigo-500 rounded-xl hover:shadow-lg hover:shadow-sky-500/25 transition-all">
+                            <i class="fas fa-plus mr-1.5 text-xs"></i> Create Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    </body>
+</html>

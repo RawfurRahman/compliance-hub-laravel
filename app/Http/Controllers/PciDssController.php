@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PciDssRequirement;
 use App\Models\Project;
 use App\Models\ProjectPciDssDetail;
-use App\Models\PciDssRequirement;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class PciDssController extends Controller
 {
@@ -21,8 +20,8 @@ class PciDssController extends Controller
         }
 
         // Eager load all related details for efficiency
-        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings.requirement', 'evidence.user', 'chatMessages.user.roles');
-        
+        $project->load('pciDssDetails.pciSscProducts', 'pciDssDetails.tpsps', 'pciDssDetails.networks', 'pciDssDetails.locations', 'pciDssDetails.components', 'pciDssDetails.externalScans', 'pciDssDetails.internalScans', 'pciDssDetails.findings.requirement', 'evidenceFiles.user', 'chatMessages.user.roles');
+
         // Get payment channels from the config file
         $paymentChannels = config('compliance.pci_dss.payment_channels', []);
 
@@ -30,7 +29,7 @@ class PciDssController extends Controller
         $requirements = PciDssRequirement::all()->sortBy('req_num', SORT_NATURAL);
 
         // Group evidence files by requirement ID for easy access in the view
-        $evidenceByRequirement = $project->evidence->groupBy('pci_dss_requirement_id');
+        $evidenceByRequirement = $project->evidenceFiles->groupBy('pci_dss_requirement_id');
 
         // Get chat messages for the project
         $chatMessages = $project->chatMessages;
@@ -144,19 +143,25 @@ class PciDssController extends Controller
 
         // Handle TPSP, Networks, and Locations
         $details->tpsps()->delete();
-        if ($request->has('tpsps')) { $details->tpsps()->createMany($request->tpsps); }
+        if ($request->has('tpsps')) {
+            $details->tpsps()->createMany($request->tpsps);
+        }
 
         $details->networks()->delete();
-        if ($request->has('networks')) { $details->networks()->createMany($request->networks); }
-        
+        if ($request->has('networks')) {
+            $details->networks()->createMany($request->networks);
+        }
+
         $details->locations()->delete();
-        if ($request->has('locations')) { $details->locations()->createMany($request->locations); }
+        if ($request->has('locations')) {
+            $details->locations()->createMany($request->locations);
+        }
 
         // Handle Components
         $details->components()->delete();
         if ($request->has('components')) {
             foreach ($request->components as $componentData) {
-                if (!empty($componentData['name']) || !empty($componentData['type'])) {
+                if (! empty($componentData['name']) || ! empty($componentData['type'])) {
                     $details->components()->create([
                         'name' => $componentData['name'] ?? null,
                         'type' => $componentData['type'] ?? null,
@@ -169,20 +174,20 @@ class PciDssController extends Controller
         $details->externalScans()->delete();
         if ($request->has('ext_scans')) {
             foreach ($request->ext_scans as $scan) {
-                if (!empty($scan['scan_date']) || !empty($scan['result'])) {
-                    $details->externalScans()->create(['scan_date' => $scan['scan_date'],'result' => $scan['result'],'initial_assessment' => isset($scan['initial_assessment']),]);
+                if (! empty($scan['scan_date']) || ! empty($scan['result'])) {
+                    $details->externalScans()->create(['scan_date' => $scan['scan_date'], 'result' => $scan['result'], 'initial_assessment' => isset($scan['initial_assessment'])]);
                 }
             }
         }
         $details->internalScans()->delete();
         if ($request->has('int_scans')) {
             foreach ($request->int_scans as $scan) {
-                 if (!empty($scan['scan_date']) || !empty($scan['result'])) {
-                    $details->internalScans()->create(['scan_date' => $scan['scan_date'],'result' => $scan['result'],'initial_assessment' => isset($scan['initial_assessment']),]);
+                if (! empty($scan['scan_date']) || ! empty($scan['result'])) {
+                    $details->internalScans()->create(['scan_date' => $scan['scan_date'], 'result' => $scan['result'], 'initial_assessment' => isset($scan['initial_assessment'])]);
                 }
             }
         }
-        
+
         // Handle Findings using updateOrCreate for efficiency
         if ($request->has('findings')) {
             foreach ($request->findings as $reqId => $findingData) {

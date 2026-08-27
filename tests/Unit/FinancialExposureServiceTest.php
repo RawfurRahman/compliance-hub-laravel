@@ -26,7 +26,7 @@ class FinancialExposureServiceTest extends TestCase
 
     private function risk(float $assetValue, int $inherent, int $residual, int $likelihood): RiskRegister
     {
-        $risk = new RiskRegister();
+        $risk = new RiskRegister;
         $risk->id = 1;
         $risk->serial_no = 'FE-001';
         $risk->category = 'Cybersecurity';

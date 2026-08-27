@@ -45,10 +45,10 @@ class RiskRankingQueryService extends BaseQueryService
             ->values()
             ->map(fn ($f) => [
                 'id' => $f->id,
-                'control' => $f->frameworkControl?->control_id ?? '',
+                'control' => $f->frameworkControl->control_id ?? '',
                 'title' => $f->frameworkControl?->control_name ?: ($f->observation ?? ''),
-                'framework' => $f->projectAssessment?->framework?->name ?? '',
-                'project' => $f->projectAssessment?->project?->name ?? '',
+                'framework' => $f->projectAssessment?->framework->name ?? '',
+                'project' => $f->projectAssessment?->project->name ?? '',
                 'risk' => $f->risk_rating,
                 'risk_score' => self::RISK_WEIGHTS[$f->risk_rating] ?? 0,
             ]);

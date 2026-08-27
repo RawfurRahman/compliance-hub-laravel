@@ -1,61 +1,219 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Compliance Hub
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Human-in-the-Loop (HITL) GRC Platform** — Automates cybersecurity compliance evidence assessment using locally-hosted AI. Evidence is uploaded, scanned for malware, analysed by a vision-language model (llava:7b), and reviewed by a human auditor who makes the final compliance determination.
 
-## About Laravel
+Built as an MSc project artefact (University of Dhaka, Dept. of CSE).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Layer | Technology |
+|-------|------------|
+| Framework | Laravel 12, PHP ≥ 8.2, Sanctum |
+| Database | SQLite (`database/database.sqlite`) |
+| Queue | Database driver |
+| Frontend | Vue 3 + ApexCharts, Alpine.js, Tailwind CSS 4, Vite |
+| Local AI | Ollama (`llava:7b` on `:11434`) |
+| Orchestration | n8n (Docker, `:5678`) |
+| Antivirus | ClamAV REST (Docker, `:9000`) |
+| Dev Mail | Mailpit (optional, `:8025`/`:1025`) |
 
-## Learning Laravel
+**Core principle:** Evidence never leaves the deployment boundary. No external AI APIs.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Quick Start
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Prerequisites (install once)
 
-## Laravel Sponsors
+| Tool | Minimum Version | Install |
+|------|-----------------|---------|
+| PHP | 8.2+ | `php -v` |
+| Composer | 2.x | `composer --version` |
+| Node.js | 18+ | `node -v` |
+| npm | 9+ | `npm -v` |
+| Docker + Compose | 24+ | `docker --version && docker compose version` |
+| Ollama | Latest | `ollama --version` |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Automated Setup (Recommended)
 
-### Premium Partners
+```bash
+git clone <your-repo-url>
+cd compliance-hub-laravel
+chmod +x setup.sh
+./setup.sh
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+The script installs dependencies, starts Docker services, pulls the AI model, runs migrations, seeds the database, **and automatically imports n8n workflows**. No manual n8n setup required — the owner account is pre-provisioned via Docker environment variables.
 
-## Contributing
+### Manual Setup
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+# 1. Clone & configure
+git clone <your-repo-url>
+cd compliance-hub-laravel
+cp .env.example .env
+php artisan key:generate
 
-## Code of Conduct
+# 2. PHP dependencies
+composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 3. Frontend assets
+npm install && npm run build
 
-## Security Vulnerabilities
+# 4. External services (Docker)
+docker compose up -d
+# Starts: clamav_service (:9000), n8n_service (:5678)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 5. Local AI model (one-time, ~4.7 GB)
+ollama serve &
+ollama pull llava:7b
+
+# 6. Database & seeders
+php artisan migrate:fresh --seed
+
+# 7. Import n8n workflows (fully automated)
+# Owner account is pre-provisioned via docker-compose env vars
+# API key is: n8nComplianceHubSecretKey
+# Just run: php artisan n8n:setup
+
+# 8. Run the app (3 terminals)
+# Terminal 1: Web server
+php artisan serve --port=8000
+
+# Terminal 2: Queue worker (required for evidence analysis)
+php artisan queue:work
+
+# Terminal 3 (optional): Vite dev server for hot reload
+npm run dev
+```
+
+Visit **http://localhost:8000**
+
+---
+
+## Default Users (after seeding)
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | superadmin@example.com | password |
+| Admin | admin@example.com | password |
+| Auditor | auditor@example.com | password |
+| Customer | customer@example.com | password |
+
+---
+
+## Key Features
+
+- **Project Portfolio** — Multi-framework compliance projects (PCI DSS v4.0.1, ISO 27001, Bangladesh Bank ICT, HITRUST CSF)
+- **Evidence Hub** — Upload, malware scan (ClamAV), AI analysis (llava:7b), human review
+- **Gap Assessment** — Map evidence to controls, track compliance gaps
+- **Risk Register** — Inherent/residual scoring, treatment planning, heatmap
+- **Unified Assessment** — Gap-to-final workflow with evidence linking
+- **Reporting** — PDF/Excel export, scheduled reports, custom templates
+- **Evaluation Harness** — 60-item corpus for thesis evaluation (seeder + runner + CSV export)
+
+---
+
+## Architecture Overview
+
+```
+upload → EvidenceFile(scan_status=pending, ai_analysis_status=pending)
+       → n8n webhook (responseMode: onReceived)
+       → ClamAV :9000/scan
+           ├─ infected → quarantine (never deleted)
+           └─ clean → Ollama /api/generate (llava:7b, temp 0.1, num_ctx 8192)
+                      → 3-stage JSON parse
+                      → /api/n8n/ai-callback → awaiting_review
+       → human auditor reviews → determination recorded
+```
+
+**Fallback:** If n8n is down, `DirectEvidenceAnalysisService` runs the same pipeline synchronously via `AnalyzeEvidenceJob`.
+
+---
+
+## Testing
+
+```bash
+php artisan test          # All 316 tests
+php artisan test --filter=Project
+php artisan test --filter=Evidence
+```
+
+---
+
+## Project Structure
+
+```
+app/
+├── Http/Controllers/           Web + API controllers
+├── Models/                     ~88 Eloquent models
+├── Services/                   Domain services
+│   ├── DirectEvidenceAnalysisService.php
+│   ├── EvidenceScanService.php
+│   ├── EvaluationRunService.php
+│   └── Dashboard/              Query builders for dashboard
+├── Modules/
+│   ├── RiskManagement/         Risk register, scoring, control mapping
+│   └── Compliance/             Control tests, monitors, findings
+├── Jobs/                       AnalyzeEvidenceJob, dashboard jobs
+├── Console/Commands/           n8n:setup, evidence:resume-analysis, evaluation:*
+└── Providers/AuthServiceProvider.php  Gates & policies
+```
+
+---
+
+## Configuration Reference
+
+Key `.env` variables:
+
+```env
+# Core
+APP_URL=http://localhost:8000
+DB_CONNECTION=sqlite
+QUEUE_CONNECTION=database
+
+# n8n (set N8N_ENABLED=true when docker compose up)
+N8N_ENABLED=false
+N8N_UNIFIED_WEBHOOK_URL=http://host.docker.internal:5678/webhook/evidence-processing
+N8N_WEBHOOK_SECRET=your-secret
+
+# AI
+AI_PROVIDER=ollama
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llava:7b
+OLLAMA_TIMEOUT=300
+
+# ClamAV
+CLAMAV_API_URL=http://localhost:9000
+
+# Internal URL (for n8n callbacks from Docker)
+APP_INTERNAL_URL=http://host.docker.internal:8000
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| `llava:7b` not found | `ollama pull llava:7b` (ensure `ollama serve` is running) |
+| n8n webhook 404 | Import `unified-evidence-workflow.json` in n8n UI; check `N8N_UNIFIED_WEBHOOK_URL` |
+| ClamAV connection refused | `docker compose up -d clamav`; verify `docker ps` shows `clamav_service` |
+| Queue not processing | Run `php artisan queue:work` in separate terminal |
+| Vite assets 404 | Run `npm run build` (production) or `npm run dev` (development) |
+| CSP errors (Alpine.js) | Check `SecurityHeaders` middleware; `unsafe-inline` required for Alpine |
+| SQLite locked | Ensure only one `php artisan serve` + one `queue:work` |
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT License — See [LICENSE](LICENSE) for details.
+
+---
+
+## Academic Context
+
+This codebase is the artefact for an MSc thesis (University of Dhaka, Dept. of CSE). The thesis describes this implementation; discrepancies between code and thesis should be reported, not silently patched. All architectural decisions prioritise explainability for viva examination.

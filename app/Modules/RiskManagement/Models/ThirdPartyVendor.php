@@ -22,7 +22,7 @@ class ThirdPartyVendor extends Model
 
     protected $casts = [
         'contract_start' => 'date',
-        'contract_end'   => 'date',
+        'contract_end' => 'date',
     ];
 
     public function project()

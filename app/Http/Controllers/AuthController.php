@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LoginOtpMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Models\User;
-use App\Mail\LoginOtpMail;
 
 class AuthController extends Controller
 {
@@ -19,6 +20,7 @@ class AuthController extends Controller
         if (auth()->check()) {
             return redirect()->route('dashboard');
         }
+
         return view('auth.login');
     }
 
@@ -34,12 +36,12 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('username', $credentials['username_or_email'])
-                    ->orWhere('email', $credentials['username_or_email'])
-                    ->first();
+            ->orWhere('email', $credentials['username_or_email'])
+            ->first();
 
         if ($user && Hash::check($credentials['password'], $user->password)) {
             $otp = random_int(100000, 999999);
-            
+
             $user->otp = $otp;
             $user->otp_expires_at = now()->addMinutes(5);
             $user->save();
@@ -49,9 +51,10 @@ class AuthController extends Controller
             try {
                 Mail::to($user->email)->send(new LoginOtpMail($otp));
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('OTP Mail sending failed: ' . $e->getMessage(), [
-                    'exception' => $e
+                Log::error('OTP Mail sending failed: '.$e->getMessage(), [
+                    'exception' => $e,
                 ]);
+
                 return back()->withErrors([
                     'username_or_email' => 'Could not send OTP. Please check mail configuration and try again.',
                 ]);
@@ -73,7 +76,7 @@ class AuthController extends Controller
     public function showOtpForm()
     {
         // ... (showOtpForm logic remains the same)
-        if (!session('temp_user_id')) {
+        if (! session('temp_user_id')) {
             return redirect()->route('login')->withErrors(['username_or_email' => 'Please log in first.']);
         }
 
@@ -91,13 +94,13 @@ class AuthController extends Controller
         ]);
 
         $userId = session('temp_user_id');
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login')->withErrors(['username_or_email' => 'Your session has expired. Please log in again.']);
         }
 
         $user = User::find($userId);
 
-        if (!$user || $user->otp !== $request->otp || now()->isAfter($user->otp_expires_at)) {
+        if (! $user || $user->otp !== $request->otp || now()->isAfter($user->otp_expires_at)) {
             return back()->withErrors(['otp' => 'The OTP is invalid or has expired.']);
         }
 

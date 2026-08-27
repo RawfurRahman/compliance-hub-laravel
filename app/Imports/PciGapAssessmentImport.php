@@ -3,9 +3,10 @@
 namespace App\Imports;
 
 use App\Models\PciGapAssessment;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
-use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class PciGapAssessmentImport implements ToModel, WithStartRow
 {
@@ -27,12 +28,12 @@ class PciGapAssessmentImport implements ToModel, WithStartRow
     public function model(array $row)
     {
         // Skip completely empty rows
-        if (!isset($row[0])) {
+        if (! isset($row[0])) {
             return null;
         }
 
         $requirementText = trim($row[0]);
-        
+
         // Detect if this row is a major section header (e.g., "Requirement 1: ...")
         // Section headers in the document typically have no other columns filled out
         $isSectionHeader = false;
@@ -42,11 +43,11 @@ class PciGapAssessmentImport implements ToModel, WithStartRow
 
         // Parse milestone date securely
         $milestoneDate = null;
-        if (!empty($row[5])) {
+        if (! empty($row[5])) {
             try {
                 // Handle Excel date serial numbers or standard date strings
-                $milestoneDate = is_numeric($row[5]) 
-                    ? \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[5]) 
+                $milestoneDate = is_numeric($row[5])
+                    ? Date::excelToDateTimeObject($row[5])
                     : Carbon::parse($row[5]);
             } catch (\Exception $e) {
                 $milestoneDate = null;
@@ -56,18 +57,22 @@ class PciGapAssessmentImport implements ToModel, WithStartRow
         // Normalize status
         $status = 'Pending';
         $rawStatus = strtolower(trim($row[1] ?? ''));
-        if ($rawStatus === 'yes') $status = 'Yes';
-        elseif ($rawStatus === 'n/a') $status = 'N/A';
-        elseif ($rawStatus === 'no') $status = 'No';
+        if ($rawStatus === 'yes') {
+            $status = 'Yes';
+        } elseif ($rawStatus === 'n/a') {
+            $status = 'N/A';
+        } elseif ($rawStatus === 'no') {
+            $status = 'No';
+        }
 
         return new PciGapAssessment([
-            'project_id'        => $this->projectId,
-            'requirement_text'  => $requirementText,
+            'project_id' => $this->projectId,
+            'requirement_text' => $requirementText,
             'is_section_header' => $isSectionHeader,
-            'status'            => $isSectionHeader ? null : $status,
-            'na_explanation'    => $row[2] ?? null,
-            'milestone_date'    => $milestoneDate,
-            'comments'          => $row[6] ?? null,
+            'status' => $isSectionHeader ? null : $status,
+            'na_explanation' => $row[2] ?? null,
+            'milestone_date' => $milestoneDate,
+            'comments' => $row[6] ?? null,
         ]);
     }
 }

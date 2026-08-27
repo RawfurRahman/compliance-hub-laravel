@@ -2,10 +2,10 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskTreatmentPlan;
 use App\Modules\RiskManagement\Services\RiskTreatmentPlanService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class RiskTreatmentPlanController extends Controller
@@ -70,6 +70,7 @@ class RiskTreatmentPlanController extends Controller
     public function destroy(RiskRegister $risk, RiskTreatmentPlan $plan)
     {
         $this->service->delete($plan);
+
         return response()->json(['success' => true]);
     }
 }

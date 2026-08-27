@@ -27,7 +27,7 @@ class ComplianceScorecardQueryService extends BaseQueryService
             ->whereIn('framework_id', $activeFrameworkIds)
             ->whereIn('type', ['Gap', 'Final'])
             ->get()
-            ->groupBy(fn ($a) => $a->framework_id . '|' . $a->type)
+            ->groupBy(fn ($a) => $a->framework_id.'|'.$a->type)
             ->map(fn ($group) => $group->sortByDesc('id')->first());
 
         // Pre-fetch compliance test counts per framework for test_pass_rate
@@ -37,8 +37,8 @@ class ComplianceScorecardQueryService extends BaseQueryService
             ->groupBy('framework_id');
 
         $scorecard = $activeFrameworks->map(function (Framework $framework) use ($latestAssessments, $testLinks) {
-            $gapKey = $framework->id . '|Gap';
-            $finalKey = $framework->id . '|Final';
+            $gapKey = $framework->id.'|Gap';
+            $finalKey = $framework->id.'|Final';
 
             $gap = $latestAssessments->get($gapKey);
             $final = $latestAssessments->get($finalKey);
@@ -72,12 +72,13 @@ class ComplianceScorecardQueryService extends BaseQueryService
         ?ProjectAssessment $final,
         float $finalPct
     ): string {
-        if (!$final) {
+        if (! $final) {
             return $gapPct >= 100 ? 'gap_done' : 'gap_in_progress';
         }
         if ($finalPct >= 100) {
             return 'final_done';
         }
+
         return $finalPct > 0 ? 'final_in_progress' : 'final_pending';
     }
 }

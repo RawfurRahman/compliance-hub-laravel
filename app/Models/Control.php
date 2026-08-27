@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use App\Modules\Compliance\Models\ComplianceTest;
+use App\Modules\Compliance\Models\ControlEvidence;
+use App\Modules\Compliance\Models\ControlMonitor;
+use App\Modules\Compliance\Models\ControlTest;
+use App\Modules\RiskManagement\Models\RiskControlMapping;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -37,7 +42,7 @@ class Control extends Model
 
     public function riskControlMappings()
     {
-        return $this->hasMany(\App\Modules\RiskManagement\Models\RiskControlMapping::class, 'control_id');
+        return $this->hasMany(RiskControlMapping::class, 'control_id');
     }
 
     public function frameworkControls()
@@ -49,21 +54,21 @@ class Control extends Model
 
     public function controlTests()
     {
-        return $this->hasMany(\App\Modules\Compliance\Models\ControlTest::class, 'control_id');
+        return $this->hasMany(ControlTest::class, 'control_id');
     }
 
     public function controlMonitors()
     {
-        return $this->hasMany(\App\Modules\Compliance\Models\ControlMonitor::class, 'control_id');
+        return $this->hasMany(ControlMonitor::class, 'control_id');
     }
 
     public function controlEvidence()
     {
-        return $this->hasMany(\App\Modules\Compliance\Models\ControlEvidence::class, 'control_id');
+        return $this->hasMany(ControlEvidence::class, 'control_id');
     }
 
     public function complianceTests()
     {
-        return $this->hasMany(\App\Modules\Compliance\Models\ComplianceTest::class, 'control_id');
+        return $this->hasMany(ComplianceTest::class, 'control_id');
     }
 }

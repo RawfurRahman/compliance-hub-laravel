@@ -11,7 +11,8 @@ use Illuminate\Console\Command;
  */
 class SnapshotFinancialMetrics extends Command
 {
-    protected $signature = 'risks:snapshot-financial-metrics {--project-id=}' ;
+    protected $signature = 'risks:snapshot-financial-metrics {--project-id=}';
+
     protected $description = 'Snapshot financial exposure (ALE) metrics for trend reporting';
 
     public function handle(
@@ -32,8 +33,9 @@ class SnapshotFinancialMetrics extends Command
 
 class SnapshotRemediationMetrics extends Command
 {
-    protected $signature = 'risks:snapshot-remediation-metrics {--project-id=}' ;
-    protected $description = 'Snapshot remediation (MTTR/SLA) metrics for trend reporting';
+    protected $signature = 'risks:snapshot-remediation-metrics {--project-id=}';
+
+    protected $description = 'Snapshot remediation metrics for trend reporting';
 
     public function handle(
         RemediationMetricsService $remediation,

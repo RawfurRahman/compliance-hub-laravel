@@ -14,7 +14,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('integration_type');
             $table->string('test_type');
-            $table->unsignedInteger('sla_days')->nullable();
             $table->text('check_expression')->nullable();
             $table->json('config')->nullable();
             $table->timestamps();

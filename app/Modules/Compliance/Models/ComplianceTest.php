@@ -2,11 +2,9 @@
 
 namespace App\Modules\Compliance\Models;
 
-use App\Models\User;
-use App\Models\Framework;
 use App\Models\Control;
 use App\Models\Integration;
-use App\Modules\Compliance\Models\ControlMonitor;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,7 +21,6 @@ class ComplianceTest extends Model
         'owner_user_id',
         'team',
         'test_type',
-        'sla_days',
         'status',
         'last_run_at',
         'next_due_at',
@@ -35,7 +32,6 @@ class ComplianceTest extends Model
     protected $casts = [
         'last_run_at' => 'datetime',
         'next_due_at' => 'datetime',
-        'sla_days' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

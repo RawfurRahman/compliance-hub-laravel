@@ -3,13 +3,12 @@
 namespace App\Modules\RiskManagement\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\RiskManagement\Models\RiskRegister;
-use App\Models\FrameworkControl;
 use App\Models\Control;
+use App\Models\FrameworkControl;
 use App\Modules\RiskManagement\Models\RiskControlMapping;
+use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Services\ControlMappingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ControlMappingController extends Controller
 {
@@ -31,10 +30,10 @@ class ControlMappingController extends Controller
     {
         $request->validate([
             'risk_register_id' => 'required_without:query|integer|exists:risk_registers,id',
-            'query'            => 'required_without:risk_register_id|string|max:2000',
-            'framework_id'     => 'nullable|integer|exists:frameworks,id',
-            'limit'            => 'nullable|integer|min:1|max:50',
-            'include_local'    => 'nullable|boolean',
+            'query' => 'required_without:risk_register_id|string|max:2000',
+            'framework_id' => 'nullable|integer|exists:frameworks,id',
+            'limit' => 'nullable|integer|min:1|max:50',
+            'include_local' => 'nullable|boolean',
         ]);
 
         $source = $request->filled('risk_register_id')
@@ -55,7 +54,7 @@ class ControlMappingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $formatted,
+            'data' => $formatted,
         ]);
     }
 
@@ -73,7 +72,7 @@ class ControlMappingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Mapping confirmed.',
-            'data'    => $mapping->load(['frameworkControl', 'control']),
+            'data' => $mapping->load(['frameworkControl', 'control']),
         ]);
     }
 
@@ -91,7 +90,7 @@ class ControlMappingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Mapping rejected.',
-            'data'    => $mapping->load(['frameworkControl', 'control']),
+            'data' => $mapping->load(['frameworkControl', 'control']),
         ]);
     }
 
@@ -103,10 +102,10 @@ class ControlMappingController extends Controller
     public function manualMap(Request $request)
     {
         $request->validate([
-            'risk_register_id'     => 'required|integer|exists:risk_registers,id',
+            'risk_register_id' => 'required|integer|exists:risk_registers,id',
             'framework_control_id' => 'required|integer|exists:framework_controls,id',
-            'control_id'           => 'nullable|integer|exists:controls,id',
-            'notes'                => 'nullable|string|max:2000',
+            'control_id' => 'nullable|integer|exists:controls,id',
+            'notes' => 'nullable|string|max:2000',
         ]);
 
         $mapping = $this->mappingService->manualMap(
@@ -119,7 +118,7 @@ class ControlMappingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Mapping created.',
-            'data'    => $mapping->load(['frameworkControl', 'control']),
+            'data' => $mapping->load(['frameworkControl', 'control']),
         ]);
     }
 
@@ -150,7 +149,7 @@ class ControlMappingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $mappings,
+            'data' => $mappings,
         ]);
     }
 
@@ -163,11 +162,11 @@ class ControlMappingController extends Controller
     {
         $frameworks = FrameworkControl::with('framework')
             ->get()
-            ->groupBy(fn ($fc) => $fc->framework?->name ?? 'Uncategorized');
+            ->groupBy(fn ($fc) => $fc->framework->name ?? 'Uncategorized');
 
         return response()->json([
             'success' => true,
-            'data'    => $frameworks,
+            'data' => $frameworks,
         ]);
     }
 
@@ -185,12 +184,12 @@ class ControlMappingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $controls,
+            'data' => $controls,
         ]);
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Internal                                                          */
+    /*  Internal */
     /* ------------------------------------------------------------------ */
 
     private function formatResults(array $results): array
@@ -199,34 +198,34 @@ class ControlMappingController extends Controller
 
         if (isset($results['framework_controls'])) {
             $formatted['framework_controls'] = $results['framework_controls']->map(fn ($s) => [
-                'id'               => $s['framework_control']->id,
-                'framework_id'     => $s['framework_control']->framework_id,
-                'framework_name'   => $s['framework_control']->framework?->name,
-                'control_id'       => $s['framework_control']->control_id,
-                'domain'           => $s['framework_control']->domain,
-                'description'      => $s['framework_control']->requirement_description,
-                'control_name'     => $s['framework_control']->control_name,
-                'required_evidence'=> $s['framework_control']->required_evidence,
-                'status'           => $s['framework_control']->status,
-                'pci_dss_ref'      => $s['framework_control']->pci_dss_ref,
-                'iso_ref'          => $s['framework_control']->iso_ref,
-                'bb_ict_ref'       => $s['framework_control']->bb_ict_ref,
-                'swift_ref'        => $s['framework_control']->swift_ref,
+                'id' => $s['framework_control']->id,
+                'framework_id' => $s['framework_control']->framework_id,
+                'framework_name' => $s['framework_control']->framework?->name,
+                'control_id' => $s['framework_control']->control_id,
+                'domain' => $s['framework_control']->domain,
+                'description' => $s['framework_control']->requirement_description,
+                'control_name' => $s['framework_control']->control_name,
+                'required_evidence' => $s['framework_control']->required_evidence,
+                'status' => $s['framework_control']->status,
+                'pci_dss_ref' => $s['framework_control']->pci_dss_ref,
+                'iso_ref' => $s['framework_control']->iso_ref,
+                'bb_ict_ref' => $s['framework_control']->bb_ict_ref,
+                'swift_ref' => $s['framework_control']->swift_ref,
                 'confidence_score' => $s['confidence_score'],
-                'match_type'       => $s['match_type'] ?? 'fuzzy',
+                'match_type' => $s['match_type'] ?? 'fuzzy',
             ]);
         }
 
         if (isset($results['local_controls'])) {
             $formatted['local_controls'] = $results['local_controls']->map(fn ($s) => [
-                'id'               => $s['control']->id,
-                'code'             => $s['control']->code ?? $s['control']->control_code,
-                'title'            => $s['control']->title ?? $s['control']->name,
-                'description'      => $s['control']->description,
+                'id' => $s['control']->id,
+                'code' => $s['control']->code ?? $s['control']->control_code,
+                'title' => $s['control']->title ?? $s['control']->name,
+                'description' => $s['control']->description,
                 'effectiveness_score' => $s['control']->effectiveness_score,
-                'status'           => $s['control']->status,
+                'status' => $s['control']->status,
                 'confidence_score' => $s['confidence_score'],
-                'match_type'       => 'fuzzy',
+                'match_type' => 'fuzzy',
             ]);
         }
 

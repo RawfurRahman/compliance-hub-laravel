@@ -11,7 +11,8 @@ use Illuminate\Console\Command;
 class SnapshotRemediationMetrics extends Command
 {
     protected $signature = 'risks:snapshot-remediation-metrics {--project-id=}';
-    protected $description = 'Snapshot remediation (MTTR/SLA) metrics for trend reporting';
+
+    protected $description = 'Snapshot remediation metrics for trend reporting';
 
     public function handle(RemediationMetricsService $remediation): int
     {

@@ -6,8 +6,9 @@ use App\Models\AssessmentFinding;
 use App\Models\Framework;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
-use App\Modules\Compliance\Models\ComplianceTest;
 use App\Modules\Compliance\Models\ComplianceTestFrameworkLink;
+use App\Modules\RiskManagement\Models\RiskRegister;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -39,64 +40,64 @@ class DashboardMetricsService
 {
     /** Risk weights used to turn risk_rating into a comparable numeric score. */
     private const RISK_WEIGHTS = [
-        'High'   => 3,
+        'High' => 3,
         'Medium' => 2,
-        'Low'    => 1,
-        'None'   => 0,
+        'Low' => 1,
+        'None' => 0,
     ];
 
     public function __construct(
         private MaturityScoreService $maturityScoreService
-    ) {
-    }
+    ) {}
 
     private array $filters = [];
 
     public function setFilters(array $filters): self
     {
         $this->filters = $filters;
+
         return $this;
     }
 
-    private function baseFindingQuery(): \Illuminate\Database\Eloquent\Builder
+    private function baseFindingQuery(): Builder
     {
         $query = AssessmentFinding::query();
 
-        if (!empty($this->filters['department'])) {
+        if (! empty($this->filters['department'])) {
             $dept = $this->filters['department'];
             $deptShort = ($dept === 'IT Department') ? 'IT' : $dept;
-            
+
             $query->where(function ($q) use ($dept, $deptShort) {
                 $q->whereHas('frameworkControl', function ($q2) use ($dept) {
                     $q2->where('domain', $dept);
                 })
-                ->orWhereHas('projectAssessment', function ($q2) use ($deptShort) {
-                    $q2->where('overall_status', 'LIKE', '%— ' . $deptShort . '%');
-                });
+                    ->orWhereHas('projectAssessment', function ($q2) use ($deptShort) {
+                        $q2->where('overall_status', 'LIKE', '%— '.$deptShort.'%');
+                    });
             });
         }
 
-        if (!empty($this->filters['owner'])) {
+        if (! empty($this->filters['owner'])) {
             $owner = $this->filters['owner'];
             $ownerShort = ($owner === 'IT Department') ? 'IT' : $owner;
-            
+
             $query->where(function ($q) use ($owner, $ownerShort) {
                 $q->whereHas('frameworkControl', function ($q2) use ($owner) {
                     $q2->where('domain', $owner);
                 })
-                ->orWhereHas('projectAssessment', function ($q2) use ($ownerShort) {
-                    $q2->where('overall_status', 'LIKE', '%— ' . $ownerShort . '%');
-                });
+                    ->orWhereHas('projectAssessment', function ($q2) use ($ownerShort) {
+                        $q2->where('overall_status', 'LIKE', '%— '.$ownerShort.'%');
+                    });
             });
         }
 
-        if (!empty($this->filters['framework'])) {
+        if (! empty($this->filters['framework'])) {
             $query->whereHas('projectAssessment.framework', function ($q) {
                 $q->where('name', $this->filters['framework']);
             });
         }
 
-        if (!empty($this->filters['risk_type'])) {
+        if (! empty($this->filters['risk_type'])) {
             if ($this->filters['risk_type'] !== 'All Risk Types') {
                 $query->where('risk_rating', $this->filters['risk_type']);
             }
@@ -112,23 +113,23 @@ class DashboardMetricsService
     {
         $findings = $this->baseFindingQuery();
 
-        $total     = (clone $findings)->count();
+        $total = (clone $findings)->count();
         $compliant = (clone $findings)->where('is_compliant', true)->count();
-        $open      = (clone $findings)->where('status', 'Open')->count();
-        $overdue   = (clone $findings)
+        $open = (clone $findings)->where('status', 'Open')->count();
+        $overdue = (clone $findings)
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', now())
             ->where('is_compliant', false)
             ->count();
 
         return [
-            'projects'         => Project::count(),
-            'frameworks'       => Framework::where('is_active', true)->count(),
-            'total_controls'   => $total,
-            'compliant'        => $compliant,
-            'open_findings'    => $open,
+            'projects' => Project::count(),
+            'frameworks' => Framework::where('is_active', true)->count(),
+            'total_controls' => $total,
+            'compliant' => $compliant,
+            'open_findings' => $open,
             'overdue_findings' => $overdue,
-            'compliance_pct'   => $total > 0 ? round($compliant / $total * 100, 1) : 0.0,
+            'compliance_pct' => $total > 0 ? round($compliant / $total * 100, 1) : 0.0,
         ];
     }
 
@@ -140,7 +141,7 @@ class DashboardMetricsService
     public function heatmap(): array
     {
         $likelihoodAxis = ['Open', 'In Progress', 'Closed'];
-        $impactAxis     = ['Low', 'Medium', 'High'];
+        $impactAxis = ['Low', 'Medium', 'High'];
 
         $rows = $this->baseFindingQuery()
             ->selectRaw('status, risk_rating, COUNT(*) as aggregate')
@@ -148,16 +149,16 @@ class DashboardMetricsService
             ->whereIn('risk_rating', $impactAxis)
             ->groupBy('status', 'risk_rating')
             ->get()
-            ->keyBy(fn ($row) => $row->status . '|' . $row->risk_rating);
+            ->keyBy(fn ($row) => $row->status.'|'.$row->risk_rating);
 
         $cells = [];
         foreach ($likelihoodAxis as $likelihood) {
             foreach ($impactAxis as $impact) {
-                $key = $likelihood . '|' . $impact;
+                $key = $likelihood.'|'.$impact;
                 $cells[] = [
                     'likelihood' => $likelihood,
-                    'impact'     => $impact,
-                    'count'      => (int) ($rows->get($key)->aggregate ?? 0),
+                    'impact' => $impact,
+                    'count' => (int) ($rows->get($key)->aggregate ?? 0),
                 ];
             }
         }
@@ -179,12 +180,12 @@ class DashboardMetricsService
             ->take($limit)
             ->values()
             ->map(fn ($f) => [
-                'id'         => $f->id,
-                'control'    => $f->frameworkControl?->control_id ?? '',
-                'title'      => $f->frameworkControl?->control_name ?: ($f->observation ?? ''),
-                'framework'  => $f->projectAssessment?->framework?->name ?? '',
-                'project'    => $f->projectAssessment?->project?->name ?? '',
-                'risk'       => $f->risk_rating,
+                'id' => $f->id,
+                'control' => $f->frameworkControl->control_id ?? '',
+                'title' => $f->frameworkControl?->control_name ?: ($f->observation ?? ''),
+                'framework' => $f->projectAssessment?->framework->name ?? '',
+                'project' => $f->projectAssessment?->project->name ?? '',
+                'risk' => $f->risk_rating,
                 'risk_score' => self::RISK_WEIGHTS[$f->risk_rating] ?? 0,
             ]);
     }
@@ -194,7 +195,7 @@ class DashboardMetricsService
      */
     public function topRiskRegisterEntries(int $limit = 5): Collection
     {
-        return \App\Modules\RiskManagement\Models\RiskRegister::with(['project', 'frameworkControl'])
+        return RiskRegister::with(['project', 'frameworkControl'])
             ->where('risk_rating_avtvlh', '>=', 84)
             ->whereNotIn('implementation_status', ['Completed'])
             ->orderByDesc('risk_rating_avtvlh')
@@ -217,8 +218,8 @@ class DashboardMetricsService
 
                 return [
                     'department' => $domain,
-                    'inherent'   => $inherent,
-                    'residual'   => $residual,
+                    'inherent' => $inherent,
+                    'residual' => $residual,
                 ];
             })
             ->values();
@@ -232,15 +233,15 @@ class DashboardMetricsService
     {
         $base = $this->baseFindingQuery();
 
-        $effective   = (clone $base)->where('is_compliant', true)->count();
-        $partial     = (clone $base)->where('is_compliant', false)
+        $effective = (clone $base)->where('is_compliant', true)->count();
+        $partial = (clone $base)->where('is_compliant', false)
             ->where('status', 'In Progress')->count();
         $ineffective = (clone $base)->where('is_compliant', false)
             ->where('status', '!=', 'In Progress')->count();
 
         return [
-            'effective'   => $effective,
-            'partial'     => $partial,
+            'effective' => $effective,
+            'partial' => $partial,
             'ineffective' => $ineffective,
         ];
     }
@@ -265,7 +266,7 @@ class DashboardMetricsService
     public function complianceScorecard(): Collection
     {
         $query = Framework::where('is_active', true);
-        if (!empty($this->filters['framework'])) {
+        if (! empty($this->filters['framework'])) {
             $query->where('name', $this->filters['framework']);
         }
         $activeFrameworks = $query->get();
@@ -276,7 +277,7 @@ class DashboardMetricsService
             ->whereIn('framework_id', $activeFrameworkIds)
             ->whereIn('type', ['Gap', 'Final'])
             ->get()
-            ->groupBy(fn ($a) => $a->framework_id . '|' . $a->type)
+            ->groupBy(fn ($a) => $a->framework_id.'|'.$a->type)
             ->map(fn ($group) => $group->sortByDesc('id')->first());
 
         // Pre-fetch compliance test counts per framework for test_pass_rate
@@ -286,13 +287,13 @@ class DashboardMetricsService
             ->groupBy('framework_id');
 
         return $activeFrameworks->map(function (Framework $framework) use ($latestAssessments, $testLinks) {
-            $gapKey = $framework->id . '|Gap';
-            $finalKey = $framework->id . '|Final';
+            $gapKey = $framework->id.'|Gap';
+            $finalKey = $framework->id.'|Final';
 
             $gap = $latestAssessments->get($gapKey);
             $final = $latestAssessments->get($finalKey);
 
-            $gapPct   = $gap ? $gap->stats()['compliancePct'] : 0.0;
+            $gapPct = $gap ? $gap->stats()['compliancePct'] : 0.0;
             $finalPct = $final ? $final->stats()['compliancePct'] : 0.0;
 
             $phase = $this->derivePhase($gap, $gapPct, $final, $finalPct);
@@ -303,12 +304,12 @@ class DashboardMetricsService
             $testPassRate = $totalTests > 0 ? round(($passingTests / $totalTests) * 100, 1) : null;
 
             return [
-                'framework'       => $framework->name,
-                'slug'            => $framework->slug ?? null,
-                'percentage'      => $final ? $finalPct : $gapPct,
-                'phase'           => $phase,
+                'framework' => $framework->name,
+                'slug' => $framework->slug ?? null,
+                'percentage' => $final ? $finalPct : $gapPct,
+                'phase' => $phase,
                 'fully_compliant' => $phase === 'final_done',
-                'test_pass_rate'  => $testPassRate,
+                'test_pass_rate' => $testPassRate,
             ];
         })->values();
     }
@@ -327,11 +328,11 @@ class DashboardMetricsService
         $composite = round(($risk + $control + $remediation + $evidence) / 4, 1);
 
         return [
-            'composite'            => $composite,
-            'risk_management'      => $risk,
-            'control_design'       => $control,
+            'composite' => $composite,
+            'risk_management' => $risk,
+            'control_design' => $control,
             'remediation_velocity' => $remediation,
-            'evidence_audit'       => $evidence,
+            'evidence_audit' => $evidence,
         ];
     }
 
@@ -361,10 +362,10 @@ class DashboardMetricsService
         $base = $this->baseFindingQuery();
 
         return [
-            'open'        => (clone $base)->where('status', 'Open')->count(),
+            'open' => (clone $base)->where('status', 'Open')->count(),
             'in_progress' => (clone $base)->where('status', 'In Progress')->count(),
-            'closed'      => (clone $base)->where('status', 'Closed')->count(),
-            'overdue'     => (clone $base)
+            'closed' => (clone $base)->where('status', 'Closed')->count(),
+            'overdue' => (clone $base)
                 ->whereNotNull('due_date')
                 ->whereDate('due_date', '<', now())
                 ->where('is_compliant', false)
@@ -381,15 +382,15 @@ class DashboardMetricsService
         $base = $this->baseFindingQuery();
 
         $mitigated = (clone $base)->where('is_compliant', true)->count();
-        $accepted  = (clone $base)->where('is_compliant', false)
+        $accepted = (clone $base)->where('is_compliant', false)
             ->where('status', 'Closed')->count();
-        $open      = (clone $base)->where('is_compliant', false)
+        $open = (clone $base)->where('is_compliant', false)
             ->where('status', '!=', 'Closed')->count();
 
         return [
-            'accepted'  => $accepted,
+            'accepted' => $accepted,
             'mitigated' => $mitigated,
-            'open'      => $open,
+            'open' => $open,
         ];
     }
 
@@ -406,7 +407,7 @@ class DashboardMetricsService
         ?ProjectAssessment $final,
         float $finalPct
     ): string {
-        if (!$final) {
+        if (! $final) {
             // A Final cannot exist until Gap == 100%, so anything without a
             // Final is still in the Gap phase (done only once Gap hits 100).
             return $gapPct >= 100 ? 'gap_done' : 'gap_in_progress';

@@ -2,9 +2,9 @@
 
 namespace App\Modules\RiskManagement\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Services\RiskExposureService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class RiskExposureController extends Controller

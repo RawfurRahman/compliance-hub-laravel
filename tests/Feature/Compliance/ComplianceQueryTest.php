@@ -9,8 +9,8 @@ use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
 use App\Models\User;
-use App\Modules\Compliance\Services\ComplianceQueryService;
 use App\Modules\Compliance\Models\ControlTest;
+use App\Modules\Compliance\Services\ComplianceQueryService;
 use App\Modules\RiskManagement\Models\RiskRegister;
 use App\Modules\RiskManagement\Models\RiskTreatmentPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +21,7 @@ class ComplianceQueryTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -85,12 +86,12 @@ class ComplianceQueryTest extends TestCase
         $this->assertEquals('Fail Control', $failed->first()['control_name']);
     }
 
-    public function test_overdue_by_sla(): void
+    public function test_overdue_plans(): void
     {
         $risk = RiskRegister::create([
             'project_id' => $this->project->id,
             'serial_no' => 'QR-002',
-            'asset_process_service' => 'Overdue SLA Risk',
+            'asset_process_service' => 'Overdue Plan Risk',
             'risk_owner' => 'Test Owner',
             'risk_calculation_date' => '2026-06-01',
             'asset_value_bdt' => 100000,
@@ -123,7 +124,7 @@ class ComplianceQueryTest extends TestCase
         ]);
 
         $service = app(ComplianceQueryService::class);
-        $overdue = $service->overdueBySLA($this->project->id);
+        $overdue = $service->overduePlans($this->project->id);
 
         $this->assertGreaterThanOrEqual(1, $overdue->count());
     }

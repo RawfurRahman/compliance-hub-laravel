@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Framework;
 use App\Models\Integration;
 use App\Models\Project;
 use App\Models\User;
@@ -30,7 +31,7 @@ class IntegrationService
     {
         $templates = ComplianceTestTemplate::where('integration_type', $integration->type)->get();
 
-        $activeFrameworks = \App\Models\Framework::where('is_active', true)->get();
+        $activeFrameworks = Framework::where('is_active', true)->get();
 
         $created = collect();
 
@@ -41,10 +42,9 @@ class IntegrationService
                 'owner_user_id' => $user->id,
                 'team' => 'Security Team',
                 'test_type' => $template->test_type,
-                'sla_days' => $template->sla_days,
                 'status' => 'Not Yet Run',
                 'last_run_at' => null,
-                'next_due_at' => $template->sla_days ? now()->addDays($template->sla_days) : null,
+                'next_due_at' => null,
                 'integration_id' => $integration->id,
                 'control_monitor_id' => null,
             ]);

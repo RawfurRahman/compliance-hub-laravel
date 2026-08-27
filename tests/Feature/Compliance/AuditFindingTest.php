@@ -18,6 +18,7 @@ class AuditFindingTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void

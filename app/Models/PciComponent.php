@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PciComponent extends Model
 {
     use HasFactory;
+
     protected $table = 'pci_components';
+
     protected $guarded = [];
 }

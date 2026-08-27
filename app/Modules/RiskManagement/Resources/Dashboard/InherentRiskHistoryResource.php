@@ -18,21 +18,21 @@ class InherentRiskHistoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'               => $this->id,
+            'id' => $this->id,
             'risk_register_id' => $this->risk_register_id,
-            'tv_score'         => (int) $this->tv_score,
-            'inherent_score'   => (int) $this->inherent_score,
-            'severity_band'    => $this->severity_band,
-            'appetite_status'  => $this->appetite_status,
-            'heatmap'          => [
+            'tv_score' => (int) $this->tv_score,
+            'inherent_score' => (int) $this->inherent_score,
+            'severity_band' => $this->severity_band,
+            'appetite_status' => $this->appetite_status,
+            'heatmap' => [
                 'likelihood' => (int) $this->heatmap_likelihood,
-                'impact'     => (int) $this->heatmap_impact,
+                'impact' => (int) $this->heatmap_impact,
             ],
-            'risk_ranking'     => (float) $this->risk_ranking,
-            'formula_version'  => $this->formula_version,
-            'source'           => $this->source,
-            'explanation'      => $this->explanation,
-            'recorded_at'      => optional($this->created_at)->toIso8601String(),
+            'risk_ranking' => (float) $this->risk_ranking,
+            'formula_version' => $this->formula_version,
+            'source' => $this->source,
+            'explanation' => $this->explanation,
+            'recorded_at' => optional($this->created_at)->toIso8601String(),
         ];
     }
 }

@@ -14,8 +14,11 @@ class ComplianceReportMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $projectName;
+
     public string $reportLabel;
+
     public ?string $messageBody;
+
     protected array $attachmentsData;
 
     /**
@@ -52,7 +55,7 @@ class ComplianceReportMail extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

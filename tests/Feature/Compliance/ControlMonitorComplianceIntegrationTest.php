@@ -19,9 +19,13 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Control $control;
+
     protected MonitoringRule $monitoringRule;
+
     protected ControlMonitor $controlMonitor;
+
     protected ComplianceTest $complianceTest;
 
     protected function setUp(): void
@@ -78,7 +82,6 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
             'owner_user_id' => $this->user->id,
             'team' => 'Security Team',
             'test_type' => 'Automated',
-            'sla_days' => 30,
             'status' => 'Passing',
             'last_run_at' => now(),
             'next_due_at' => now()->addDays(30),
@@ -137,7 +140,7 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
         $this->assertNotNull($failure->resolved_at);
     }
 
-    public function test_runAllDue_cascades_updates_to_all_linked_tests(): void
+    public function test_run_all_due_cascades_updates_to_all_linked_tests(): void
     {
         // Arrange: Create another ComplianceTest linked to the same ControlMonitor
         $project2 = Project::create([
@@ -152,7 +155,6 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
             'owner_user_id' => $this->user->id,
             'team' => 'Security Team',
             'test_type' => 'Automated',
-            'sla_days' => 30,
             'status' => 'Passing',
             'last_run_at' => now(),
             'next_due_at' => now()->addDays(30),
@@ -190,7 +192,6 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
         // Arrange: Set next_due_at to past date
         $this->complianceTest->update([
             'next_due_at' => now()->subDays(1),
-            'sla_days' => 30,
         ]);
 
         // Act: Run the check again (should update the test status)
@@ -216,7 +217,6 @@ class ControlMonitorComplianceIntegrationTest extends TestCase
             'owner_user_id' => $this->user->id,
             'team' => 'Security Team',
             'test_type' => 'Automated',
-            'sla_days' => 30,
             'status' => 'Passing',
             'last_run_at' => now(),
             'next_due_at' => now()->addDays(30),

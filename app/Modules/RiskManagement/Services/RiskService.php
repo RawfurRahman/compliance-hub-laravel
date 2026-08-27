@@ -9,14 +9,16 @@ use Illuminate\Support\Facades\Auth;
 class RiskService
 {
     private ScoringEngine $engine;
+
     private RiskScoringService $scoringService;
+
     private ResidualRiskService $residualService;
 
     public function __construct()
     {
-        $this->engine = new ScoringEngine();
-        $this->scoringService = new RiskScoringService();
-        $this->residualService = new ResidualRiskService();
+        $this->engine = new ScoringEngine;
+        $this->scoringService = new RiskScoringService;
+        $this->residualService = new ResidualRiskService;
     }
 
     /**
@@ -32,25 +34,28 @@ class RiskService
         $computedTv = $this->engine->calculateTvScore($threat, $vuln);
         $computedInherent = $this->engine->calculateInherentScore($vuln, $computedTv, $likelihood);
 
-        // Gather all mapped control effectiveness values
-        $mappings = $risk->controlMappings()->pluck('effectiveness')->toArray();
+        // Cumulative control effectiveness is aggregated here purely for the
+        // legacy history log; residual scoring itself is delegated to the
+        // single authoritative implementation (ResidualRiskService).
+        $cumulativeEffectiveness = $this->engine->calculateCumulativeEffectiveness(
+            $risk->controlMappings()->pluck('effectiveness')->toArray()
+        );
 
-        if (empty($mappings)) {
-            // Default to manual workbook residual inputs for reconciliation of manual formulas
-            $resTv = intval($risk->residual_tv ?: 1);
-            $resLh = intval($risk->residual_lh ?: 1);
-            $computedResidual = $resTv * $resLh;
-            $cumulativeEffectiveness = 0.0;
-            $residualTvRecord = $resTv;
-            $residualLhRecord = $resLh;
-        } else {
-            $cumulativeEffectiveness = $this->engine->calculateCumulativeEffectiveness($mappings);
-            // Compute Residual Scores using cumulative control reduction
-            $residualInputs = $this->engine->calculateResidualInputs($computedTv, $likelihood, $cumulativeEffectiveness);
-            $computedResidual = $residualInputs['residual_tv'] * $residualInputs['residual_lh'];
-            $residualTvRecord = $residualInputs['residual_tv'];
-            $residualLhRecord = $residualInputs['residual_lh'];
-        }
+        // Make the freshly computed inherent available to the residual engine
+        // before the reconciliation columns are persisted.
+        $risk->computed_risk_rating = $computedInherent;
+
+        // Residual is always derived from ResidualRiskService (weighted,
+        // versioned reduction model). scoreAndRecord() persists the canonical
+        // residual history row + fires events, and returns the authoritative
+        // score that is mirrored into the reconciliation column and legacy log.
+        $residualResult = $this->residualService->scoreAndRecord(
+            $this->residualService->buildInputFromRisk($risk),
+            risk: $risk,
+            recordedBy: Auth::id() ?? $risk->updated_by,
+            source: 'trigger'
+        );
+        $computedResidual = $residualResult->residualScore;
 
         // Save computed scores to reconciliation columns
         $risk->update([
@@ -78,17 +83,9 @@ class RiskService
             source: 'manual'
         );
 
-        // Recalculate the residual (after-controls) score. Triggered here so any
-        // change to control effectiveness, remediation state, evidence or
-        // acceptance flows through to a fresh residual history row + events.
-        $this->residualService->scoreAndRecord(
-            $this->residualService->buildInputFromRisk($risk),
-            risk: $risk,
-            recordedBy: Auth::id() ?? $risk->updated_by,
-            source: 'trigger'
-        );
-
-        // Record history log entry
+        // Record history log entry. residual_tv/residual_lh are the manual
+        // workbook inputs; residual_rating is the authoritative
+        // ResidualRiskService output (no longer residual_tv × residual_lh).
         $risk->scoresHistory()->create([
             'tv_score' => $computedTv,
             'lh_score' => $likelihood,
@@ -97,8 +94,8 @@ class RiskService
             'vulnerability_level_av' => $vuln,
             'control_effectiveness' => $cumulativeEffectiveness,
             'formula_version' => config('rmm.formula_version', 'v1'),
-            'residual_tv' => $residualTvRecord,
-            'residual_lh' => $residualLhRecord,
+            'residual_tv' => intval($risk->residual_tv ?: 1),
+            'residual_lh' => intval($risk->residual_lh ?: 1),
             'residual_rating' => $computedResidual,
             'recorded_by' => Auth::id() ?? $risk->updated_by ?? 1,
         ]);
@@ -109,7 +106,7 @@ class RiskService
      */
     public function updateHeatmap(int $projectId): void
     {
-        $calc = new RiskCalculationService();
+        $calc = new RiskCalculationService;
         $registerService = new RiskRegisterService($calc);
 
         $registerService->snapshotHeatmap($projectId, 'inherent');
@@ -123,6 +120,7 @@ class RiskService
     {
         if ($risk->lifecycle_status === 'draft' && $risk->computed_tv !== null) {
             $risk->lifecycle_status = 'assessed';
+
             return;
         }
 
@@ -130,13 +128,14 @@ class RiskService
             $latestAcceptance = $risk->latestAcceptance;
             if ($latestAcceptance && $latestAcceptance->status === 'Approved') {
                 $risk->lifecycle_status = 'accepted';
+
                 return;
             }
         }
 
         if ($risk->lifecycle_status === 'treated') {
             $treatmentPlans = $risk->treatmentPlans;
-            if ($treatmentPlans->isNotEmpty() && $treatmentPlans->every(fn($p) => $p->status === 'completed')) {
+            if ($treatmentPlans->isNotEmpty() && $treatmentPlans->every(fn ($p) => $p->status === 'completed')) {
                 $risk->lifecycle_status = 'monitoring';
             }
         }

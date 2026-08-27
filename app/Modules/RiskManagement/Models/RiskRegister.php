@@ -2,7 +2,7 @@
 
 namespace App\Modules\RiskManagement\Models;
 
-use App\Models\Asset;
+use App\Models\AssessmentFinding;
 use App\Models\Control;
 use App\Models\FrameworkControl;
 use App\Models\Project;
@@ -23,7 +23,7 @@ class RiskRegister extends Model
     {
         static::saved(function ($risk) {
             if ($risk->isDirty(['threat_level_t', 'vulnerability_level_av', 'likelihood_lh'])) {
-                \App\Modules\RiskManagement\Jobs\RiskRecalculationJob::dispatch($risk->id);
+                RiskRecalculationJob::dispatch($risk->id);
             }
         });
     }
@@ -55,22 +55,22 @@ class RiskRegister extends Model
 
     // For frontend dropdowns
     public const STATUSES = [
-        'Not Started', 'Pending', 'In Progress', 'Completed'
+        'Not Started', 'Pending', 'In Progress', 'Completed',
     ];
 
     public const TREATMENT_DECISIONS = [
-        'Accepted', 'Not Accepted'
+        'Accepted', 'In Review', 'Not Accepted',
     ];
 
     public const LIFECYCLE_TRANSITIONS = [
-        'draft'      => ['assessed'],
-        'assessed'   => ['accepted', 'treated', 'monitoring'],
-        'accepted'   => ['treated', 'monitoring'],
-        'treated'    => ['monitoring', 'assessed'],
+        'draft' => ['assessed'],
+        'assessed' => ['accepted', 'treated', 'monitoring'],
+        'accepted' => ['treated', 'monitoring'],
+        'treated' => ['monitoring', 'assessed'],
         'monitoring' => ['escalated', 'closed', 'assessed'],
-        'escalated'  => ['treated', 'accepted', 'monitoring'],
-        'closed'     => ['monitoring', 'assessed'],
-        'expired'    => ['assessed'],
+        'escalated' => ['treated', 'accepted', 'monitoring'],
+        'closed' => ['monitoring', 'assessed'],
+        'expired' => ['assessed'],
     ];
 
     public const LIFECYCLE_STATUSES = [
@@ -89,11 +89,10 @@ class RiskRegister extends Model
         'lifecycle_status',
         'residual_tv', 'residual_lh', 'residual_rating', 'follow_up_note',
         'category', 'department',
-        'owner_user_id', 'asset_id', 'evidence_ids', 'source', 'legacy_source_id', 'assessment_finding_id',
+        'owner_user_id', 'evidence_ids', 'source', 'legacy_source_id', 'assessment_finding_id', 'observation_id',
         'created_by', 'updated_by', 'custom_fields',
         'computed_tv', 'computed_risk_rating', 'computed_residual_rating',
         'exposure_value',
-        'is_enterprise_risk',
     ];
 
     protected $casts = [
@@ -120,7 +119,6 @@ class RiskRegister extends Model
         'computed_risk_rating' => 'integer',
         'computed_residual_rating' => 'integer',
         'exposure_value' => 'decimal:2',
-        'is_enterprise_risk' => 'boolean',
     ];
 
     // Ensure serializing to JSON includes old field names for the frontend views
@@ -128,13 +126,13 @@ class RiskRegister extends Model
         'risk_id',
         'risk_name',
         'date_identified',
-        'asset_id_ref',
         'threat_score',
         'confidentiality',
         'integrity',
         'availability',
         'existing_controls',
         'likelihood',
+        'impact',
         'inherent_score',
         'inherent_risk_level',
         'recommended_control',
@@ -144,69 +142,200 @@ class RiskRegister extends Model
         'residual_impact',
         'residual_score',
         'residual_risk_level',
-        'follow_up_notes'
+        'follow_up_notes',
     ];
 
     /* ------------------------------------------------------------------ */
-    /* Backward Compatibility Accessors & Mutators                        */
+    /* Backward Compatibility Accessors & Mutators */
     /* ------------------------------------------------------------------ */
 
-    public function getRiskIdAttribute() { return $this->serial_no; }
-    public function setRiskIdAttribute($value) { $this->serial_no = $value; }
+    public function getRiskIdAttribute()
+    {
+        return $this->serial_no;
+    }
 
-    public function getRiskNameAttribute() { return $this->asset_process_service; }
-    public function setRiskNameAttribute($value) { $this->asset_process_service = $value; }
+    public function setRiskIdAttribute($value)
+    {
+        $this->serial_no = $value;
+    }
 
-    public function getDateIdentifiedAttribute() { return $this->risk_calculation_date; }
-    public function setDateIdentifiedAttribute($value) { $this->risk_calculation_date = $value; }
+    public function getRiskNameAttribute()
+    {
+        return $this->asset_process_service;
+    }
 
-    public function getAssetIdRefAttribute() { return $this->asset_id; }
-    public function setAssetIdRefAttribute($value) { $this->asset_id = $value; }
+    public function setRiskNameAttribute($value)
+    {
+        $this->asset_process_service = $value;
+    }
 
-    public function getThreatScoreAttribute() { return $this->threat_level_t; }
-    public function setThreatScoreAttribute($value) { $this->threat_level_t = $value; }
+    public function getDateIdentifiedAttribute()
+    {
+        return $this->risk_calculation_date;
+    }
 
-    public function getConfidentialityAttribute() { return $this->impact_confidentiality; }
-    public function setConfidentialityAttribute($value) { $this->impact_confidentiality = $value; }
+    public function setDateIdentifiedAttribute($value)
+    {
+        $this->risk_calculation_date = $value;
+    }
 
-    public function getIntegrityAttribute() { return $this->impact_integrity; }
-    public function setIntegrityAttribute($value) { $this->impact_integrity = $value; }
+    public function getThreatScoreAttribute()
+    {
+        return $this->threat_level_t;
+    }
 
-    public function getAvailabilityAttribute() { return $this->impact_availability; }
-    public function setAvailabilityAttribute($value) { $this->impact_availability = $value; }
+    public function setThreatScoreAttribute($value)
+    {
+        $this->threat_level_t = $value;
+    }
 
-    public function getExistingControlsAttribute() { return $this->existing_control; }
-    public function setExistingControlsAttribute($value) { $this->existing_control = $value; }
+    public function getConfidentialityAttribute()
+    {
+        return $this->impact_confidentiality;
+    }
 
-    public function getLikelihoodAttribute() { return $this->likelihood_lh; }
-    public function setLikelihoodAttribute($value) { $this->likelihood_lh = $value; }
+    public function setConfidentialityAttribute($value)
+    {
+        $this->impact_confidentiality = $value;
+    }
 
-    public function getInherentScoreAttribute() { return $this->risk_rating_avtvlh; }
-    public function setInherentScoreAttribute($value) { $this->risk_rating_avtvlh = $value; }
+    public function getIntegrityAttribute()
+    {
+        return $this->impact_integrity;
+    }
 
-    public function getRecommendedControlAttribute() { return $this->proposed_control; }
-    public function setRecommendedControlAttribute($value) { $this->proposed_control = $value; }
+    public function setIntegrityAttribute($value)
+    {
+        $this->impact_integrity = $value;
+    }
 
-    public function getTreatmentDecisionAttribute() { return $this->measurement; }
-    public function setTreatmentDecisionAttribute($value) { $this->measurement = $value; }
+    public function getAvailabilityAttribute()
+    {
+        return $this->impact_availability;
+    }
 
-    public function getStatusAttribute() { return $this->implementation_status; }
-    public function setStatusAttribute($value) { $this->implementation_status = $value; }
+    public function setAvailabilityAttribute($value)
+    {
+        $this->impact_availability = $value;
+    }
 
-    public function getResidualLikelihoodAttribute() { return $this->residual_lh; }
-    public function setResidualLikelihoodAttribute($value) { $this->residual_lh = $value; }
+    /**
+     * 'Impact' has no dedicated column -- the workbook model expresses impact
+     * as three separate CIA scores (impact_confidentiality/integrity/availability,
+     * already shown as the C/I/A columns). This mirrors RiskCalculationService's
+     * own residual-risk impact factor: max(C, I, A).
+     */
+    public function getImpactAttribute()
+    {
+        return max(
+            (int) ($this->impact_confidentiality ?? 0),
+            (int) ($this->impact_integrity ?? 0),
+            (int) ($this->impact_availability ?? 0)
+        );
+    }
 
-    public function getResidualImpactAttribute() { return $this->residual_tv; }
-    public function setResidualImpactAttribute($value) { $this->residual_tv = $value; }
+    public function getExistingControlsAttribute()
+    {
+        return $this->existing_control;
+    }
 
-    public function getResidualScoreAttribute() { return $this->residual_rating; }
-    public function setResidualScoreAttribute($value) { $this->residual_rating = $value; }
+    public function setExistingControlsAttribute($value)
+    {
+        $this->existing_control = $value;
+    }
 
-    public function getFollowUpNotesAttribute() { return $this->follow_up_note; }
-    public function setFollowUpNotesAttribute($value) { $this->follow_up_note = $value; }
+    public function getLikelihoodAttribute()
+    {
+        return $this->likelihood_lh;
+    }
+
+    public function setLikelihoodAttribute($value)
+    {
+        $this->likelihood_lh = $value;
+    }
+
+    public function getInherentScoreAttribute()
+    {
+        return $this->risk_rating_avtvlh;
+    }
+
+    public function setInherentScoreAttribute($value)
+    {
+        $this->risk_rating_avtvlh = $value;
+    }
+
+    public function getRecommendedControlAttribute()
+    {
+        return $this->proposed_control;
+    }
+
+    public function setRecommendedControlAttribute($value)
+    {
+        $this->proposed_control = $value;
+    }
+
+    public function getTreatmentDecisionAttribute()
+    {
+        return $this->measurement;
+    }
+
+    public function setTreatmentDecisionAttribute($value)
+    {
+        $this->measurement = $value;
+    }
+
+    public function getStatusAttribute()
+    {
+        return $this->implementation_status;
+    }
+
+    public function setStatusAttribute($value)
+    {
+        $this->implementation_status = $value;
+    }
+
+    public function getResidualLikelihoodAttribute()
+    {
+        return $this->residual_lh;
+    }
+
+    public function setResidualLikelihoodAttribute($value)
+    {
+        $this->residual_lh = $value;
+    }
+
+    public function getResidualImpactAttribute()
+    {
+        return $this->residual_tv;
+    }
+
+    public function setResidualImpactAttribute($value)
+    {
+        $this->residual_tv = $value;
+    }
+
+    public function getResidualScoreAttribute()
+    {
+        return $this->residual_rating;
+    }
+
+    public function setResidualScoreAttribute($value)
+    {
+        $this->residual_rating = $value;
+    }
+
+    public function getFollowUpNotesAttribute()
+    {
+        return $this->follow_up_note;
+    }
+
+    public function setFollowUpNotesAttribute($value)
+    {
+        $this->follow_up_note = $value;
+    }
 
     /* ------------------------------------------------------------------ */
-    /* Relationships                                                        */
+    /* Relationships */
     /* ------------------------------------------------------------------ */
 
     public function project()
@@ -217,11 +346,6 @@ class RiskRegister extends Model
     public function frameworkControl()
     {
         return $this->belongsTo(FrameworkControl::class);
-    }
-
-    public function asset()
-    {
-        return $this->belongsTo(Asset::class, 'asset_id');
     }
 
     public function ownerUser()
@@ -241,7 +365,12 @@ class RiskRegister extends Model
 
     public function assessmentFinding()
     {
-        return $this->belongsTo(\App\Models\AssessmentFinding::class, 'assessment_finding_id');
+        return $this->belongsTo(AssessmentFinding::class, 'assessment_finding_id');
+    }
+
+    public function observation()
+    {
+        return $this->belongsTo(\App\Models\Observation::class, 'observation_id');
     }
 
     public function controlMappings()
@@ -319,14 +448,23 @@ class RiskRegister extends Model
     }
 
     /* ------------------------------------------------------------------ */
-    /* Static helpers & Scopes                                              */
+    /* Static helpers & Scopes */
     /* ------------------------------------------------------------------ */
 
-    public static function scoreToLevel(int $score): string
+    public static function scoreToLevel(?int $score): string
     {
-        if ($score >= 128) return 'Critical';
-        if ($score >= 84)  return 'High';
-        if ($score >= 54)  return 'Medium';
+        $score ??= 0;
+
+        if ($score >= 128) {
+            return 'Critical';
+        }
+        if ($score >= 84) {
+            return 'High';
+        }
+        if ($score >= 54) {
+            return 'Medium';
+        }
+
         return 'Low';
     }
 
@@ -334,10 +472,10 @@ class RiskRegister extends Model
     {
         return match ($level) {
             'Critical' => 'risk-critical',
-            'High'     => 'risk-high',
-            'Medium'   => 'risk-medium',
-            'Low'      => 'risk-low',
-            default    => 'risk-low',
+            'High' => 'risk-high',
+            'Medium' => 'risk-medium',
+            'Low' => 'risk-low',
+            default => 'risk-low',
         };
     }
 
@@ -345,10 +483,10 @@ class RiskRegister extends Model
     {
         return match ($level) {
             'Critical' => 'background:#c0392b;color:#fff;',
-            'High'     => 'background:#e67e22;color:#fff;',
-            'Medium'   => 'background:#f1c40f;color:#333;',
-            'Low'      => 'background:#2ecc71;color:#fff;',
-            default    => 'background:#ecf0f1;color:#333;',
+            'High' => 'background:#e67e22;color:#fff;',
+            'Medium' => 'background:#f1c40f;color:#333;',
+            'Low' => 'background:#2ecc71;color:#fff;',
+            default => 'background:#ecf0f1;color:#333;',
         };
     }
 
@@ -374,7 +512,10 @@ class RiskRegister extends Model
 
     public function getRiskReductionPctAttribute(): float
     {
-        if ($this->risk_rating_avtvlh <= 0) return 0;
+        if ($this->risk_rating_avtvlh <= 0) {
+            return 0;
+        }
+
         return round((1 - ($this->residual_rating / $this->risk_rating_avtvlh)) * 100, 1);
     }
 
@@ -392,6 +533,7 @@ class RiskRegister extends Model
     {
         $inherent = $this->computed_risk_rating ?? $this->risk_rating_avtvlh;
         $residual = $this->computed_residual_rating ?? $this->residual_rating;
+
         return max(0, $inherent - $residual);
     }
 }

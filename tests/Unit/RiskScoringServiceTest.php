@@ -4,14 +4,16 @@ namespace Tests\Unit;
 
 use App\Modules\RiskManagement\Services\RiskScoringService;
 use App\Modules\RiskManagement\Support\Scoring\InherentRiskInput;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 /**
  * Pure unit tests for the inherent risk scoring engine.
  *
  * These do not touch the database; they assert workbook parity, banding,
  * appetite status, heatmap coordinates, ranking, determinism and
- * reproducibility of the pure scoring logic.
+ * reproducibility of the pure scoring logic. Extends the Laravel TestCase so
+ * the application (and config) is booted — the engine reads versioned weights
+ * and bands from config.
  */
 class RiskScoringServiceTest extends TestCase
 {
@@ -20,7 +22,7 @@ class RiskScoringServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new RiskScoringService();
+        $this->service = new RiskScoringService;
     }
 
     private function input(int $threat, int $vuln, int $likelihood, array $impact = [], float $assetValue = 100000.0): InherentRiskInput

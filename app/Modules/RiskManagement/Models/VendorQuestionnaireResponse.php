@@ -16,9 +16,9 @@ class VendorQuestionnaireResponse extends Model
     ];
 
     protected $casts = [
-        'score'               => 'decimal:2',
-        'max_score'           => 'decimal:2',
-        'is_compliant'        => 'boolean',
+        'score' => 'decimal:2',
+        'max_score' => 'decimal:2',
+        'is_compliant' => 'boolean',
         'needs_vendor_review' => 'boolean',
     ];
 

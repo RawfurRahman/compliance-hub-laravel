@@ -13,18 +13,21 @@ class ThirdPartyVendorService
         if ($projectId) {
             $query->where('project_id', $projectId);
         }
+
         return $query->orderBy('vendor_name')->get();
     }
 
     public function create(array $data): ThirdPartyVendor
     {
         $data['created_by'] = Auth::id();
+
         return ThirdPartyVendor::create($data);
     }
 
     public function update(ThirdPartyVendor $vendor, array $data): ThirdPartyVendor
     {
         $vendor->update($data);
+
         return $vendor->fresh();
     }
 
@@ -41,6 +44,7 @@ class ThirdPartyVendorService
         if ($vendor->criticality === 'high' || $vendor->data_classification === 'confidential') {
             return 'tier_2';
         }
+
         return 'tier_3';
     }
 }

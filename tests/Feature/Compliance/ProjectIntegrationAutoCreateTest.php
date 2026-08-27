@@ -16,6 +16,7 @@ class ProjectIntegrationAutoCreateTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Project $project;
 
     protected function setUp(): void
@@ -114,7 +115,7 @@ class ProjectIntegrationAutoCreateTest extends TestCase
         $names = $n8nTemplates->pluck('name')->toArray();
         $this->assertContains('Evidence Malware Scan Check', $names);
         $this->assertContains('AI Analysis Completion Check', $names);
-        $this->assertContains('Evidence Processing SLA Check', $names);
+        $this->assertContains('Evidence Processing Check', $names);
         $this->assertContains('Malware Detection Alert', $names);
         $this->assertContains('Evidence Upload Freshness', $names);
     }

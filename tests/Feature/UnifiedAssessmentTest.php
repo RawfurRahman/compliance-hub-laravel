@@ -2,15 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Imports\FrameworkControlImport;
+use App\Models\Evidence;
 use App\Models\Framework;
 use App\Models\FrameworkControl;
 use App\Models\Project;
 use App\Models\ProjectAssessment;
-use App\Models\AssessmentFinding;
-use App\Models\Evidence;
 use App\Models\User;
 use App\Services\AssessmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Testing\File;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UnifiedAssessmentTest extends TestCase
@@ -24,7 +27,7 @@ class UnifiedAssessmentTest extends TestCase
         $project = Project::create([
             'name' => 'Test Project',
             'module_type' => 'iso_27001',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
         $framework = Framework::create([
             'name' => 'ISO 27001',
@@ -74,7 +77,7 @@ class UnifiedAssessmentTest extends TestCase
         $user = User::factory()->create();
         $project = Project::create(['name' => 'Agnostic Test', 'module_type' => 'iso_27001', 'user_id' => $user->id]);
         $framework = Framework::create(['name' => 'ISO 27001', 'slug' => 'iso_27001', 'is_active' => true]);
-        
+
         $control = FrameworkControl::create([
             'framework_id' => $framework->id,
             'control_id' => 'A.8.1',
@@ -130,7 +133,7 @@ class UnifiedAssessmentTest extends TestCase
         $user = User::factory()->create();
         $project = Project::create(['name' => 'Evidence Test', 'module_type' => 'iso_27001', 'user_id' => $user->id]);
         $framework = Framework::create(['name' => 'ISO 27001', 'slug' => 'iso_27001', 'is_active' => true]);
-        
+
         $control = FrameworkControl::create([
             'framework_id' => $framework->id,
             'control_id' => 'A.5.1',
@@ -162,7 +165,7 @@ class UnifiedAssessmentTest extends TestCase
 
     public function test_excel_import_recovers_truncated_trailing_zeros()
     {
-        $import = new \App\Imports\FrameworkControlImport(1);
+        $import = new FrameworkControlImport(1);
 
         // Simulate reading sequential rows where 5.10 was formatted as 5.1, and 5.20 was formatted as 5.2
         $rows = [
@@ -189,13 +192,13 @@ class UnifiedAssessmentTest extends TestCase
 
     public function test_excel_import_matches_complex_slash_headers()
     {
-        $import = new \App\Imports\FrameworkControlImport(1);
+        $import = new FrameworkControlImport(1);
 
         $row = [
             'domain_domain_name' => 'Asset Management',
             'control_id_control_no' => 'A.5.1',
             'requirement_description_description' => 'Describe policy details.',
-            'required_evidence_evidence' => 'Document policy list.'
+            'required_evidence_evidence' => 'Document policy list.',
         ];
 
         $model = $import->model($row);
@@ -214,7 +217,7 @@ class UnifiedAssessmentTest extends TestCase
         $project = Project::create([
             'name' => 'Agnostic Project',
             'module_type' => 'iso_27001',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
         $framework = Framework::create([
             'name' => 'ISO 27001',
@@ -240,13 +243,18 @@ class UnifiedAssessmentTest extends TestCase
 
     public function test_evidence_upload_for_agnostic_project()
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $user = User::factory()->create();
+        $adminRoleId = DB::table('roles')->insertGetId(['name' => 'Admin']);
+        DB::table('user_roles')->insert([
+            'user_id' => $user->id,
+            'role_id' => $adminRoleId,
+        ]);
         $project = Project::create([
             'name' => 'Agnostic Upload Project',
             'module_type' => 'iso_27001',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
         $framework = Framework::create([
             'name' => 'ISO 27001',
@@ -260,7 +268,7 @@ class UnifiedAssessmentTest extends TestCase
             'requirement_description' => 'Role definition',
         ]);
 
-        $file = \Illuminate\Http\Testing\File::create('policy_doc.pdf', 100, 'application/pdf');
+        $file = File::create('policy_doc.pdf', 100, 'application/pdf');
 
         $response = $this->actingAs($user)->post("/evidence/{$project->id}/upload", [
             'file' => $file,
@@ -278,7 +286,7 @@ class UnifiedAssessmentTest extends TestCase
 
     public function test_evidence_zip_export_for_agnostic_project()
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $user = User::factory()->create();
         $user->roles()->create(['name' => 'Auditor']);
@@ -286,7 +294,7 @@ class UnifiedAssessmentTest extends TestCase
         $project = Project::create([
             'name' => 'Agnostic ZIP Project',
             'module_type' => 'iso_27001',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
         $framework = Framework::create([
             'name' => 'ISO 27001',
@@ -301,8 +309,8 @@ class UnifiedAssessmentTest extends TestCase
         ]);
 
         // Create accepted evidence file
-        $filePath = 'evidence/' . $project->id . '/test_file.txt';
-        \Illuminate\Support\Facades\Storage::disk('public')->put($filePath, 'plain text content');
+        $filePath = 'evidence/'.$project->id.'/test_file.txt';
+        Storage::disk('public')->put($filePath, 'plain text content');
 
         $evidenceFile = $project->evidenceFiles()->create([
             'framework_control_id' => $control->id,
@@ -324,7 +332,7 @@ class UnifiedAssessmentTest extends TestCase
         $user = User::factory()->create();
         $project = Project::create(['name' => 'Phase Test', 'module_type' => 'iso_27001', 'user_id' => $user->id]);
         $framework = Framework::create(['name' => 'ISO 27001', 'slug' => 'iso_27001', 'is_active' => true]);
-        
+
         $control = FrameworkControl::create([
             'framework_id' => $framework->id,
             'control_id' => 'A.5.1',

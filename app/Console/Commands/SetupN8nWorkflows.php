@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 
 class SetupN8nWorkflows extends Command
 {
@@ -27,7 +27,14 @@ class SetupN8nWorkflows extends Command
      */
     public function handle()
     {
-        $apiKey = $this->option('key') ?: env('N8N_API_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiOWI2NjFhZi1iMjc4LTQ5OTAtOTk5OC03ZGJhMTk1MzE3Y2IiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiOGUyOGI4MjMtZjA5ZC00MTQzLTk2NjMtYTgwZmNmZDVhMmI3IiwiaWF0IjoxNzgxODY4MjU5LCJleHAiOjE3ODk2MTc2MDB9.y_xv6cuSYqD4JhYQmMqg5RfhQl5v2-XhT28QFpKqVzA');
+        $apiKey = $this->option('key') ?: env('N8N_API_KEY');
+
+        if (! $apiKey) {
+            $this->error('An n8n Public API key is required. Pass it with --key= or set N8N_API_KEY in .env.');
+
+            return 1;
+        }
+
         $n8nUrl = 'http://localhost:5678/api/v1';
 
         $this->info("Connecting to n8n at {$n8nUrl}...");
@@ -35,21 +42,22 @@ class SetupN8nWorkflows extends Command
         try {
             // Test connection to n8n API
             $response = Http::withHeaders([
-                'X-N8N-API-KEY' => $apiKey
+                'X-N8N-API-KEY' => $apiKey,
             ])->get("{$n8nUrl}/workflows");
 
             if ($response->failed()) {
-                $this->error("Failed to connect to n8n API. Status code: " . $response->status());
+                $this->error('Failed to connect to n8n API. Status code: '.$response->status());
                 $this->error($response->body());
+
                 return 1;
             }
 
             $existingWorkflows = collect($response->json('data') ?? []);
-            $this->info("Successfully connected! Found " . $existingWorkflows->count() . " existing workflow(s).");
+            $this->info('Successfully connected! Found '.$existingWorkflows->count().' existing workflow(s).');
 
             // Setup/Retrieve Mailpit SMTP Credentials
             $credResponse = Http::withHeaders([
-                'X-N8N-API-KEY' => $apiKey
+                'X-N8N-API-KEY' => $apiKey,
             ])->get("{$n8nUrl}/credentials");
 
             $smtpCredentialId = null;
@@ -62,18 +70,42 @@ class SetupN8nWorkflows extends Command
                 if ($smtpCred) {
                     $smtpCredentialId = $smtpCred['id'];
                     $this->info("Found existing Mailpit SMTP credential with ID: {$smtpCredentialId}");
+
+                    // Ensure the SMTP host points to the Docker service so the
+                    // n8n container (inside Docker) can actually reach Mailpit.
+                    $this->info('Updating Mailpit SMTP credential host to reachable Docker hostname...');
+                    $updateCredResponse = Http::withHeaders([
+                        'X-N8N-API-KEY' => $apiKey,
+                    ])->patch("{$n8nUrl}/credentials/{$smtpCredentialId}", [
+                        'name' => 'Mailpit SMTP',
+                        'type' => 'smtp',
+                        'data' => [
+                            'host' => env('N8N_SMTP_HOST', 'host.docker.internal'),
+                            'port' => 1025,
+                            'secure' => false,
+                            'disableStartTls' => true,
+                            'user' => '',
+                            'password' => '',
+                        ],
+                    ]);
+
+                    if (! $updateCredResponse->successful()) {
+                        $this->error('Failed to update Mailpit SMTP credential: '.$updateCredResponse->body());
+
+                        return 1;
+                    }
                 }
             }
 
-            if (!$smtpCredentialId) {
-                $this->info("Creating Mailpit SMTP credential in n8n...");
+            if (! $smtpCredentialId) {
+                $this->info('Creating Mailpit SMTP credential in n8n...');
                 $createCredResponse = Http::withHeaders([
-                    'X-N8N-API-KEY' => $apiKey
+                    'X-N8N-API-KEY' => $apiKey,
                 ])->post("{$n8nUrl}/credentials", [
                     'name' => 'Mailpit SMTP',
                     'type' => 'smtp',
                     'data' => [
-                        'host' => '127.0.0.1',
+                        'host' => env('N8N_SMTP_HOST', 'host.docker.internal'),
                         'port' => 1025,
                         'secure' => false,
                         'disableStartTls' => true,
@@ -86,14 +118,16 @@ class SetupN8nWorkflows extends Command
                     $smtpCredentialId = $createCredResponse->json('id');
                     $this->info("Successfully created Mailpit SMTP credential with ID: {$smtpCredentialId}");
                 } else {
-                    $this->error("Failed to create Mailpit SMTP credential: " . $createCredResponse->body());
+                    $this->error('Failed to create Mailpit SMTP credential: '.$createCredResponse->body());
+
                     return 1;
                 }
             }
 
             $workflowDirectory = database_path('n8n');
-            if (!File::exists($workflowDirectory)) {
+            if (! File::exists($workflowDirectory)) {
                 $this->error("Workflow directory not found at {$workflowDirectory}.");
+
                 return 1;
             }
 
@@ -124,6 +158,7 @@ class SetupN8nWorkflows extends Command
 
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $this->error("Invalid JSON format in {$file->getFilename()}.");
+
                     continue;
                 }
 
@@ -139,8 +174,9 @@ class SetupN8nWorkflows extends Command
                 }
 
                 $name = $workflowData['name'] ?? null;
-                if (!$name) {
+                if (! $name) {
                     $this->error("Workflow name missing in {$file->getFilename()}.");
+
                     continue;
                 }
 
@@ -150,7 +186,7 @@ class SetupN8nWorkflows extends Command
                 if ($matched) {
                     $this->info("Updating existing workflow '{$name}' (ID: {$matched['id']})...");
                     $updateResponse = Http::withHeaders([
-                        'X-N8N-API-KEY' => $apiKey
+                        'X-N8N-API-KEY' => $apiKey,
                     ])->put("{$n8nUrl}/workflows/{$matched['id']}", [
                         'name' => $name,
                         'nodes' => $workflowData['nodes'] ?? [],
@@ -162,21 +198,21 @@ class SetupN8nWorkflows extends Command
                         $this->info("Workflow '{$name}' updated successfully. Activating...");
                         $id = $updateResponse->json('id') ?: $matched['id'];
                         $activateResponse = Http::withHeaders([
-                            'X-N8N-API-KEY' => $apiKey
-                        ])->post("{$n8nUrl}/workflows/{$id}/activate", (object)[]);
+                            'X-N8N-API-KEY' => $apiKey,
+                        ])->post("{$n8nUrl}/workflows/{$id}/activate", (object) []);
 
                         if ($activateResponse->successful()) {
                             $this->info("Workflow '{$name}' activated successfully.");
                         } else {
-                            $this->warn("Failed to activate workflow '{$name}': " . $activateResponse->body());
+                            $this->warn("Failed to activate workflow '{$name}': ".$activateResponse->body());
                         }
                     } else {
-                        $this->error("Failed to update workflow '{$name}': " . $updateResponse->body());
+                        $this->error("Failed to update workflow '{$name}': ".$updateResponse->body());
                     }
                 } else {
                     $this->info("Creating new workflow '{$name}'...");
                     $createResponse = Http::withHeaders([
-                        'X-N8N-API-KEY' => $apiKey
+                        'X-N8N-API-KEY' => $apiKey,
                     ])->post("{$n8nUrl}/workflows", [
                         'name' => $name,
                         'nodes' => $workflowData['nodes'] ?? [],
@@ -188,25 +224,27 @@ class SetupN8nWorkflows extends Command
                         $this->info("Workflow '{$name}' created successfully. Activating...");
                         $id = $createResponse->json('id');
                         $activateResponse = Http::withHeaders([
-                            'X-N8N-API-KEY' => $apiKey
-                        ])->post("{$n8nUrl}/workflows/{$id}/activate", (object)[]);
+                            'X-N8N-API-KEY' => $apiKey,
+                        ])->post("{$n8nUrl}/workflows/{$id}/activate", (object) []);
 
                         if ($activateResponse->successful()) {
                             $this->info("Workflow '{$name}' activated successfully.");
                         } else {
-                            $this->warn("Failed to activate workflow '{$name}': " . $activateResponse->body());
+                            $this->warn("Failed to activate workflow '{$name}': ".$activateResponse->body());
                         }
                     } else {
-                        $this->error("Failed to create workflow '{$name}': " . $createResponse->body());
+                        $this->error("Failed to create workflow '{$name}': ".$createResponse->body());
                     }
                 }
             }
 
-            $this->info("n8n workflow setup completed successfully.");
+            $this->info('n8n workflow setup completed successfully.');
+
             return 0;
 
         } catch (\Exception $e) {
-            $this->error("An error occurred during workflow setup: " . $e->getMessage());
+            $this->error('An error occurred during workflow setup: '.$e->getMessage());
+
             return 1;
         }
     }

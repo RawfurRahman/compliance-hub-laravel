@@ -102,8 +102,8 @@ class RemediationTrendQueryService extends BaseQueryService
 
         return $allMonths->mapWithKeys(fn ($month) => [
             $month => [
-                'opened' => (int) ($opened->get($month)?->count ?? 0),
-                'closed' => (int) ($closed->get($month)?->count ?? 0),
+                'opened' => (int) ($opened->get($month)->count ?? 0),
+                'closed' => (int) ($closed->get($month)->count ?? 0),
             ],
         ]);
     }

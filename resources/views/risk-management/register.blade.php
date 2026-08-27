@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 /* ======================================================
    INTEGRATED RISK REGISTER — Excel-exact styling
    Matches the uploaded Cybersecurity Compliance Hub
@@ -87,8 +87,8 @@
 .rr-table {
     border-collapse: collapse;
     font-size: 11px;
-    min-width: 2200px;
     width: 100%;
+    table-layout: auto;
 }
 /* Sticky header */
 .rr-table thead tr { position: sticky; top: 0; z-index: 10; }
@@ -108,6 +108,7 @@
 .rr-th-assess   { background: #1d4ed8; color: #fff; }           /* risk assessment (blue) */
 .rr-th-treat    { background: #7c3aed; color: #fff; }           /* treatment plan (purple) */
 .rr-th-residual { background: #065f46; color: #fff; }           /* residual risk (green) */
+.rr-th-riskstatus { background: #92400e; color: #fff; }         /* risk status (amber/brown) */
 
 /* ── Column headers (row 2) ── */
 .rr-th {
@@ -131,9 +132,6 @@
     border: 1px solid #e8ecf0;
     vertical-align: middle;
     white-space: nowrap;
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     color: #1e293b;
 }
 .rr-td.frozen { position: sticky; left: 0; background: #fff; z-index: 3; border-right: 2px solid #cbd5e1; }
@@ -141,6 +139,13 @@
 .rr-td.mono   { font-family: monospace; font-weight: 700; }
 .rr-tr:hover .rr-td { background: #f0f9ff !important; }
 .rr-tr:hover .rr-td.frozen { background: #e0f2fe !important; }
+/* .rr-tr:hover .rr-td has higher specificity than .score-* alone, so without this
+   the inherent/residual score colour would disappear on row hover -- these must
+   stay visible at all times, hover included. */
+.rr-tr:hover .rr-td.score-critical { background: #c0392b !important; color: #fff !important; }
+.rr-tr:hover .rr-td.score-high     { background: #e67e22 !important; color: #fff !important; }
+.rr-tr:hover .rr-td.score-medium   { background: #f1c40f !important; color: #333 !important; }
+.rr-tr:hover .rr-td.score-low      { background: #27ae60 !important; color: #fff !important; }
 
 /* ── Risk level badges / score cells ── */
 .risk-badge {
@@ -157,6 +162,22 @@
 .score-high     { background: #e67e22 !important; color: #fff !important; font-weight: 800; text-align: center; }
 .score-medium   { background: #f1c40f !important; color: #333 !important; font-weight: 800; text-align: center; }
 .score-low      { background: #27ae60 !important; color: #fff !important; font-weight: 800; text-align: center; }
+
+/* Risk status dropdown: Open = red, Closed = green -- must stay visible on row hover too */
+.risk-status-select {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.risk-status-open   { background: #c0392b !important; color: #fff !important; }
+.risk-status-closed { background: #27ae60 !important; color: #fff !important; }
+.rr-tr:hover .rr-td .risk-status-open   { background: #c0392b !important; color: #fff !important; }
+.rr-tr:hover .rr-td .risk-status-closed { background: #27ae60 !important; color: #fff !important; }
 
 /* Treatment decision badges */
 .treat-accepted    { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
@@ -318,55 +339,57 @@
             <thead>
                 {{-- Row 1: Section group headers --}}
                 <tr>
-                    <th class="rr-th-section rr-th-meta" colspan="8">
+                    <th class="rr-th-section rr-th-meta" colspan="7">
                         Risk Identification
                     </th>
-                    <th class="rr-th-section rr-th-assess" colspan="9">
+                    <th class="rr-th-section rr-th-assess" colspan="8">
                         Risk Assessment
                     </th>
-                    <th class="rr-th-section rr-th-treat" colspan="7">
+                    <th class="rr-th-section rr-th-treat" colspan="5">
                         Risk Treatment Plan
                     </th>
                     <th class="rr-th-section rr-th-residual" colspan="5">
                         Residual Risk
+                    </th>
+                    <th class="rr-th-section rr-th-riskstatus" colspan="1">
+                        Risk Status
                     </th>
                 </tr>
                 {{-- Row 2: Column headers --}}
                 <tr>
                     {{-- Identification --}}
                     <th class="rr-th frozen" style="left:0;min-width:35px;" @click="sort('index')">#</th>
-                    <th class="rr-th" @click="sort('risk_id')" style="min-width:80px;">Risk ID</th>
-                    <th class="rr-th" @click="sort('risk_name')" style="min-width:160px;">Risk Name</th>
-                    <th class="rr-th" @click="sort('department')" style="min-width:120px;">Department</th>
-                    <th class="rr-th" @click="sort('risk_owner')" style="min-width:100px;">Risk Owner</th>
-                    <th class="rr-th" @click="sort('date_identified')" style="min-width:90px;">Assess. Date</th>
-                    <th class="rr-th" @click="sort('asset_id_ref')" style="min-width:80px;">Asset ID</th>
-                    <th class="rr-th" @click="sort('category_name')" style="min-width:100px;">Category</th>
+                    <th class="rr-th" @click="sort('risk_id')">Risk ID</th>
+                    <th class="rr-th" @click="sort('risk_name')">Risk Description</th>
+                    <th class="rr-th" @click="sort('department')">Department</th>
+                    <th class="rr-th" @click="sort('risk_owner')">Risk Owner</th>
+                    <th class="rr-th" @click="sort('date_identified')">Assess. Date</th>
+                    <th class="rr-th" @click="sort('category_name')">Category</th>
                     {{-- Assessment --}}
-                    <th class="rr-th" style="min-width:200px;">Risk Description</th>
-                    <th class="rr-th" @click="sort('threat_score')" style="min-width:60px;">Threat</th>
-                    <th class="rr-th" @click="sort('confidentiality')" style="min-width:38px;">C</th>
-                    <th class="rr-th" @click="sort('integrity')" style="min-width:38px;">I</th>
-                    <th class="rr-th" @click="sort('availability')" style="min-width:38px;">A</th>
-                    <th class="rr-th" @click="sort('likelihood')" style="min-width:65px;">Likelihood</th>
-                    <th class="rr-th" @click="sort('impact')" style="min-width:65px;">Impact</th>
-                    <th class="rr-th" @click="sort('inherent_score')" style="min-width:65px;">Inherent Score</th>
-                    <th class="rr-th" @click="sort('inherent_risk_level')" style="min-width:80px;">Risk Level</th>
+                    <th class="rr-th" @click="sort('threat_score')">Threat</th>
+                    <th class="rr-th" @click="sort('confidentiality')">C</th>
+                    <th class="rr-th" @click="sort('integrity')">I</th>
+                    <th class="rr-th" @click="sort('availability')">A</th>
+                    <th class="rr-th" @click="sort('likelihood')">Likelihood</th>
+                    <th class="rr-th" @click="sort('impact')">Impact</th>
+                    <th class="rr-th" @click="sort('inherent_score')">Inherent Score</th>
+                    <th class="rr-th" @click="sort('inherent_risk_level')">Risk Level</th>
                     {{-- Treatment --}}
-                    <th class="rr-th" style="min-width:160px;">Recommended Control</th>
-                    <th class="rr-th" @click="sort('treatment_decision')" style="min-width:100px;">Decision</th>
-                    <th class="rr-th" @click="sort('communication_status')" style="min-width:90px;">Comm. Status</th>
-                    <th class="rr-th" @click="sort('target_date')" style="min-width:90px;">Target Date</th>
-                    <th class="rr-th" @click="sort('next_review_date')" style="min-width:90px;">Review Date</th>
-                    <th class="rr-th" @click="sort('status')" style="min-width:90px;">Impl. Status</th>
+                    <th class="rr-th" @click="sort('treatment_decision')">Decision</th>
+                    <th class="rr-th" @click="sort('communication_status')">Comm. Status</th>
+                    <th class="rr-th" @click="sort('target_date')">Target Date</th>
+                    <th class="rr-th" @click="sort('next_review_date')">Review Date</th>
+                    <th class="rr-th" @click="sort('status')">Impl. Status</th>
                     {{-- Residual --}}
-                    <th class="rr-th" @click="sort('residual_likelihood')" style="min-width:65px;">Res. Likelihood</th>
-                    <th class="rr-th" @click="sort('residual_impact')" style="min-width:65px;">Res. Impact</th>
-                    <th class="rr-th" @click="sort('residual_score')" style="min-width:65px;">Res. Score</th>
-                    <th class="rr-th" @click="sort('residual_risk_level')" style="min-width:80px;">Res. Level</th>
-                    <th class="rr-th" style="min-width:140px;">Follow-up Notes</th>
+                    <th class="rr-th" @click="sort('residual_likelihood')">Res. Likelihood</th>
+                    <th class="rr-th" @click="sort('residual_impact')">Res. Impact</th>
+                    <th class="rr-th" @click="sort('residual_score')">Res. Score</th>
+                    <th class="rr-th" @click="sort('residual_risk_level')">Res. Level</th>
+                    <th class="rr-th">Follow-up Notes</th>
+                    {{-- Risk Status --}}
+                    <th class="rr-th">Risk Status</th>
                     {{-- Actions --}}
-                    <th class="rr-th" style="min-width:90px;">Actions</th>
+                    <th class="rr-th">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -374,23 +397,21 @@
                     <tr class="rr-tr">
                         <td class="rr-td frozen num" x-text="idx + 1"></td>
                         <td class="rr-td mono" x-text="row.risk_id"></td>
-                        <td class="rr-td" :title="row.risk_name" x-text="row.risk_name"></td>
+                        <td class="rr-td" style="max-width:340px;white-space:normal;font-size:10px;"
+                            x-text="row.risk_name"></td>
                         <td class="rr-td" x-text="row.department"></td>
                         <td class="rr-td" x-text="row.risk_owner"></td>
                         <td class="rr-td" x-text="row.date_identified"></td>
-                        <td class="rr-td" x-text="row.asset_id_ref ?? '—'"></td>
                         <td class="rr-td" x-text="row.category_name ?? '—'"></td>
                         {{-- Assessment --}}
-                        <td class="rr-td" style="max-width:200px;white-space:normal;font-size:10px;"
-                            :title="row.risk_description" x-text="row.risk_description"></td>
                         <td class="rr-td num" x-text="row.threat_score"></td>
                         <td class="rr-td num" x-text="row.confidentiality"></td>
                         <td class="rr-td num" x-text="row.integrity"></td>
                         <td class="rr-td num" x-text="row.availability"></td>
-                        <td class="rr-td num" x-text="likelihoodLabel(row.likelihood)"></td>
-                        <td class="rr-td num" x-text="impactLabel(row.impact)"></td>
+                        <td class="rr-td num" x-text="row.likelihood"></td>
+                        <td class="rr-td num" x-text="row.impact"></td>
                         <td class="rr-td num"
-                            :class="scoreCssClass(row.inherent_score)"
+                            :class="'score-' + row.inherent_risk_level.toLowerCase()"
                             x-text="row.inherent_score"></td>
                         <td class="rr-td">
                             <span class="risk-badge"
@@ -398,8 +419,6 @@
                                   x-text="row.inherent_risk_level"></span>
                         </td>
                         {{-- Treatment --}}
-                        <td class="rr-td" style="max-width:160px;white-space:normal;font-size:10px;"
-                            x-text="row.recommended_control ?? '—'"></td>
                         <td class="rr-td">
                             <span class="risk-badge"
                                   :class="treatmentCss(row.treatment_decision)"
@@ -418,10 +437,10 @@
                                   x-text="row.status"></span>
                         </td>
                         {{-- Residual --}}
-                        <td class="rr-td num" x-text="likelihoodLabel(row.residual_likelihood)"></td>
-                        <td class="rr-td num" x-text="impactLabel(row.residual_impact)"></td>
+                        <td class="rr-td num" x-text="row.residual_likelihood"></td>
+                        <td class="rr-td num" x-text="row.residual_impact"></td>
                         <td class="rr-td num"
-                            :class="scoreCssClass(row.residual_score)"
+                            :class="'score-' + row.residual_risk_level.toLowerCase()"
                             x-text="row.residual_score"></td>
                         <td class="rr-td">
                             <span class="risk-badge"
@@ -430,6 +449,16 @@
                         </td>
                         <td class="rr-td" style="max-width:140px;white-space:normal;font-size:10px;"
                             x-text="row.follow_up_notes ?? '—'"></td>
+                        {{-- Risk Status --}}
+                        <td class="rr-td">
+                            <select class="risk-status-select"
+                                    :class="row.status === 'Completed' ? 'risk-status-closed' : 'risk-status-open'"
+                                    :value="row.status === 'Completed' ? 'Closed' : 'Open'"
+                                    @change="updateRiskStatus(row, $event.target.value)">
+                                <option value="Open">Open</option>
+                                <option value="Closed">Closed</option>
+                            </select>
+                        </td>
                         {{-- Actions --}}
                         <td class="rr-td" style="white-space:nowrap;">
                             <a :href="row.edit_url" class="rr-btn rr-btn-outline" style="padding:3px 8px;font-size:10px;">
@@ -444,7 +473,7 @@
                 </template>
                 <template x-if="filteredRows.length === 0">
                     <tr>
-                        <td colspan="30" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px;">
+                        <td colspan="29" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px;">
                             <i class="fas fa-shield-alt text-slate-300 text-3xl mb-2 block"></i>
                             No risks found. Click <strong>Add Risk</strong> to create the first entry.
                         </td>
@@ -482,9 +511,9 @@
 
                     <div class="form-section-title"><i class="fas fa-info-circle mr-1"></i>General Information</div>
                     <div class="rr-form-grid">
-                        <div>
-                            <label class="form-label-sm">Risk Name *</label>
-                            <input type="text" x-model="form.risk_name" class="form-input-sm" required>
+                        <div class="rr-form-full">
+                            <label class="form-label-sm">Risk Description *</label>
+                            <textarea x-model="form.risk_name" class="form-input-sm" rows="2" required></textarea>
                         </div>
                         <div>
                             <label class="form-label-sm">Risk Owner *</label>
@@ -512,14 +541,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="form-label-sm">Asset ID Reference</label>
-                            <input type="text" x-model="form.asset_id_ref" class="form-input-sm" placeholder="ASSET-001">
-                        </div>
-                        <div class="rr-form-full">
-                            <label class="form-label-sm">Risk Description *</label>
-                            <textarea x-model="form.risk_description" class="form-input-sm" rows="2" required></textarea>
-                        </div>
                     </div>
 
                     <div class="form-section-title"><i class="fas fa-chart-bar mr-1"></i>Threat Analysis</div>
@@ -530,15 +551,15 @@
                         </div>
                         <div>
                             <label class="form-label-sm">Confidentiality (1–5)</label>
-                            <input type="number" x-model.number="form.confidentiality" min="1" max="5" class="form-input-sm">
+                            <input type="number" x-model.number="form.confidentiality" @input="recalc()" min="1" max="5" class="form-input-sm">
                         </div>
                         <div>
                             <label class="form-label-sm">Integrity (1–5)</label>
-                            <input type="number" x-model.number="form.integrity" min="1" max="5" class="form-input-sm">
+                            <input type="number" x-model.number="form.integrity" @input="recalc()" min="1" max="5" class="form-input-sm">
                         </div>
                         <div>
                             <label class="form-label-sm">Availability (1–5)</label>
-                            <input type="number" x-model.number="form.availability" min="1" max="5" class="form-input-sm">
+                            <input type="number" x-model.number="form.availability" @input="recalc()" min="1" max="5" class="form-input-sm">
                         </div>
                         <div class="rr-form-full">
                             <label class="form-label-sm">Existing Controls</label>
@@ -559,11 +580,11 @@
                             </div>
                         </div>
                         <div>
-                            <label class="form-label-sm">Impact (1–5) *</label>
-                            <input type="number" x-model.number="form.impact" @input="recalc()"
-                                   min="1" max="5" class="form-input-sm" required>
+                            <label class="form-label-sm">Impact (auto)</label>
+                            <input type="number" x-model.number="form.impact" readonly tabindex="-1"
+                                   class="form-input-sm" style="background:#f1f5f9;color:#64748b;cursor:not-allowed;">
                             <div style="font-size:9px;color:#6b7280;margin-top:2px;">
-                                1=Very Low · 5=Critical
+                                Highest of Confidentiality / Integrity / Availability
                             </div>
                         </div>
                         <div>
@@ -587,7 +608,7 @@
                         </div>
                         <div>
                             <label class="form-label-sm">Communication Status</label>
-                            <select x-model="form.communication_status" class="form-input-sm">
+                            <select x-model="form.communication" class="form-input-sm">
                                 <option value="">-- Select --</option>
                                 <option value="Communicated">Communicated</option>
                                 <option value="Pending">Pending</option>
@@ -595,7 +616,7 @@
                         </div>
                         <div>
                             <label class="form-label-sm">Target Date</label>
-                            <input type="date" x-model="form.target_date" class="form-input-sm">
+                            <input type="date" x-model="form.implementation_to" class="form-input-sm">
                         </div>
                         <div>
                             <label class="form-label-sm">Review Date</label>
@@ -708,7 +729,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function riskRegister() {
     return {
         // ── Data ──
@@ -720,9 +741,7 @@ function riskRegister() {
                 'department'          => $r->department,
                 'risk_owner'          => $r->risk_owner,
                 'date_identified'     => $r->date_identified?->format('Y-m-d'),
-                'asset_id_ref'        => $r->asset_id_ref,
                 'category_name'       => $r->category,
-                'risk_description'    => $r->risk_description,
                 'threat_score'        => $r->threat_score,
                 'confidentiality'     => $r->confidentiality,
                 'integrity'           => $r->integrity,
@@ -734,9 +753,12 @@ function riskRegister() {
                 'inherent_risk_level' => $r->inherent_risk_level,
                 'recommended_control' => $r->recommended_control,
                 'treatment_decision'  => $r->treatment_decision,
-                'communication_status'=> $r->communication_status,
+                // 'communication_status'/'target_date' are not real columns or accessors
+                // on RiskRegister (a pre-existing gap) -- read from the actual backing
+                // columns instead so these cells stop always rendering blank/default.
+                'communication_status'=> $r->communication,
                 'status'              => $r->status,
-                'target_date'         => $r->target_date?->format('Y-m-d'),
+                'target_date'         => $r->implementation_to?->format('Y-m-d'),
                 'next_review_date'    => $r->next_review_date?->format('Y-m-d'),
                 'residual_likelihood' => $r->residual_likelihood,
                 'residual_impact'     => $r->residual_impact,
@@ -778,18 +800,18 @@ function riskRegister() {
         form: {
             risk_name: '', risk_owner: '', department: '',
             date_identified: new Date().toISOString().slice(0,10),
-            asset_id_ref: '', risk_category_id: '',
-            risk_description: '', threat_score: 3,
+            risk_category_id: '',
+            threat_score: 3,
             confidentiality: 3, integrity: 3, availability: 3,
             existing_controls: '',
             likelihood: 3, impact: 3,
             recommended_control: '',
             treatment_decision: 'In Review',
-            communication_status: 'Pending',
-            status: 'Draft',
+            communication: 'Pending',
+            status: 'Not Started',
             framework_control_id: '',
             residual_likelihood: 2, residual_impact: 2,
-            target_date: '', next_review_date: '',
+            implementation_to: '', next_review_date: '',
             follow_up_notes: '',
         },
 
@@ -807,7 +829,7 @@ function riskRegister() {
 
             if (q) {
                 data = data.filter(r =>
-                    (r.risk_id + r.risk_name + r.risk_description + r.department + r.risk_owner)
+                    (r.risk_id + r.risk_name + r.department + r.risk_owner)
                         .toLowerCase().includes(q)
                 );
             }
@@ -832,8 +854,13 @@ function riskRegister() {
 
         // ── Score helpers ──
         recalc() {
+            const c  = parseInt(this.form.confidentiality) || 1;
+            const integ = parseInt(this.form.integrity)    || 1;
+            const a  = parseInt(this.form.availability)    || 1;
+            this.form.impact = Math.max(c, integ, a);
+
             const l  = parseInt(this.form.likelihood)          || 1;
-            const i  = parseInt(this.form.impact)              || 1;
+            const i  = this.form.impact;
             const rl = parseInt(this.form.residual_likelihood) || 1;
             const ri = parseInt(this.form.residual_impact)     || 1;
 
@@ -879,6 +906,32 @@ function riskRegister() {
             return map[status] ?? 'status-open';
         },
 
+        // A simplified Open/Closed view of implementation_status (the same field the
+        // "Impl. Status" column already shows in full detail) -- reuses the existing
+        // unrestricted /transition endpoint rather than the separately state-machine
+        // gated lifecycle_status, which rejects most direct jumps to/from "closed".
+        async updateRiskStatus(row, value) {
+            const newImplStatus = value === 'Closed' ? 'Completed' : 'Not Started';
+            const previous = row.status;
+            row.status = newImplStatus;
+            try {
+                const res = await fetch(`/projects/{{ $project->id }}/risk-register/${row.id}/transition`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ status: newImplStatus }),
+                });
+                if (!res.ok) throw new Error('Request failed');
+                this.showToast(`Risk marked as ${value}.`);
+            } catch (e) {
+                row.status = previous;
+                this.showToast('Failed to update risk status.', true);
+            }
+        },
+
         // ── Modal ──
         openAddModal() {
             this.editMode = false;
@@ -886,18 +939,18 @@ function riskRegister() {
             this.form = {
                 risk_name:'', risk_owner:'', department:'',
                 date_identified: new Date().toISOString().slice(0,10),
-                asset_id_ref:'', risk_category_id:'',
-                risk_description:'', threat_score:3,
+                risk_category_id:'',
+                threat_score:3,
                 confidentiality:3, integrity:3, availability:3,
                 existing_controls:'',
                 likelihood:3, impact:3,
                 recommended_control:'',
                 treatment_decision:'In Review',
-                communication_status:'Pending',
-                status:'Draft',
+                communication:'Pending',
+                status:'Not Started',
                 framework_control_id:'',
                 residual_likelihood:2, residual_impact:2,
-                target_date:'', next_review_date:'',
+                implementation_to:'', next_review_date:'',
                 follow_up_notes:'',
             };
             this.recalc();
@@ -934,9 +987,7 @@ function riskRegister() {
                         department:          r.department,
                         risk_owner:          r.risk_owner,
                         date_identified:     r.date_identified,
-                        asset_id_ref:        r.asset_id_ref,
                         category_name:       r.category ?? null,
-                        risk_description:    r.risk_description,
                         threat_score:        r.threat_score,
                         confidentiality:     r.confidentiality,
                         integrity:           r.integrity,
@@ -948,9 +999,9 @@ function riskRegister() {
                         inherent_risk_level: r.inherent_risk_level,
                         recommended_control: r.recommended_control,
                         treatment_decision:  r.treatment_decision,
-                        communication_status:r.communication_status,
+                        communication_status:r.communication,
                         status:              r.status,
-                        target_date:         r.target_date,
+                        target_date:         r.implementation_to,
                         next_review_date:    r.next_review_date,
                         residual_likelihood: r.residual_likelihood,
                         residual_impact:     r.residual_impact,
@@ -971,7 +1022,8 @@ function riskRegister() {
                     this.showModal = false;
                     this.showToast(this.editId ? 'Risk updated successfully.' : 'Risk created successfully.');
                 } else {
-                    alert(data.message ?? 'Failed to save risk.');
+                    const errors = data.errors ? Object.values(data.errors).flat().join('\n') : (data.message ?? 'Failed to save risk.');
+                    alert(errors);
                 }
             } catch (e) {
                 alert('Network error. Please try again.');

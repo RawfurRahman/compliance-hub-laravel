@@ -2,8 +2,8 @@
 
 namespace App\Modules\RiskManagement\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Modules\RiskManagement\Services\MigrationService;
+use Illuminate\Console\Command;
 
 class MigrateLegacyRisks extends Command
 {
@@ -29,22 +29,25 @@ class MigrateLegacyRisks extends Command
         $projectId = intval($this->option('project-id'));
         $this->info("Starting legacy risk migration for Project ID: {$projectId}...");
 
-        $service = new MigrationService();
-        
+        $service = new MigrationService;
+
         try {
             $result = $service->migrateLegacyAssessments($projectId);
-            
+
             if ($result['success']) {
-                $this->info("Legacy migration completed successfully.");
-                $this->line("  Migrated ISO Gap Assessments: " . $result['iso_migrated']);
-                $this->line("  Migrated PCI Gap Assessments: " . $result['pci_migrated']);
+                $this->info('Legacy migration completed successfully.');
+                $this->line('  Migrated ISO Gap Assessments: '.$result['iso_migrated']);
+                $this->line('  Migrated PCI Gap Assessments: '.$result['pci_migrated']);
+
                 return self::SUCCESS;
             }
-            
-            $this->error("Legacy migration failed.");
+
+            $this->error('Legacy migration failed.');
+
             return self::FAILURE;
         } catch (\Exception $e) {
-            $this->error("Error running legacy migration: " . $e->getMessage());
+            $this->error('Error running legacy migration: '.$e->getMessage());
+
             return self::FAILURE;
         }
     }

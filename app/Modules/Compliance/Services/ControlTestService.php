@@ -5,7 +5,6 @@ namespace App\Modules\Compliance\Services;
 use App\Models\AssessmentFinding;
 use App\Modules\Compliance\Events\ControlTestCompleted;
 use App\Modules\Compliance\Models\ControlTest;
-use App\Modules\Compliance\Models\FrameworkVersion;
 use Illuminate\Support\Collection;
 
 class ControlTestService
@@ -35,7 +34,7 @@ class ControlTestService
             'assessment_finding_id' => $findingId,
         ]);
 
-        if (!$findingId && in_array($result, ['fail', 'partial', 'error'])) {
+        if (! $findingId && in_array($result, ['fail', 'partial', 'error'])) {
             $finding = $this->createFindingFromTest($test, $projectAssessmentId);
             $test->update(['assessment_finding_id' => $finding->id]);
             $test->load('assessmentFinding');
@@ -60,7 +59,7 @@ class ControlTestService
             'observation' => sprintf('Control test failed: %s — %s', $control->name, $test->notes ?? ''),
             'is_compliant' => false,
             'is_applicable' => true,
-            'due_date' => now()->addDays(config('compliance.sla_defaults.resolution_hours', 168) / 24),
+            'due_date' => now()->addDays(7),
         ]);
     }
 

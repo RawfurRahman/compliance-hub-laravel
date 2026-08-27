@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Services\Dashboard\DashboardCacheKey;
-use App\Services\Dashboard\DashboardDomains;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 

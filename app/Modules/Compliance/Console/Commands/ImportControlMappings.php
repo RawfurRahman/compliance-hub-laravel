@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class ImportControlMappings extends Command
 {
     protected $signature = 'compliance:import-mappings {file} {--framework=}';
+
     protected $description = 'Import framework-to-control mappings from a JSON or CSV file';
 
     public function handle(MappingImportService $service): int
@@ -15,14 +16,16 @@ class ImportControlMappings extends Command
         $file = $this->argument('file');
         $frameworkId = $this->option('framework');
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             $this->error("File not found: {$file}");
+
             return Command::FAILURE;
         }
 
         $mappings = json_decode(file_get_contents($file), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->error('Invalid JSON file.');
+
             return Command::FAILURE;
         }
 

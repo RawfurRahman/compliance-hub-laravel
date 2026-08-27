@@ -23,13 +23,15 @@ const props = defineProps({
 const categories = computed(() => props.monthly.map(m => m.month || ''))
 
 const chartSeries = computed(() => [
-  { name: 'Opened', data: props.monthly.map(m => m.opened || 0) },
-  { name: 'Closed', data: props.monthly.map(m => m.closed || 0) },
+  { name: 'Critical', data: props.monthly.map(m => m.critical || 0) },
+  { name: 'High', data: props.monthly.map(m => m.high || 0) },
+  { name: 'Medium', data: props.monthly.map(m => m.medium || 0) },
+  { name: 'Low', data: props.monthly.map(m => m.low || 0) },
 ])
 
 const chartOptions = computed(() => ({
   chart: { type: 'area', toolbar: { show: false }, fontFamily: 'inherit' },
-  colors: [CHART_COLORS.bad, CHART_COLORS.good],
+  colors: [CHART_COLORS.bad, '#f97316', CHART_COLORS.warning, CHART_COLORS.good],
   dataLabels: { enabled: false },
   stroke: { curve: 'smooth', width: 2 },
   fill: { type: 'gradient', gradient: { shadeIntensity: 0.1, opacityFrom: 0.3, opacityTo: 0 } },

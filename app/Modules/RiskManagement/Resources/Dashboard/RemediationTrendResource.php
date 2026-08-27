@@ -15,7 +15,6 @@ class RemediationTrendResource extends JsonResource
             'closed' => $this['closed'],
             'overdue' => $this['overdue'],
             'mttr_hours' => $this['mttr_hours'],
-            'sla_breach_rate' => $this['sla_breach_rate'],
             'closure_rate' => $this['closure_rate'],
             'aging_buckets' => $this['aging_buckets'],
         ];

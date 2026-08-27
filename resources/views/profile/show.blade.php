@@ -28,7 +28,7 @@
                         <x-dropdown-item href="{{ route('profile.show') }}">Profile</x-dropdown-item>
                         <x-dropdown-item href="{{ route('profile.settings') }}">Settings</x-dropdown-item>
                         <x-dropdown-item href="{{ route('logout') }}" 
-                                         onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                         class="js-logout-form">
                             {{ __('Logout') }}
                         </x-dropdown-item>
                         <form id="logout-form" method="POST" action="{{ route('logout') }}">
@@ -168,5 +168,6 @@
     </div>
 
     @vite(['resources/js/app.js'])
+    <script src="{{ asset('js/csp-bindings.js') }}" defer></script>
 </body>
 </html>
